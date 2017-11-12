@@ -150,6 +150,8 @@ VOID EvtDeviceFileCreate(
 
     if (AmIWhitelisted(pid))
     {
+        WdfRequestFormatRequestUsingCurrentType(Request);
+
         //
         // PID is white-listed, pass request down the stack
         // 

@@ -79,6 +79,8 @@ VOID HidGuardianEvtIoDefault(
 
     KdPrint((DRIVERNAME "HidGuardianEvtIoDefault called\n"));
 
+    WdfRequestFormatRequestUsingCurrentType(Request);
+
     WDF_REQUEST_SEND_OPTIONS_INIT(&options,
         WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
 
