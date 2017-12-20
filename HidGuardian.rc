@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,14,0,0
- PRODUCTVERSION 1,14,0,0
+ FILEVERSION 1,14,1,0
+ PRODUCTVERSION 1,14,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -69,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Benjamin Höglinger-Stelzer"
             VALUE "FileDescription", "HidGuardian Class Filter Driver"
-VALUE "FileVersion", "1.14.0.0"
+VALUE "FileVersion", "1.14.1.0"
             VALUE "InternalName", "HidGuardian.sys"
             VALUE "LegalCopyright", "Copyright (C) Benjamin Höglinger-Stelzer 2016"
             VALUE "OriginalFilename", "HidGuardian.sys"
             VALUE "ProductName", "HidGuardian Class Filter Driver"
-VALUE "ProductVersion", "1.14.0.0"
+VALUE "ProductVersion", "1.14.1.0"
         END
     END
     BLOCK "VarFileInfo"
