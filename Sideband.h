@@ -39,7 +39,7 @@ SOFTWARE.
 #define IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST        CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
                                                                     IOCTL_INDEX + 0x00, \
                                                                     METHOD_BUFFERED,    \
-                                                                    FILE_READ_ACCESS)
+                                                                    FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 
 //
 // Used to instruct driver to allow or deny request
@@ -54,20 +54,48 @@ SOFTWARE.
 
 typedef struct _HIDGUARDIAN_GET_CREATE_REQUEST
 {
+    //
+    // Arbitrary value to match request and response
+    // 
     ULONG RequestId;
 
+    //
+    // ID of the process this request is related to
+    // 
     ULONG ProcessId;
 
+    //
+    // Index of device this request belongs to (zero-based)
+    // 
+    ULONG DeviceIndex;
+
+    //
+    // Buffer containing Hardware ID string
+    // 
     PWSTR HardwareIdBuffer;
 
+    //
+    // Size of buffer for Hardware ID
+    // 
     ULONG HardwareIdBufferLength;
 
 } HIDGUARDIAN_GET_CREATE_REQUEST, *PHIDGUARDIAN_GET_CREATE_REQUEST;
 
 typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
 {
+    //
+    // Arbitrary value to match request and response
+    // 
     ULONG RequestId;
 
+    //
+    // Index of device this request belongs to (zero-based)
+    // 
+    ULONG DeviceIndex;
+
+    //
+    // TRUE if WdfRequestTypeCreate is allowed, FALSE otherwise
+    // 
     BOOLEAN IsAllowed;
 
 } HIDGUARDIAN_SET_CREATE_REQUEST, *PHIDGUARDIAN_SET_CREATE_REQUEST;
