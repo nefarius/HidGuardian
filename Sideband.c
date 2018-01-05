@@ -186,7 +186,7 @@ HidGuardianCreateControlDevice(
 
     pControlCtx = ControlDeviceGetContext(controlDevice);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION,
+    TraceEvents(TRACE_LEVEL_VERBOSE,
         TRACE_SIDEBAND,
         "ControlDeviceGetContext = 0x%p", pControlCtx);
 
@@ -201,6 +201,20 @@ HidGuardianCreateControlDevice(
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_SIDEBAND,
             "WdfIoQueueCreate (InvertedCallQueue) failed with %!STATUS!", status);
+        goto Error;
+    }
+
+    WDF_IO_QUEUE_CONFIG_INIT(&ioQueueConfig, WdfIoQueueDispatchManual);
+
+    status = WdfIoQueueCreate(controlDevice,
+        &ioQueueConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &pControlCtx->PendingAuthQueue
+    );
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "WdfIoQueueCreate (PendingAuthQueue) failed with %!STATUS!", status);
         goto Error;
     }
 
