@@ -57,27 +57,27 @@ typedef struct _HIDGUARDIAN_GET_CREATE_REQUEST
     //
     // Arbitrary value to match request and response
     // 
-    ULONG RequestId;
+    IN ULONG RequestId;
 
     //
     // ID of the process this request is related to
     // 
-    ULONG ProcessId;
+    OUT ULONG ProcessId;
 
     //
     // Index of device this request belongs to (zero-based)
     // 
-    ULONG DeviceIndex;
+    OUT ULONG DeviceIndex;
 
     //
     // Buffer containing Hardware ID string
     // 
-    PWSTR HardwareIdBuffer;
+    OUT PWSTR HardwareIdBuffer;
 
     //
     // Size of buffer for Hardware ID
     // 
-    ULONG HardwareIdBufferLength;
+    OUT ULONG HardwareIdBufferLength;
 
 } HIDGUARDIAN_GET_CREATE_REQUEST, *PHIDGUARDIAN_GET_CREATE_REQUEST;
 
@@ -86,17 +86,17 @@ typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
     //
     // Arbitrary value to match request and response
     // 
-    ULONG RequestId;
+    IN ULONG RequestId;
 
     //
     // Index of device this request belongs to (zero-based)
     // 
-    ULONG DeviceIndex;
+    IN ULONG DeviceIndex;
 
     //
     // TRUE if WdfRequestTypeCreate is allowed, FALSE otherwise
     // 
-    BOOLEAN IsAllowed;
+    IN BOOLEAN IsAllowed;
 
 } HIDGUARDIAN_SET_CREATE_REQUEST, *PHIDGUARDIAN_SET_CREATE_REQUEST;
 
