@@ -49,6 +49,32 @@ SOFTWARE.
                                                                     METHOD_BUFFERED,    \
                                                                     FILE_WRITE_ACCESS)
 
+
+#include <pshpack1.h>
+
+typedef struct _HIDGUARDIAN_GET_CREATE_REQUEST
+{
+    ULONG RequestId;
+
+    ULONG ProcessId;
+
+    PWSTR HardwareIdBuffer;
+
+    ULONG HardwareIdBufferLength;
+
+} HIDGUARDIAN_GET_CREATE_REQUEST, *PHIDGUARDIAN_GET_CREATE_REQUEST;
+
+typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
+{
+    ULONG RequestId;
+
+    BOOLEAN IsAllowed;
+
+} HIDGUARDIAN_SET_CREATE_REQUEST, *PHIDGUARDIAN_SET_CREATE_REQUEST;
+
+#include <poppack.h>
+
+
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL HidGuardianSidebandIoDeviceControl;
 EVT_WDF_FILE_CLEANUP HidGuardianSidebandFileCleanup;
 

@@ -27,6 +27,7 @@ SOFTWARE.
 #include "Sideband.tmh"
 #include <wdmsec.h>
 
+
 WDFCOLLECTION   FilterDeviceCollection;
 WDFWAITLOCK     FilterDeviceCollectionLock;
 WDFDEVICE       ControlDevice = NULL;
@@ -230,12 +231,64 @@ VOID HidGuardianSidebandIoDeviceControl(
     _In_ ULONG      IoControlCode
 )
 {
-    NTSTATUS                        status = STATUS_INVALID_PARAMETER;
+    NTSTATUS                            status = STATUS_INVALID_PARAMETER;
+    size_t                              bufferLength;
+    size_t                              transferred = 0;
+    PHIDGUARDIAN_GET_CREATE_REQUEST     pGetCreateRequest;
+    PHIDGUARDIAN_SET_CREATE_REQUEST     pSetCreateRequest;
 
     UNREFERENCED_PARAMETER(Queue);
-    UNREFERENCED_PARAMETER(OutputBufferLength);
-    UNREFERENCED_PARAMETER(InputBufferLength);
-    UNREFERENCED_PARAMETER(IoControlCode);
+    
+    switch (IoControlCode)
+    {
+#pragma region IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST
+
+    case IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST:
+
+        //TraceEvents(TRACE_LEVEL_INFORMATION,
+        //    TRACE_SIDEBAND, "IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST");
+
+        status = WdfRequestRetrieveOutputBuffer(
+            Request,
+            sizeof(HIDGUARDIAN_GET_CREATE_REQUEST),
+            (void*)&pGetCreateRequest,
+            &bufferLength);
+
+        if (NT_SUCCESS(status) && OutputBufferLength == sizeof(HIDGUARDIAN_GET_CREATE_REQUEST))
+        {
+            transferred = OutputBufferLength;
+            //RtlCopyMemory(&pGetHostAddr->Host, &pDeviceContext->HostAddress, sizeof(BD_ADDR));
+        }
+
+        break;
+
+#pragma endregion
+
+#pragma region IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST
+
+    case IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST:
+
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_SIDEBAND, "IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST");
+
+        status = WdfRequestRetrieveInputBuffer(
+            Request,
+            sizeof(HIDGUARDIAN_SET_CREATE_REQUEST),
+            (void*)&pSetCreateRequest,
+            &bufferLength);
+
+        if (NT_SUCCESS(status) && InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST))
+        {
+            
+        }
+
+        break;
+
+#pragma endregion
+
+    default:
+        break;
+    }
 
     WdfRequestComplete(Request, status);
 }
