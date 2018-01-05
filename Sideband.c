@@ -245,8 +245,8 @@ VOID HidGuardianSidebandIoDeviceControl(
 
     case IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST:
 
-        //TraceEvents(TRACE_LEVEL_INFORMATION,
-        //    TRACE_SIDEBAND, "IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST");
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_SIDEBAND, "IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST");
 
         status = WdfRequestRetrieveOutputBuffer(
             Request,
