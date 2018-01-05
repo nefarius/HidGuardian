@@ -29,8 +29,6 @@ SOFTWARE.
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, HidGuardianCreateDevice)
 #pragma alloc_text (PAGE, EvtDeviceFileCreate)
-#pragma alloc_text (PAGE, AmIAffected)
-#pragma alloc_text (PAGE, AmIWhitelisted)
 #endif
 
 

@@ -3,6 +3,11 @@
 #define NTSTRSAFE_LIB
 #include <ntstrsafe.h>
 
+#ifdef ALLOC_PRAGMA
+#pragma alloc_text (PAGE, AmIAffected)
+#pragma alloc_text (PAGE, AmIWhitelisted)
+#endif
+
 //
 // Checks if the current device should be intercepted or not.
 // 
