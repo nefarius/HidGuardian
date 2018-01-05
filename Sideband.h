@@ -30,6 +30,25 @@ SOFTWARE.
 #define NTDEVICE_NAME_STRING        L"\\Device\\HidGuardian"
 #define SYMBOLIC_NAME_STRING        L"\\DosDevices\\HidGuardian"
 
+#define IOCTL_INDEX                 0x801
+#define FILE_DEVICE_HIDGUARDIAN     32768U
+
+//
+// Used for inverted calls to get request information
+// 
+#define IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST        CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
+                                                                    IOCTL_INDEX + 0x00, \
+                                                                    METHOD_BUFFERED,    \
+                                                                    FILE_READ_ACCESS)
+
+//
+// Used to instruct driver to allow or deny request
+// 
+#define IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST        CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
+                                                                    IOCTL_INDEX + 0x01, \
+                                                                    METHOD_BUFFERED,    \
+                                                                    FILE_WRITE_ACCESS)
+
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL HidGuardianSidebandIoDeviceControl;
 EVT_WDF_FILE_CLEANUP HidGuardianSidebandFileCleanup;
 
