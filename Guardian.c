@@ -64,7 +64,9 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
         &col
     );
     if (!NT_SUCCESS(status)) {
-        KdPrint((DRIVERNAME "WdfCollectionCreate failed: 0x%x\n", status));
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_GUARDIAN,
+            "WdfCollectionCreate failed: %!STATUS!", status);
         return status;
     }
 
@@ -73,7 +75,9 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
     // 
     status = WdfDriverOpenParametersRegistryKey(WdfGetDriver(), STANDARD_RIGHTS_ALL, WDF_NO_OBJECT_ATTRIBUTES, &keyParams);
     if (!NT_SUCCESS(status)) {
-        KdPrint((DRIVERNAME "WdfDriverOpenParametersRegistryKey failed: 0x%x\n", status));
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_GUARDIAN,
+            "WdfDriverOpenParametersRegistryKey failed: %!STATUS!", status);
         return status;
     }
 
@@ -101,7 +105,10 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
             // 
             status = RtlUnicodeStringInit(&myHardwareID, szIter);
             if (!NT_SUCCESS(status)) {
-                KdPrint((DRIVERNAME "RtlUnicodeStringInit failed: 0x%x\n", status));
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_GUARDIAN,
+                    "RtlUnicodeStringInit failed: %!STATUS!", status);
+                
                 return status;
             }
 
@@ -112,10 +119,14 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
             {
                 WdfStringGetUnicodeString(WdfCollectionGetItem(col, i), &currentHardwareID);
 
-                KdPrint((DRIVERNAME "My ID %wZ vs current exempted ID %wZ\n", &myHardwareID, &currentHardwareID));
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_GUARDIAN,
+                    "My ID %wZ vs current exempted ID %wZ\n", &myHardwareID, &currentHardwareID);
 
                 affected = RtlEqualUnicodeString(&myHardwareID, &currentHardwareID, TRUE);
-                KdPrint((DRIVERNAME "Are we exempted: %d\n", affected));
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_GUARDIAN,
+                    "Are we exempted: %d\n", affected);
 
                 if (affected)
                 {
@@ -161,7 +172,9 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
             // 
             status = RtlUnicodeStringInit(&myHardwareID, szIter);
             if (!NT_SUCCESS(status)) {
-                KdPrint((DRIVERNAME "RtlUnicodeStringInit failed: 0x%x\n", status));
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_GUARDIAN,
+                    "RtlUnicodeStringInit failed: %!STATUS!", status);
                 return status;
             }
 
@@ -172,10 +185,14 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
             {
                 WdfStringGetUnicodeString(WdfCollectionGetItem(col, i), &currentHardwareID);
 
-                KdPrint((DRIVERNAME "My ID %wZ vs current affected ID %wZ\n", &myHardwareID, &currentHardwareID));
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_GUARDIAN,
+                    "My ID %wZ vs current affected ID %wZ\n", &myHardwareID, &currentHardwareID);
 
                 affected = RtlEqualUnicodeString(&myHardwareID, &currentHardwareID, TRUE);
-                KdPrint((DRIVERNAME "Are we affected: %d\n", affected));
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_GUARDIAN,
+                    "Are we affected: %d\n", affected);
 
                 if (affected) break;
             }
@@ -210,7 +227,9 @@ BOOLEAN AmIWhitelisted(DWORD Pid)
     // 
     status = WdfDriverOpenParametersRegistryKey(WdfGetDriver(), STANDARD_RIGHTS_READ, WDF_NO_OBJECT_ATTRIBUTES, &keyParams);
     if (!NT_SUCCESS(status)) {
-        KdPrint((DRIVERNAME "WdfDriverOpenParametersRegistryKey failed: 0x%x\n", status));
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_GUARDIAN,
+            "WdfDriverOpenParametersRegistryKey failed: %!STATUS!", status);
         return FALSE;
     }
 

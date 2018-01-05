@@ -77,7 +77,7 @@ VOID HidGuardianEvtIoDefault(
     NTSTATUS                        status;
     BOOLEAN                         ret;
 
-    KdPrint((DRIVERNAME "HidGuardianEvtIoDefault called\n"));
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
     WdfRequestFormatRequestUsingCurrentType(Request);
 
@@ -88,8 +88,12 @@ VOID HidGuardianEvtIoDefault(
 
     if (ret == FALSE) {
         status = WdfRequestGetStatus(Request);
-        KdPrint((DRIVERNAME "WdfRequestSend failed: 0x%x\n", status));
+        TraceEvents(TRACE_LEVEL_ERROR, 
+            TRACE_DEVICE, 
+            "WdfRequestSend failed: %!STATUS!", status);
         WdfRequestComplete(Request, status);
     }
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }
 

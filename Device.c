@@ -83,7 +83,9 @@ HidGuardianCreateDevice(
         deviceContext = DeviceGetContext(device);
 
         if (!NT_SUCCESS(status)) {
-            KdPrint((DRIVERNAME "WdfDeviceCreateDeviceInterface failed with status 0x%X", status));
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfDeviceCreateDeviceInterface failed with status %!STATUS!", status);
             return status;
         }
 
@@ -101,7 +103,9 @@ HidGuardianCreateDevice(
         );
 
         if (!NT_SUCCESS(status)) {
-            KdPrint((DRIVERNAME "WdfDeviceAllocAndQueryProperty failed with status 0x%X", status));
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfDeviceAllocAndQueryProperty failed with status %!STATUS!", status);
             return status;
         }
 
@@ -117,7 +121,9 @@ HidGuardianCreateDevice(
         status = HidGuardianQueueInitialize(device);
 
         if (!NT_SUCCESS(status)) {
-            KdPrint((DRIVERNAME "HidGuardianQueueInitialize failed with status 0x%X", status));
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "HidGuardianQueueInitialize failed with status %!STATUS!", status);
             return status;
         }
 
@@ -131,7 +137,9 @@ HidGuardianCreateDevice(
         //
         status = WdfCollectionAdd(FilterDeviceCollection, device);
         if (!NT_SUCCESS(status)) {
-            KdPrint(("WdfCollectionAdd failed with status code 0x%x\n", status));
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfCollectionAdd failed with status %!STATUS!", status);
         }
         WdfWaitLockRelease(FilterDeviceCollectionLock);
 
@@ -140,8 +148,9 @@ HidGuardianCreateDevice(
         //
         status = HidGuardianCreateControlDevice(device);
         if (!NT_SUCCESS(status)) {
-            KdPrint(("HidGuardianCreateControlDevice failed with status 0x%x\n",
-                status));
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "HidGuardianCreateControlDevice failed with status %!STATUS!", status);
             //
             // Let us not fail AddDevice just because we weren't able to create the
             // control device.
@@ -154,7 +163,9 @@ HidGuardianCreateDevice(
         // 
         status = AmIAffected(deviceContext);
 
-        KdPrint((DRIVERNAME "AmIAffected status 0x%X\n", status));
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_DEVICE,
+            "AmIAffected status %!STATUS!", status);
     }
 
     return status;
@@ -190,7 +201,7 @@ WDF status code
 
     PAGED_CODE();
 
-    KdPrint(("Entered HidGuardianEvtDeviceContextCleanup\n"));
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
     WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
 
@@ -213,6 +224,8 @@ WDF status code
     WdfCollectionRemove(FilterDeviceCollection, Device);
 
     WdfWaitLockRelease(FilterDeviceCollectionLock);
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }
 #pragma warning(pop) // enable 28118 again
 
@@ -232,7 +245,10 @@ VOID EvtDeviceFileCreate(
 
     UNREFERENCED_PARAMETER(FileObject);
 
+    
     PAGED_CODE();
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
     pid = CURRENT_PROCESS_ID();
 
@@ -250,7 +266,9 @@ VOID EvtDeviceFileCreate(
 
         if (ret == FALSE) {
             status = WdfRequestGetStatus(Request);
-            KdPrint((DRIVERNAME "WdfRequestSend failed: 0x%x\n", status));
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfRequestSend failed: %!STATUS!", status);
             WdfRequestComplete(Request, status);
         }
     }
@@ -259,8 +277,12 @@ VOID EvtDeviceFileCreate(
         //
         // PID is not white-listed, fail the open request
         // 
-        KdPrint((DRIVERNAME "CreateFile(...) blocked for PID: %d\n", pid));
+        TraceEvents(TRACE_LEVEL_INFORMATION, 
+            TRACE_DEVICE, 
+            "CreateFile(...) blocked for PID: %d\n", pid);
         WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
     }
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }
 

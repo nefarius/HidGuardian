@@ -102,6 +102,16 @@ typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
 
 #include <poppack.h>
 
+typedef struct _CONTROL_DEVICE_CONTEXT
+{
+    WDFQUEUE InvertedCallQueue;
+
+    WDFQUEUE PendingAuthQueue;
+
+} CONTROL_DEVICE_CONTEXT, *PCONTROL_DEVICE_CONTEXT;
+
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(CONTROL_DEVICE_CONTEXT, ControlDeviceGetContext)
+
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL HidGuardianSidebandIoDeviceControl;
 EVT_WDF_FILE_CLEANUP HidGuardianSidebandFileCleanup;

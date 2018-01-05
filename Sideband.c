@@ -55,6 +55,7 @@ HidGuardianCreateControlDevice(
     NTSTATUS                    status;
     WDFQUEUE                    queue;
     WDF_FILEOBJECT_CONFIG       foCfg;
+    PCONTROL_DEVICE_CONTEXT     pControlCtx;
     DECLARE_CONST_UNICODE_STRING(ntDeviceName, NTDEVICE_NAME_STRING);
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, SYMBOLIC_NAME_STRING);
 
@@ -82,7 +83,9 @@ HidGuardianCreateControlDevice(
         return STATUS_SUCCESS;
     }
 
-    KdPrint((DRIVERNAME "Creating Control Device\n"));
+    TraceEvents(TRACE_LEVEL_INFORMATION,
+        TRACE_SIDEBAND,
+        "Creating Control Device");
 
     //
     //
@@ -96,6 +99,9 @@ HidGuardianCreateControlDevice(
 
     if (pInit == NULL) {
         status = STATUS_INSUFFICIENT_RESOURCES;
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "WdfControlDeviceInitAllocate failed with %!STATUS!", status);
         goto Error;
     }
 
@@ -111,6 +117,9 @@ HidGuardianCreateControlDevice(
     status = WdfDeviceInitAssignName(pInit, &ntDeviceName);
 
     if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "WdfDeviceInitAssignName failed with %!STATUS!", status);
         goto Error;
     }
 
@@ -119,13 +128,18 @@ HidGuardianCreateControlDevice(
     WdfDeviceInitSetFileObjectConfig(pInit, &foCfg, WDF_NO_OBJECT_ATTRIBUTES);
 
     //
-    // Specify the size of device context
-    //
-    WDF_OBJECT_ATTRIBUTES_INIT(&controlAttributes);
+    // Since control device is globally available we can use a device
+    // context to handle global data.
+    // 
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&controlAttributes, CONTROL_DEVICE_CONTEXT);
+
     status = WdfDeviceCreate(&pInit,
         &controlAttributes,
         &controlDevice);
     if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "WdfDeviceCreate failed with %!STATUS!", status);
         goto Error;
     }
 
@@ -138,6 +152,9 @@ HidGuardianCreateControlDevice(
         &symbolicLinkName);
 
     if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "WdfDeviceCreateSymbolicLink failed with %!STATUS!", status);
         goto Error;
     }
 
@@ -161,6 +178,29 @@ HidGuardianCreateControlDevice(
         &queue // pointer to default queue
     );
     if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "WdfIoQueueCreate (Default) failed with %!STATUS!", status);
+        goto Error;
+    }
+
+    pControlCtx = ControlDeviceGetContext(controlDevice);
+
+    TraceEvents(TRACE_LEVEL_INFORMATION,
+        TRACE_SIDEBAND,
+        "ControlDeviceGetContext = 0x%p", pControlCtx);
+
+    WDF_IO_QUEUE_CONFIG_INIT(&ioQueueConfig, WdfIoQueueDispatchManual);
+
+    status = WdfIoQueueCreate(controlDevice,
+        &ioQueueConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &pControlCtx->InvertedCallQueue
+    );
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "WdfIoQueueCreate (InvertedCallQueue) failed with %!STATUS!", status);
         goto Error;
     }
 
@@ -209,7 +249,9 @@ HidGuardianDeleteControlDevice(
 
     PAGED_CODE();
 
-    KdPrint((DRIVERNAME "Deleting Control Device\n"));
+    TraceEvents(TRACE_LEVEL_INFORMATION,
+        TRACE_SIDEBAND,
+        "Deleting Control Device");
 
     if (ControlDevice) {
         WdfObjectDelete(ControlDevice);
@@ -234,11 +276,14 @@ VOID HidGuardianSidebandIoDeviceControl(
     NTSTATUS                            status = STATUS_INVALID_PARAMETER;
     size_t                              bufferLength;
     size_t                              transferred = 0;
-    PHIDGUARDIAN_GET_CREATE_REQUEST     pGetCreateRequest;
+    PCONTROL_DEVICE_CONTEXT             pControlCtx;
     PHIDGUARDIAN_SET_CREATE_REQUEST     pSetCreateRequest;
 
-    UNREFERENCED_PARAMETER(Queue);
-    
+    pControlCtx = ControlDeviceGetContext(WdfIoQueueGetDevice(Queue));
+
+    UNREFERENCED_PARAMETER(OutputBufferLength);
+    UNREFERENCED_PARAMETER(transferred);
+
     switch (IoControlCode)
     {
 #pragma region IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST
@@ -248,6 +293,18 @@ VOID HidGuardianSidebandIoDeviceControl(
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_SIDEBAND, "IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST");
 
+        status = WdfRequestForwardToIoQueue(Request, pControlCtx->InvertedCallQueue);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_SIDEBAND, 
+                "WdfRequestForwardToIoQueue failed with status %!STATUS!", status);
+            WdfRequestComplete(Request, status);
+            return;
+        }
+
+        return;
+
+        /*
         status = WdfRequestRetrieveOutputBuffer(
             Request,
             sizeof(HIDGUARDIAN_GET_CREATE_REQUEST),
@@ -259,6 +316,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             transferred = OutputBufferLength;
             //RtlCopyMemory(&pGetHostAddr->Host, &pDeviceContext->HostAddress, sizeof(BD_ADDR));
         }
+        */
 
         break;
 
@@ -279,7 +337,7 @@ VOID HidGuardianSidebandIoDeviceControl(
 
         if (NT_SUCCESS(status) && InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST))
         {
-            
+
         }
 
         break;
@@ -302,6 +360,8 @@ HidGuardianSidebandFileCleanup(
 {
     UNREFERENCED_PARAMETER(FileObject);
 
-    KdPrint((DRIVERNAME "HidGuardianSidebandFileCleanup called\n"));
+    TraceEvents(TRACE_LEVEL_INFORMATION,
+        TRACE_SIDEBAND,
+        "HidGuardianSidebandFileCleanup called");
 }
 
