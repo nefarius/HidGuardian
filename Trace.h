@@ -29,6 +29,7 @@ Environment:
         WPP_DEFINE_BIT(TRACE_DEVICE)                                   \
         WPP_DEFINE_BIT(TRACE_QUEUE)                                    \
         WPP_DEFINE_BIT(TRACE_SIDEBAND)                                 \
+        WPP_DEFINE_BIT(TRACE_GUARDIAN)                                 \
         )                             
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                                  \
