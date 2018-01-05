@@ -99,6 +99,36 @@ Return Value:
         return status;
     }
 
+    //
+    // Since there is only one control-device for all the instances
+    // of the physical device, we need an ability to get to particular instance
+    // of the device in our FilterEvtIoDeviceControlForControl. For that we
+    // will create a collection object and store filter device objects.        
+    // The collection object has the driver object as a default parent.
+    //
+
+    status = WdfCollectionCreate(WDF_NO_OBJECT_ATTRIBUTES,
+        &FilterDeviceCollection);
+    if (!NT_SUCCESS(status))
+    {
+        KdPrint(("WdfCollectionCreate failed with status 0x%x\n", status));
+        WPP_CLEANUP(DriverObject);
+        return status;
+    }
+
+    //
+    // The wait-lock object has the driver object as a default parent.
+    //
+
+    status = WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES,
+        &FilterDeviceCollectionLock);
+    if (!NT_SUCCESS(status))
+    {
+        KdPrint(("WdfWaitLockCreate failed with status 0x%x\n", status));
+        WPP_CLEANUP(DriverObject);
+        return status;
+    }
+
     KdPrint((DRIVERNAME "HidGuardian loaded: 0x%X\n", status));
 
     return status;

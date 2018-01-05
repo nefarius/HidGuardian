@@ -64,6 +64,14 @@ HidGuardianCreateDevice(
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
+    //
+    // We will just register for cleanup notification because we have to
+    // delete the control-device when the last instance of the device goes
+    // away. If we don't delete, the driver wouldn't get unloaded automatically
+    // by the PNP subsystem.
+    //
+    deviceAttributes.EvtCleanupCallback = HidGuardianEvtDeviceContextCleanup;
+
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
     if (NT_SUCCESS(status)) {
@@ -118,6 +126,34 @@ HidGuardianCreateDevice(
         }
 
         //
+        // Add this device to the FilterDevice collection.
+        //
+        WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
+        //
+        // WdfCollectionAdd takes a reference on the item object and removes
+        // it when you call WdfCollectionRemove.
+        //
+        status = WdfCollectionAdd(FilterDeviceCollection, device);
+        if (!NT_SUCCESS(status)) {
+            KdPrint(("WdfCollectionAdd failed with status code 0x%x\n", status));
+        }
+        WdfWaitLockRelease(FilterDeviceCollectionLock);
+
+        //
+        // Create a control device
+        //
+        status = HidGuardianCreateControlDevice(device);
+        if (!NT_SUCCESS(status)) {
+            KdPrint(("HidGuardianCreateControlDevice failed with status 0x%x\n",
+                status));
+            //
+            // Let us not fail AddDevice just because we weren't able to create the
+            // control device.
+            //
+            status = STATUS_SUCCESS;
+        }
+
+        //
         // Check if this device should get intercepted
         // 
         status = AmIAffected(deviceContext);
@@ -127,6 +163,62 @@ HidGuardianCreateDevice(
 
     return status;
 }
+
+#pragma warning(push)
+#pragma warning(disable:28118) // this callback will run at IRQL=PASSIVE_LEVEL
+_Use_decl_annotations_
+VOID
+HidGuardianEvtDeviceContextCleanup(
+    WDFOBJECT Device
+)
+/*++
+
+Routine Description:
+
+EvtDeviceRemove event callback must perform any operations that are
+necessary before the specified device is removed. The framework calls
+the driver's EvtDeviceRemove callback when the PnP manager sends
+an IRP_MN_REMOVE_DEVICE request to the driver stack.
+
+Arguments:
+
+Device - Handle to a framework device object.
+
+Return Value:
+
+WDF status code
+
+--*/
+{
+    ULONG   count;
+
+    PAGED_CODE();
+
+    KdPrint(("Entered HidGuardianEvtDeviceContextCleanup\n"));
+
+    WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
+
+    count = WdfCollectionGetCount(FilterDeviceCollection);
+
+    if (count == 1)
+    {
+        //
+        // We are the last instance. So let us delete the control-device
+        // so that driver can unload when the FilterDevice is deleted.
+        // We absolutely have to do the deletion of control device with
+        // the collection lock acquired because we implicitly use this
+        // lock to protect ControlDevice global variable. We need to make
+        // sure another thread doesn't attempt to create while we are
+        // deleting the device.
+        //
+        HidGuardianDeleteControlDevice((WDFDEVICE)Device);
+    }
+
+    WdfCollectionRemove(FilterDeviceCollection, Device);
+
+    WdfWaitLockRelease(FilterDeviceCollectionLock);
+}
+#pragma warning(pop) // enable 28118 again
 
 //
 // Catches CreateFile(...) calls.

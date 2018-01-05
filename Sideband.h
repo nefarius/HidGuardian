@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2016 Benjamin "Nefarius" Höglinger
+Copyright (c) 2018 Benjamin "Nefarius" Höglinger
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,30 +23,26 @@ SOFTWARE.
 */
 
 
-#define INITGUID
+#pragma once
 
-#include <ntddk.h>
-#include <wdf.h>
+#include "driver.h"
 
-#include "Sideband.h"
-#include "device.h"
-#include "queue.h"
-#include "trace.h"
+#define NTDEVICE_NAME_STRING        L"\\Device\\HidGuardian"
+#define SYMBOLIC_NAME_STRING        L"\\DosDevices\\HidGuardian"
 
-#define DRIVERNAME "HidGuardian: "
+EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL HidGuardianSidebandIoDeviceControl;
+EVT_WDF_FILE_CLEANUP HidGuardianSidebandFileCleanup;
 
-WDFCOLLECTION   FilterDeviceCollection;
-WDFWAITLOCK     FilterDeviceCollectionLock;
-WDFDEVICE       ControlDevice;
+_Must_inspect_result_
+_Success_(return == STATUS_SUCCESS)
+_IRQL_requires_max_(PASSIVE_LEVEL)
+NTSTATUS
+HidGuardianCreateControlDevice(
+    WDFDEVICE Device
+);
 
-EXTERN_C_START
-
-//
-// WDFDRIVER Events
-//
-
-DRIVER_INITIALIZE DriverEntry;
-EVT_WDF_DRIVER_DEVICE_ADD HidGuardianEvtDeviceAdd;
-EVT_WDF_OBJECT_CONTEXT_CLEANUP HidGuardianEvtDriverContextCleanup;
-
-EXTERN_C_END
+_IRQL_requires_max_(PASSIVE_LEVEL)
+VOID
+HidGuardianDeleteControlDevice(
+    WDFDEVICE Device
+);
