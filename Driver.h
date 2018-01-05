@@ -31,6 +31,7 @@ SOFTWARE.
 #include "Sideband.h"
 #include "device.h"
 #include "queue.h"
+#include "Guardian.h"
 #include "trace.h"
 
 #define DRIVERNAME "HidGuardian: "

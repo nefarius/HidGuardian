@@ -65,8 +65,4 @@ HidGuardianCreateDevice(
 EVT_WDF_DEVICE_CONTEXT_CLEANUP HidGuardianEvtDeviceContextCleanup;
 EVT_WDF_DEVICE_FILE_CREATE EvtDeviceFileCreate;
 
-NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext);
-
-BOOLEAN AmIWhitelisted(DWORD Pid);
-
 EXTERN_C_END

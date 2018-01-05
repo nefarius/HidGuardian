@@ -104,12 +104,16 @@ HidGuardianCreateControlDevice(
     //
     WdfDeviceInitSetExclusive(pInit, FALSE);
 
+    //
+    // Assign name to expose
+    // 
     status = WdfDeviceInitAssignName(pInit, &ntDeviceName);
 
     if (!NT_SUCCESS(status)) {
         goto Error;
     }
 
+    // TODO: do we need this?
     WDF_FILEOBJECT_CONFIG_INIT(&foCfg, NULL, NULL, HidGuardianSidebandFileCleanup);
     WdfDeviceInitSetFileObjectConfig(pInit, &foCfg, WDF_NO_OBJECT_ATTRIBUTES);
 
