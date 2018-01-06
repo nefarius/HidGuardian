@@ -243,6 +243,8 @@ VOID EvtDeviceFileCreate(
     WDFREQUEST                          invertedCall;
     size_t                              bufferLength;
     PHIDGUARDIAN_GET_CREATE_REQUEST     pGetCreateRequest;
+    ULONG                               index;
+    DWORD                               pid;
 
 #ifdef OLD
     DWORD                           pid;
@@ -254,10 +256,22 @@ VOID EvtDeviceFileCreate(
 
     UNREFERENCED_PARAMETER(FileObject);
 
-    
+
     PAGED_CODE();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+    pid = CURRENT_PROCESS_ID();
+
+    if (pid <= 4) {
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_DEVICE,
+            "Request belongs to system PID %d, allowing access",
+            pid);
+
+        WdfRequestComplete(Request, STATUS_SUCCESS);
+        return;
+    }
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
 
@@ -266,13 +280,13 @@ VOID EvtDeviceFileCreate(
     // 
     status = WdfIoQueueRetrieveNextRequest(pControlCtx->InvertedCallQueue, &invertedCall);
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR,
+        TraceEvents(TRACE_LEVEL_WARNING,
             TRACE_DEVICE,
             "WdfIoQueueRetrieveNextRequest failed with status %!STATUS!", status);
 
         goto blockAccess;
     }
-        
+
     status = WdfRequestRetrieveOutputBuffer(
         invertedCall,
         sizeof(HIDGUARDIAN_GET_CREATE_REQUEST),
@@ -290,22 +304,29 @@ VOID EvtDeviceFileCreate(
         // Search for our device in the collection to get index
         // 
         for (
-            pGetCreateRequest->DeviceIndex = 0; 
-            pGetCreateRequest->DeviceIndex < WdfCollectionGetCount(FilterDeviceCollection); 
-            pGetCreateRequest->DeviceIndex++
+            index = 0;
+            index < WdfCollectionGetCount(FilterDeviceCollection);
+            index++
             )
         {
             //
             // Assign request and device details to inverted call
             // 
-            if (WdfCollectionGetItem(FilterDeviceCollection, pGetCreateRequest->DeviceIndex) == Device)
+            if (WdfCollectionGetItem(FilterDeviceCollection, index) == Device)
             {
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_DEVICE,
+                    "Request ID: %d",
+                    pGetCreateRequest->RequestId);
+
+                pGetCreateRequest->DeviceIndex = index;
+
                 TraceEvents(TRACE_LEVEL_INFORMATION,
                     TRACE_DEVICE,
                     "Found our device at index %d",
                     pGetCreateRequest->DeviceIndex);
 
-                pGetCreateRequest->ProcessId = CURRENT_PROCESS_ID();
+                pGetCreateRequest->ProcessId = pid;
 
                 TraceEvents(TRACE_LEVEL_INFORMATION,
                     TRACE_DEVICE,
@@ -363,13 +384,18 @@ VOID EvtDeviceFileCreate(
         //
         // PID is not white-listed, fail the open request
         // 
-        TraceEvents(TRACE_LEVEL_INFORMATION, 
-            TRACE_DEVICE, 
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_DEVICE,
             "CreateFile(...) blocked for PID: %d\n", pid);
         WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
     }
 
 #endif
+
+    //
+    // Request is queued and pending, we're done here
+    // 
+    return;
 
 blockAccess:
     //

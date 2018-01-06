@@ -107,10 +107,9 @@ HidGuardianCreateControlDevice(
     }
 
     //
-    // Set exclusive to false so that more than one app can talk to the
-    // control device simultaneously.
-    //
-    WdfDeviceInitSetExclusive(pInit, FALSE);
+    // Only one service may manage us
+    // 
+    WdfDeviceInitSetExclusive(pInit, TRUE);
 
     //
     // Assign name to expose
@@ -124,7 +123,9 @@ HidGuardianCreateControlDevice(
         goto Error;
     }
 
-    // TODO: do we need this?
+    //
+    // Clean-up actions once service disconnects
+    // 
     WDF_FILEOBJECT_CONFIG_INIT(&foCfg, NULL, NULL, HidGuardianSidebandFileCleanup);
     WdfDeviceInitSetFileObjectConfig(pInit, &foCfg, WDF_NO_OBJECT_ATTRIBUTES);
 
@@ -327,20 +328,6 @@ VOID HidGuardianSidebandIoDeviceControl(
 
         return;
 
-        /*
-        status = WdfRequestRetrieveOutputBuffer(
-            Request,
-            sizeof(HIDGUARDIAN_GET_CREATE_REQUEST),
-            (void*)&pGetCreateRequest,
-            &bufferLength);
-
-        if (NT_SUCCESS(status) && OutputBufferLength == sizeof(HIDGUARDIAN_GET_CREATE_REQUEST))
-        {
-            transferred = OutputBufferLength;
-            //RtlCopyMemory(&pGetHostAddr->Host, &pDeviceContext->HostAddress, sizeof(BD_ADDR));
-        }
-        */
-
         break;
 
 #pragma endregion
@@ -381,10 +368,20 @@ HidGuardianSidebandFileCleanup(
     WDFFILEOBJECT  FileObject
 )
 {
+    PCONTROL_DEVICE_CONTEXT     pControlCtx;
+
     UNREFERENCED_PARAMETER(FileObject);
 
     TraceEvents(TRACE_LEVEL_INFORMATION,
         TRACE_SIDEBAND,
         "HidGuardianSidebandFileCleanup called");
+
+    pControlCtx = ControlDeviceGetContext(ControlDevice);
+
+    WdfIoQueuePurgeSynchronously(pControlCtx->InvertedCallQueue);
+    WdfIoQueueStart(pControlCtx->InvertedCallQueue);
+
+    WdfIoQueuePurgeSynchronously(pControlCtx->PendingAuthQueue);
+    WdfIoQueueStart(pControlCtx->PendingAuthQueue);
 }
 
