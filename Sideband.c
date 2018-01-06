@@ -281,7 +281,6 @@ VOID HidGuardianSidebandIoDeviceControl(
 {
     NTSTATUS                            status = STATUS_INVALID_PARAMETER;
     size_t                              bufferLength;
-    size_t                              transferred = 0;
     PCONTROL_DEVICE_CONTEXT             pControlCtx;
     PHIDGUARDIAN_SET_CREATE_REQUEST     pSetCreateRequest;
     WDFDEVICE                           device;
@@ -294,7 +293,6 @@ VOID HidGuardianSidebandIoDeviceControl(
     pControlCtx = ControlDeviceGetContext(WdfIoQueueGetDevice(Queue));
 
     UNREFERENCED_PARAMETER(OutputBufferLength);
-    UNREFERENCED_PARAMETER(transferred);
 
     switch (IoControlCode)
     {
