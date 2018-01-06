@@ -43,7 +43,10 @@ EXTERN_C_START
 typedef struct _DEVICE_CONTEXT
 {
     WDFMEMORY   HardwareIDsMemory;
+
     PCWSTR      HardwareIDs;
+
+    WDFQUEUE    PendingAuthQueue;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
@@ -53,6 +56,16 @@ typedef struct _DEVICE_CONTEXT
 // in a type safe manner.
 //
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, DeviceGetContext)
+
+typedef struct _CREATE_REQUEST_CONTEXT
+{
+    ULONG RequestId;
+
+    ULONG ProcessId;
+
+} CREATE_REQUEST_CONTEXT, *PCREATE_REQUEST_CONTEXT;
+
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(CREATE_REQUEST_CONTEXT, CreateRequestGetContext)
 
 //
 // Function to initialize the device and its callbacks

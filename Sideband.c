@@ -210,24 +210,6 @@ HidGuardianCreateControlDevice(
 
 #pragma endregion
 
-#pragma region Create PendingAuthQueue I/O Queue
-
-    WDF_IO_QUEUE_CONFIG_INIT(&ioQueueConfig, WdfIoQueueDispatchManual);
-
-    status = WdfIoQueueCreate(controlDevice,
-        &ioQueueConfig,
-        WDF_NO_OBJECT_ATTRIBUTES,
-        &pControlCtx->PendingAuthQueue
-    );
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_SIDEBAND,
-            "WdfIoQueueCreate (PendingAuthQueue) failed with %!STATUS!", status);
-        goto Error;
-    }
-
-#pragma endregion
-
     //
     // Control devices must notify WDF when they are done initializing.   I/O is
     // rejected until this call is made.
@@ -302,6 +284,12 @@ VOID HidGuardianSidebandIoDeviceControl(
     size_t                              transferred = 0;
     PCONTROL_DEVICE_CONTEXT             pControlCtx;
     PHIDGUARDIAN_SET_CREATE_REQUEST     pSetCreateRequest;
+    WDFDEVICE                           device;
+    WDFREQUEST                          authRequest;
+    PDEVICE_CONTEXT                     pDeviceCtx;
+    WDF_REQUEST_SEND_OPTIONS            options;
+    BOOLEAN                             ret;
+    PCREATE_REQUEST_CONTEXT             pRequestCtx;
 
     pControlCtx = ControlDeviceGetContext(WdfIoQueueGetDevice(Queue));
 
@@ -345,9 +333,74 @@ VOID HidGuardianSidebandIoDeviceControl(
             (void*)&pSetCreateRequest,
             &bufferLength);
 
+        //
+        // Validate buffer of request
+        // 
         if (NT_SUCCESS(status) && InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST))
         {
+            WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
 
+            //
+            // Get device & context this authentication request is targeted at
+            // 
+            device = WdfCollectionGetItem(FilterDeviceCollection, pSetCreateRequest->DeviceIndex);
+            pDeviceCtx = DeviceGetContext(device);
+
+            //
+            // Pop auth request from device queue
+            // 
+            status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->PendingAuthQueue, &authRequest);
+            if (!NT_SUCCESS(status)) {
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_DEVICE,
+                    "WdfIoQueueRetrieveNextRequest (PendingAuthQueue) failed with status %!STATUS!", status);
+                WdfWaitLockRelease(FilterDeviceCollectionLock);
+                break;
+            }
+
+            pRequestCtx = CreateRequestGetContext(authRequest);
+
+            if (!pRequestCtx) {
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_DEVICE,
+                    "Request has no context");
+                status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            if (pSetCreateRequest->RequestId != pRequestCtx->RequestId) {
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_DEVICE,
+                    "Request ID mismatch: %d != %d",
+                    pSetCreateRequest->RequestId,
+                    pRequestCtx->RequestId);
+                // TODO: handle this case
+            }
+
+            if (pSetCreateRequest->IsAllowed) {
+                WdfRequestFormatRequestUsingCurrentType(authRequest);
+
+                //
+                // PID is white-listed, pass request down the stack
+                // 
+                WDF_REQUEST_SEND_OPTIONS_INIT(&options,
+                    WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
+
+                ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(device), &options);
+
+                if (ret == FALSE) {
+                    status = WdfRequestGetStatus(Request);
+                    TraceEvents(TRACE_LEVEL_ERROR,
+                        TRACE_SIDEBAND,
+                        "WdfRequestSend failed: %!STATUS!", status);
+                    WdfRequestComplete(Request, status);
+                }
+            }
+            else {
+                WdfRequestComplete(authRequest, STATUS_ACCESS_DENIED);
+            }
+
+            WdfWaitLockRelease(FilterDeviceCollectionLock);
         }
 
         break;
@@ -369,6 +422,9 @@ HidGuardianSidebandFileCleanup(
 )
 {
     PCONTROL_DEVICE_CONTEXT     pControlCtx;
+    ULONG                       index;
+    WDFDEVICE                   device;
+    PDEVICE_CONTEXT             pDeviceCtx;
 
     UNREFERENCED_PARAMETER(FileObject);
 
@@ -377,11 +433,28 @@ HidGuardianSidebandFileCleanup(
         "HidGuardianSidebandFileCleanup called");
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
-
+    
     WdfIoQueuePurgeSynchronously(pControlCtx->InvertedCallQueue);
     WdfIoQueueStart(pControlCtx->InvertedCallQueue);
 
-    WdfIoQueuePurgeSynchronously(pControlCtx->PendingAuthQueue);
-    WdfIoQueueStart(pControlCtx->PendingAuthQueue);
+    WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
+
+    //
+    // Search for our device in the collection to get index
+    // 
+    for (
+        index = 0;
+        index < WdfCollectionGetCount(FilterDeviceCollection);
+        index++
+        )
+    {
+        device = WdfCollectionGetItem(FilterDeviceCollection, index);
+        pDeviceCtx = DeviceGetContext(device);
+
+        WdfIoQueuePurgeSynchronously(pDeviceCtx->PendingAuthQueue);
+        WdfIoQueueStart(pDeviceCtx->PendingAuthQueue);
+    }
+
+    WdfWaitLockRelease(FilterDeviceCollectionLock);
 }
 

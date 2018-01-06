@@ -43,6 +43,7 @@ HidGuardianCreateDevice(
     NTSTATUS                status;
     WDF_FILEOBJECT_CONFIG   deviceConfig;
     WDFMEMORY               memory;
+    WDF_IO_QUEUE_CONFIG     queueConfig;
 
     PAGED_CODE();
 
@@ -126,6 +127,24 @@ HidGuardianCreateDevice(
                 "HidGuardianQueueInitialize failed with status %!STATUS!", status);
             return status;
         }
+
+#pragma region Create PendingAuthQueue I/O Queue
+
+        WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchManual);
+
+        status = WdfIoQueueCreate(device,
+            &queueConfig,
+            WDF_NO_OBJECT_ATTRIBUTES,
+            &deviceContext->PendingAuthQueue
+        );
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfIoQueueCreate (PendingAuthQueue) failed with %!STATUS!", status);
+            return status;
+        }
+
+#pragma endregion
 
         //
         // Add this device to the FilterDevice collection.
@@ -245,14 +264,10 @@ VOID EvtDeviceFileCreate(
     PHIDGUARDIAN_GET_CREATE_REQUEST     pGetCreateRequest;
     ULONG                               index;
     DWORD                               pid;
+    PDEVICE_CONTEXT                     pDeviceCtx;
+    WDF_OBJECT_ATTRIBUTES               requestAttribs;
+    PCREATE_REQUEST_CONTEXT             pRequestCtx = NULL;
 
-#ifdef OLD
-    DWORD                           pid;
-    WDF_REQUEST_SEND_OPTIONS        options;
-    NTSTATUS                        status;
-    BOOLEAN                         ret;
-
-#endif
 
     UNREFERENCED_PARAMETER(FileObject);
 
@@ -274,6 +289,7 @@ VOID EvtDeviceFileCreate(
     }
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
+    pDeviceCtx = DeviceGetContext(Device);
 
     //
     // Get inverted call to communicate with the user-mode application
@@ -349,11 +365,38 @@ VOID EvtDeviceFileCreate(
         WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
     }
 
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);
+    requestAttribs.ParentObject = Request;
+
+    //
+    // Add custom context to request so we can validate it later
+    // 
+    status = WdfObjectAllocateContext(
+        Request,
+        &requestAttribs,
+        (PVOID)&pRequestCtx
+    );
+
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_DEVICE,
+            "WdfObjectAllocateContext failed with status %!STATUS!", status);
+
+        // TODO: implement missing clean-up
+        goto blockAccess;
+    }
+
+    //
+    // Pass identification information to request context
+    // 
+    pRequestCtx->ProcessId = pGetCreateRequest->ProcessId;
+    pRequestCtx->RequestId = pGetCreateRequest->RequestId;
+
     //
     // Information has been passed to user-land, queue this request for 
     // later confirmation (or block) action.
     // 
-    status = WdfRequestForwardToIoQueue(Request, pControlCtx->PendingAuthQueue);
+    status = WdfRequestForwardToIoQueue(Request, pDeviceCtx->PendingAuthQueue);
     if (!NT_SUCCESS(status)) {
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_DEVICE,
@@ -361,43 +404,6 @@ VOID EvtDeviceFileCreate(
 
         goto blockAccess;
     }
-
-#ifdef OLD
-
-    pid = CURRENT_PROCESS_ID();
-
-    if (AmIWhitelisted(pid))
-    {
-        WdfRequestFormatRequestUsingCurrentType(Request);
-
-        //
-        // PID is white-listed, pass request down the stack
-        // 
-        WDF_REQUEST_SEND_OPTIONS_INIT(&options,
-            WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
-
-        ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(Device), &options);
-
-        if (ret == FALSE) {
-            status = WdfRequestGetStatus(Request);
-            TraceEvents(TRACE_LEVEL_ERROR,
-                TRACE_DEVICE,
-                "WdfRequestSend failed: %!STATUS!", status);
-            WdfRequestComplete(Request, status);
-        }
-    }
-    else
-    {
-        //
-        // PID is not white-listed, fail the open request
-        // 
-        TraceEvents(TRACE_LEVEL_INFORMATION,
-            TRACE_DEVICE,
-            "CreateFile(...) blocked for PID: %d\n", pid);
-        WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
-    }
-
-#endif
 
     //
     // Request is queued and pending, we're done here
