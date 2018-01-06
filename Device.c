@@ -238,10 +238,19 @@ VOID EvtDeviceFileCreate(
     _In_ WDFFILEOBJECT FileObject
 )
 {
+    NTSTATUS                            status;
+    PCONTROL_DEVICE_CONTEXT             pControlCtx;
+    WDFREQUEST                          invertedCall;
+    size_t                              bufferLength;
+    PHIDGUARDIAN_GET_CREATE_REQUEST     pGetCreateRequest;
+
+#ifdef OLD
     DWORD                           pid;
     WDF_REQUEST_SEND_OPTIONS        options;
     NTSTATUS                        status;
     BOOLEAN                         ret;
+
+#endif
 
     UNREFERENCED_PARAMETER(FileObject);
 
@@ -249,6 +258,83 @@ VOID EvtDeviceFileCreate(
     PAGED_CODE();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+    pControlCtx = ControlDeviceGetContext(ControlDevice);
+
+    //
+    // Get inverted call to communicate with the user-mode application
+    // 
+    status = WdfIoQueueRetrieveNextRequest(pControlCtx->InvertedCallQueue, &invertedCall);
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_DEVICE,
+            "WdfIoQueueRetrieveNextRequest failed with status %!STATUS!", status);
+
+        goto blockAccess;
+    }
+        
+    status = WdfRequestRetrieveOutputBuffer(
+        invertedCall,
+        sizeof(HIDGUARDIAN_GET_CREATE_REQUEST),
+        (void*)&pGetCreateRequest,
+        &bufferLength);
+
+    //
+    // Validate output buffer
+    // 
+    if (NT_SUCCESS(status) && bufferLength == sizeof(HIDGUARDIAN_GET_CREATE_REQUEST))
+    {
+        WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
+
+        //
+        // Search for our device in the collection to get index
+        // 
+        for (
+            pGetCreateRequest->DeviceIndex = 0; 
+            pGetCreateRequest->DeviceIndex < WdfCollectionGetCount(FilterDeviceCollection); 
+            pGetCreateRequest->DeviceIndex++
+            )
+        {
+            //
+            // Assign request and device details to inverted call
+            // 
+            if (WdfCollectionGetItem(FilterDeviceCollection, pGetCreateRequest->DeviceIndex) == Device)
+            {
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_DEVICE,
+                    "Found our device at index %d",
+                    pGetCreateRequest->DeviceIndex);
+
+                pGetCreateRequest->ProcessId = CURRENT_PROCESS_ID();
+
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_DEVICE,
+                    "PID associated to this request: %d",
+                    pGetCreateRequest->ProcessId);
+
+                break;
+            }
+        }
+
+        WdfWaitLockRelease(FilterDeviceCollectionLock);
+
+        WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
+    }
+
+    //
+    // Information has been passed to user-land, queue this request for 
+    // later confirmation (or block) action.
+    // 
+    status = WdfRequestForwardToIoQueue(Request, pControlCtx->PendingAuthQueue);
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_DEVICE,
+            "WdfRequestForwardToIoQueue failed with status %!STATUS!", status);
+
+        goto blockAccess;
+    }
+
+#ifdef OLD
 
     pid = CURRENT_PROCESS_ID();
 
@@ -282,6 +368,14 @@ VOID EvtDeviceFileCreate(
             "CreateFile(...) blocked for PID: %d\n", pid);
         WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
     }
+
+#endif
+
+blockAccess:
+    //
+    // If forwarding fails, fall back to blocking access
+    // 
+    WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }

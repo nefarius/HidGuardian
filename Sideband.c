@@ -61,6 +61,7 @@ HidGuardianCreateControlDevice(
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
 
+
     PAGED_CODE();
 
     //
@@ -190,6 +191,8 @@ HidGuardianCreateControlDevice(
         TRACE_SIDEBAND,
         "ControlDeviceGetContext = 0x%p", pControlCtx);
 
+#pragma region Create InvertedCallQueue I/O Queue
+
     WDF_IO_QUEUE_CONFIG_INIT(&ioQueueConfig, WdfIoQueueDispatchManual);
 
     status = WdfIoQueueCreate(controlDevice,
@@ -204,6 +207,10 @@ HidGuardianCreateControlDevice(
         goto Error;
     }
 
+#pragma endregion
+
+#pragma region Create PendingAuthQueue I/O Queue
+
     WDF_IO_QUEUE_CONFIG_INIT(&ioQueueConfig, WdfIoQueueDispatchManual);
 
     status = WdfIoQueueCreate(controlDevice,
@@ -217,6 +224,8 @@ HidGuardianCreateControlDevice(
             "WdfIoQueueCreate (PendingAuthQueue) failed with %!STATUS!", status);
         goto Error;
     }
+
+#pragma endregion
 
     //
     // Control devices must notify WDF when they are done initializing.   I/O is
