@@ -308,7 +308,7 @@ VOID HidGuardianSidebandIoDeviceControl(
         status = WdfRequestForwardToIoQueue(Request, pControlCtx->InvertedCallQueue);
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
-                TRACE_SIDEBAND, 
+                TRACE_SIDEBAND,
                 "WdfRequestForwardToIoQueue failed with status %!STATUS!", status);
             WdfRequestComplete(Request, status);
             return;
@@ -345,7 +345,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             // 
             device = WdfCollectionGetItem(FilterDeviceCollection, pSetCreateRequest->DeviceIndex);
             pDeviceCtx = DeviceGetContext(device);
-
+                        
             //
             // Pop auth request from device queue
             // 
@@ -360,14 +360,6 @@ VOID HidGuardianSidebandIoDeviceControl(
 
             pRequestCtx = CreateRequestGetContext(authRequest);
 
-            if (!pRequestCtx) {
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_DEVICE,
-                    "Request has no context");
-                status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
             if (pSetCreateRequest->RequestId != pRequestCtx->RequestId) {
                 TraceEvents(TRACE_LEVEL_ERROR,
                     TRACE_DEVICE,
@@ -378,6 +370,12 @@ VOID HidGuardianSidebandIoDeviceControl(
             }
 
             if (pSetCreateRequest->IsAllowed) {
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_SIDEBAND,
+                    "Request %d from PID %d is allowed", 
+                    pRequestCtx->RequestId,
+                    pRequestCtx->ProcessId);
+
                 WdfRequestFormatRequestUsingCurrentType(authRequest);
 
                 //
@@ -386,17 +384,23 @@ VOID HidGuardianSidebandIoDeviceControl(
                 WDF_REQUEST_SEND_OPTIONS_INIT(&options,
                     WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
 
-                ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(device), &options);
+                ret = WdfRequestSend(authRequest, WdfDeviceGetIoTarget(device), &options);
 
                 if (ret == FALSE) {
-                    status = WdfRequestGetStatus(Request);
+                    status = WdfRequestGetStatus(authRequest);
                     TraceEvents(TRACE_LEVEL_ERROR,
                         TRACE_SIDEBAND,
                         "WdfRequestSend failed: %!STATUS!", status);
-                    WdfRequestComplete(Request, status);
+                    WdfRequestComplete(authRequest, status);
                 }
             }
             else {
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_SIDEBAND,
+                    "Request %d from PID %d is not allowed",
+                    pRequestCtx->RequestId,
+                    pRequestCtx->ProcessId);
+
                 WdfRequestComplete(authRequest, STATUS_ACCESS_DENIED);
             }
 
@@ -433,7 +437,7 @@ HidGuardianSidebandFileCleanup(
         "HidGuardianSidebandFileCleanup called");
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
-    
+
     WdfIoQueuePurgeSynchronously(pControlCtx->InvertedCallQueue);
     WdfIoQueueStart(pControlCtx->InvertedCallQueue);
 
