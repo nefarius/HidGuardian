@@ -369,6 +369,9 @@ VOID HidGuardianSidebandIoDeviceControl(
                 // TODO: handle this case
             }
 
+            //
+            // Request was permitted, pass it down the stack
+            // 
             if (pSetCreateRequest->IsAllowed) {
                 TraceEvents(TRACE_LEVEL_INFORMATION,
                     TRACE_SIDEBAND,
@@ -386,6 +389,9 @@ VOID HidGuardianSidebandIoDeviceControl(
 
                 ret = WdfRequestSend(authRequest, WdfDeviceGetIoTarget(device), &options);
 
+                //
+                // Complete the request on failure
+                // 
                 if (ret == FALSE) {
                     status = WdfRequestGetStatus(authRequest);
                     TraceEvents(TRACE_LEVEL_ERROR,
@@ -401,6 +407,9 @@ VOID HidGuardianSidebandIoDeviceControl(
                     pRequestCtx->RequestId,
                     pRequestCtx->ProcessId);
 
+                //
+                // Request was denied, complete it with failure
+                // 
                 WdfRequestComplete(authRequest, STATUS_ACCESS_DENIED);
             }
 
@@ -438,6 +447,9 @@ HidGuardianSidebandFileCleanup(
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
 
+    //
+    // Purge & restart queue so no orphaned requests remain
+    // 
     WdfIoQueuePurgeSynchronously(pControlCtx->InvertedCallQueue);
     WdfIoQueueStart(pControlCtx->InvertedCallQueue);
 
@@ -452,9 +464,15 @@ HidGuardianSidebandFileCleanup(
         index++
         )
     {
+        //
+        // Get device & context
+        // 
         device = WdfCollectionGetItem(FilterDeviceCollection, index);
         pDeviceCtx = DeviceGetContext(device);
 
+        //
+        // Purge & restart queue so no orphaned requests remain
+        // 
         WdfIoQueuePurgeSynchronously(pDeviceCtx->PendingAuthQueue);
         WdfIoQueueStart(pDeviceCtx->PendingAuthQueue);
     }
