@@ -287,6 +287,9 @@ VOID EvtDeviceFileCreate(
         goto blockAccess;
     }
 
+    //
+    // Get buffer of request
+    // 
     status = WdfRequestRetrieveOutputBuffer(
         invertedCall,
         sizeof(HIDGUARDIAN_GET_CREATE_REQUEST),
@@ -339,6 +342,10 @@ VOID EvtDeviceFileCreate(
 
         WdfWaitLockRelease(FilterDeviceCollectionLock);
 
+        //
+        // Complete inverted call. Now it's up to the user-mode service
+        // to decide what to do and invoke another IRP
+        // 
         WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
     }
 
