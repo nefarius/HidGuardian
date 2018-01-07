@@ -267,6 +267,7 @@ VOID EvtDeviceFileCreate(
     PDEVICE_CONTEXT                     pDeviceCtx;
     WDF_OBJECT_ATTRIBUTES               requestAttribs;
     PCREATE_REQUEST_CONTEXT             pRequestCtx = NULL;
+    ULONG                               hwidBufferLength;
 
     UNREFERENCED_PARAMETER(FileObject);
 
@@ -351,9 +352,20 @@ VOID EvtDeviceFileCreate(
                     "PID associated to this request: %d",
                     pGetCreateRequest->ProcessId);
 
-                //TraceEvents(TRACE_LEVEL_INFORMATION,
-                //    TRACE_DEVICE,
-                //    "Size for string: %d", pGetCreateRequest->Size - sizeof(HIDGUARDIAN_GET_CREATE_REQUEST));
+                hwidBufferLength = pGetCreateRequest->Size - sizeof(HIDGUARDIAN_GET_CREATE_REQUEST);
+
+                TraceEvents(TRACE_LEVEL_VERBOSE,
+                    TRACE_DEVICE,
+                    "Size for string: %d", hwidBufferLength);
+
+                if (hwidBufferLength >= pDeviceCtx->HardwareIDsLength) 
+                {
+                    RtlCopyMemory(
+                        pGetCreateRequest->HardwareIds, 
+                        pDeviceCtx->HardwareIDs, 
+                        pDeviceCtx->HardwareIDsLength
+                    );
+                }
 
                 break;
             }
