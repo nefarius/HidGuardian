@@ -77,7 +77,7 @@ VOID HidGuardianEvtIoDefault(
     NTSTATUS                        status;
     BOOLEAN                         ret;
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DEVICE, "%!FUNC! Entry");
 
     WdfRequestFormatRequestUsingCurrentType(Request);
 
@@ -94,6 +94,6 @@ VOID HidGuardianEvtIoDefault(
         WdfRequestComplete(Request, status);
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+    TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DEVICE, "%!FUNC! Exit");
 }
 

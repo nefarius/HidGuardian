@@ -114,7 +114,7 @@ HidGuardianCreateDevice(
         // Get Hardware ID string
         // 
         deviceContext->HardwareIDsMemory = memory;
-        deviceContext->HardwareIDs = WdfMemoryGetBuffer(memory, NULL);
+        deviceContext->HardwareIDs = WdfMemoryGetBuffer(memory, &deviceContext->HardwareIDsLength);
 
         //
         // Initialize the I/O Package and any Queues
@@ -268,7 +268,6 @@ VOID EvtDeviceFileCreate(
     WDF_OBJECT_ATTRIBUTES               requestAttribs;
     PCREATE_REQUEST_CONTEXT             pRequestCtx = NULL;
 
-
     UNREFERENCED_PARAMETER(FileObject);
 
 
@@ -351,6 +350,25 @@ VOID EvtDeviceFileCreate(
                     TRACE_DEVICE,
                     "PID associated to this request: %d",
                     pGetCreateRequest->ProcessId);
+
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_DEVICE,
+                    "User buffer size: %d, kernel buffer size: %d",
+                    pGetCreateRequest->HardwareIdBufferLength,
+                    (ULONG)pDeviceCtx->HardwareIDsLength);
+
+#ifdef NOPE
+                if (pGetCreateRequest->HardwareIdBuffer
+                    && pGetCreateRequest->HardwareIdBufferLength >= pDeviceCtx->HardwareIDsLength)
+                {
+                    pGetCreateRequest->HardwareIdBufferLength = (ULONG)pDeviceCtx->HardwareIDsLength;
+                    RtlCopyMemory(
+                        pGetCreateRequest->HardwareIdBuffer,
+                        pDeviceCtx->HardwareIDs,
+                        pDeviceCtx->HardwareIDsLength
+                    );
+                }
+#endif // NOPE                
 
                 break;
             }

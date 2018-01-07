@@ -46,6 +46,8 @@ typedef struct _DEVICE_CONTEXT
 
     PCWSTR      HardwareIDs;
 
+    size_t      HardwareIDsLength;
+
     WDFQUEUE    PendingAuthQueue;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
