@@ -314,7 +314,7 @@ VOID EvtDeviceFileCreate(
     //
     // Validate output buffer
     // 
-    if (NT_SUCCESS(status) && bufferLength == sizeof(HIDGUARDIAN_GET_CREATE_REQUEST))
+    if (NT_SUCCESS(status) && bufferLength == pGetCreateRequest->Size)
     {
         WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
 
@@ -351,24 +351,9 @@ VOID EvtDeviceFileCreate(
                     "PID associated to this request: %d",
                     pGetCreateRequest->ProcessId);
 
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_DEVICE,
-                    "User buffer size: %d, kernel buffer size: %d",
-                    pGetCreateRequest->HardwareIdBufferLength,
-                    (ULONG)pDeviceCtx->HardwareIDsLength);
-
-#ifdef NOPE
-                if (pGetCreateRequest->HardwareIdBuffer
-                    && pGetCreateRequest->HardwareIdBufferLength >= pDeviceCtx->HardwareIDsLength)
-                {
-                    pGetCreateRequest->HardwareIdBufferLength = (ULONG)pDeviceCtx->HardwareIDsLength;
-                    RtlCopyMemory(
-                        pGetCreateRequest->HardwareIdBuffer,
-                        pDeviceCtx->HardwareIDs,
-                        pDeviceCtx->HardwareIDsLength
-                    );
-                }
-#endif // NOPE                
+                //TraceEvents(TRACE_LEVEL_INFORMATION,
+                //    TRACE_DEVICE,
+                //    "Size for string: %d", pGetCreateRequest->Size - sizeof(HIDGUARDIAN_GET_CREATE_REQUEST));
 
                 break;
             }
@@ -381,6 +366,11 @@ VOID EvtDeviceFileCreate(
         // to decide what to do and invoke another IRP
         // 
         WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
+    }
+    else {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_DEVICE,
+            "Packet size mismatch: %d", pGetCreateRequest->Size);
     }
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);

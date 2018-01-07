@@ -52,8 +52,15 @@ SOFTWARE.
 
 #include <pshpack1.h>
 
+#pragma warning(push)
+#pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
 typedef struct _HIDGUARDIAN_GET_CREATE_REQUEST
 {
+    //
+    // Size of packet
+    // 
+    IN ULONG Size;
+
     //
     // Arbitrary value to match request and response
     // 
@@ -72,14 +79,10 @@ typedef struct _HIDGUARDIAN_GET_CREATE_REQUEST
     //
     // Buffer containing Hardware ID string
     // 
-    OUT PWSTR HardwareIdBuffer;
-
-    //
-    // Size of buffer for Hardware ID
-    // 
-    OUT ULONG HardwareIdBufferLength;
+    OUT WCHAR HardwareIds[];
 
 } HIDGUARDIAN_GET_CREATE_REQUEST, *PHIDGUARDIAN_GET_CREATE_REQUEST;
+#pragma warning(pop)
 
 typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
 {
