@@ -413,6 +413,14 @@ VOID HidGuardianSidebandIoDeviceControl(
 
             WdfWaitLockRelease(FilterDeviceCollectionLock);
         }
+        else {
+            //InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST)
+            TraceEvents(TRACE_LEVEL_WARNING,
+                TRACE_SIDEBAND,
+                "Buffer size mismatch: %d != %d",
+                (ULONG)bufferLength,
+                (ULONG)sizeof(HIDGUARDIAN_SET_CREATE_REQUEST));
+        }
 
         break;
 
