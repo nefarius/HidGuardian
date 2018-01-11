@@ -44,8 +44,12 @@ HidGuardianCreateDevice(
     WDF_FILEOBJECT_CONFIG   deviceConfig;
     WDFMEMORY               memory;
     WDF_IO_QUEUE_CONFIG     queueConfig;
+    WDFMEMORY               classNameMemory;
+    PCWSTR                  className;
 
     PAGED_CODE();
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
     WdfFdoInitSetFilter(DeviceInit);
 
@@ -72,6 +76,10 @@ HidGuardianCreateDevice(
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
     if (NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_VERBOSE,
+            TRACE_DEVICE,
+            "Current device handle: %p", device);
+
         //
         // Get a pointer to the device context structure that we just associated
         // with the device object. We define this structure in the device.h
@@ -115,6 +123,24 @@ HidGuardianCreateDevice(
         // 
         deviceContext->HardwareIDsMemory = memory;
         deviceContext->HardwareIDs = WdfMemoryGetBuffer(memory, &deviceContext->HardwareIDsLength);
+
+        //
+        // Query for current device's ClassName
+        // 
+        status = WdfDeviceAllocAndQueryProperty(device,
+            DevicePropertyClassName,
+            NonPagedPool,
+            &deviceAttributes,
+            &classNameMemory
+        );
+
+        if (NT_SUCCESS(status)) {
+            className = WdfMemoryGetBuffer(classNameMemory, NULL);
+
+            TraceEvents(TRACE_LEVEL_INFORMATION, 
+                TRACE_DEVICE, 
+                "Current device class: %ls", className);
+        }
 
         //
         // Initialize the I/O Package and any Queues
@@ -186,6 +212,8 @@ HidGuardianCreateDevice(
             TRACE_DEVICE,
             "AmIAffected status %!STATUS!", status);
     }
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 
     return status;
 }

@@ -458,9 +458,7 @@ HidGuardianSidebandFileCleanup(
 
     UNREFERENCED_PARAMETER(FileObject);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION,
-        TRACE_SIDEBAND,
-        "HidGuardianSidebandFileCleanup called");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
 
@@ -495,5 +493,7 @@ HidGuardianSidebandFileCleanup(
     }
 
     WdfWaitLockRelease(FilterDeviceCollectionLock);
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
 }
 
