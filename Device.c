@@ -268,6 +268,8 @@ VOID EvtDeviceFileCreate(
     WDF_OBJECT_ATTRIBUTES               requestAttribs;
     PCREATE_REQUEST_CONTEXT             pRequestCtx = NULL;
     ULONG                               hwidBufferLength;
+    BOOLEAN                             ret;
+    WDF_REQUEST_SEND_OPTIONS            options;
 
     UNREFERENCED_PARAMETER(FileObject);
 
@@ -284,7 +286,24 @@ VOID EvtDeviceFileCreate(
             "Request belongs to system PID %d, allowing access",
             pid);
 
-        WdfRequestComplete(Request, STATUS_SUCCESS);
+        WdfRequestFormatRequestUsingCurrentType(Request);
+
+        //
+        // Send request down the stack
+        // 
+        WDF_REQUEST_SEND_OPTIONS_INIT(&options,
+            WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
+
+        ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(Device), &options);
+
+        if (ret == FALSE) {
+            status = WdfRequestGetStatus(Request);
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfRequestSend failed: %!STATUS!", status);
+            WdfRequestComplete(Request, status);
+        }
+
         return;
     }
 
