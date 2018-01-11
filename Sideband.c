@@ -343,6 +343,17 @@ VOID HidGuardianSidebandIoDeviceControl(
             // 
             device = WdfCollectionGetItem(FilterDeviceCollection, pSetCreateRequest->DeviceIndex);
             pDeviceCtx = DeviceGetContext(device);
+
+            //
+            // User input might be bogus
+            // 
+            if (!device || !pDeviceCtx) {
+                status = STATUS_INVALID_PARAMETER;
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_DEVICE,
+                    "Device with index %d not found", pSetCreateRequest->DeviceIndex);
+                break;
+            }
                         
             //
             // Pop auth request from device queue
