@@ -447,6 +447,8 @@ VOID EvtDeviceFileCreate(
     //
     // Request is queued and pending, we're done here
     // 
+    
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access pending)");
     return;
 
 blockAccess:
@@ -455,6 +457,6 @@ blockAccess:
     // 
     WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access blocked)");
 }
 
