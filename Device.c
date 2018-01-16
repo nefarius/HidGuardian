@@ -91,11 +91,15 @@ HidGuardianCreateDevice(
         //
         deviceContext = DeviceGetContext(device);
 
-        if (!NT_SUCCESS(status)) {
+        //
+        // Linked list for sticky PIDs
+        // 
+        deviceContext->StickyPidList = PID_LIST_CREATE();
+        if (deviceContext->StickyPidList == NULL) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
-                "WdfDeviceCreateDeviceInterface failed with status %!STATUS!", status);
-            return status;
+                "PID_LIST_CREATE failed");
+            return STATUS_INSUFFICIENT_RESOURCES;
         }
 
         WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
@@ -244,11 +248,16 @@ WDF status code
 
 --*/
 {
-    ULONG   count;
+    ULONG               count;
+    PDEVICE_CONTEXT     pDeviceCtx;
 
     PAGED_CODE();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+    pDeviceCtx = DeviceGetContext(Device);
+
+    PID_LIST_DESTROY(&pDeviceCtx->StickyPidList);
 
     WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
 

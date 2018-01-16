@@ -42,13 +42,15 @@ EXTERN_C_START
 //
 typedef struct _DEVICE_CONTEXT
 {
-    WDFMEMORY   HardwareIDsMemory;
+    WDFMEMORY       HardwareIDsMemory;
 
-    PCWSTR      HardwareIDs;
+    PCWSTR          HardwareIDs;
 
-    size_t      HardwareIDsLength;
+    size_t          HardwareIDsLength;
 
-    WDFQUEUE    PendingAuthQueue;
+    WDFQUEUE        PendingAuthQueue;
+
+    PPID_LIST_NODE  StickyPidList;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
