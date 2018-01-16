@@ -28,6 +28,7 @@ SOFTWARE.
 #include <ntddk.h>
 #include <wdf.h>
 
+#include "PidList.h"
 #include "Sideband.h"
 #include "device.h"
 #include "queue.h"
