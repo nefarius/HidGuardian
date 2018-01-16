@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define PID_LIST_TAG    0x4C504748
+#define PID_LIST_TAG    'LPGH'
 
 typedef struct _PID_LIST_NODE
 {
