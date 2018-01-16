@@ -55,7 +55,7 @@ HidGuardianCreateDevice(
 
     WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
     deviceAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-    WDF_FILEOBJECT_CONFIG_INIT(&deviceConfig, EvtDeviceFileCreate, NULL, NULL);
+    WDF_FILEOBJECT_CONFIG_INIT(&deviceConfig, EvtDeviceFileCreate, NULL, EvtFileCleanup);
 
     WdfDeviceInitSetFileObjectConfig(
         DeviceInit,
@@ -519,3 +519,19 @@ blockAccess:
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access blocked)");
 }
 
+_Use_decl_annotations_
+VOID
+EvtFileCleanup(
+    WDFFILEOBJECT  FileObject
+)
+{
+    WDFDEVICE           device;
+    PDEVICE_CONTEXT     pDeviceCtx;
+
+    device = WdfFileObjectGetDevice(FileObject);
+    pDeviceCtx = DeviceGetContext(device);
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", CURRENT_PROCESS_ID());
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+}
