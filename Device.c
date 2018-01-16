@@ -105,7 +105,7 @@ HidGuardianCreateDevice(
         //
         // Always allow SYSTEM PID 4
         // 
-        PID_LIST_PUSH(&deviceContext->StickyPidList, 4);
+        PID_LIST_PUSH(&deviceContext->StickyPidList, 4, TRUE);
 
         WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
         deviceAttributes.ParentObject = device;
@@ -312,6 +312,7 @@ VOID EvtDeviceFileCreate(
     ULONG                               hwidBufferLength;
     BOOLEAN                             ret;
     WDF_REQUEST_SEND_OPTIONS            options;
+    BOOLEAN                             allowed;
 
     UNREFERENCED_PARAMETER(FileObject);
 
@@ -329,31 +330,43 @@ VOID EvtDeviceFileCreate(
         "Current PID: %d",
         pid);
 
-    if (PID_LIST_CONTAINS(&pDeviceCtx->StickyPidList, pid)) {
+    if (PID_LIST_CONTAINS(&pDeviceCtx->StickyPidList, pid, &allowed)) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
-            "Request belongs to sticky PID %d, allowing access",
+            "Request belongs to sticky PID %d, processing",
             pid);
 
-        WdfRequestFormatRequestUsingCurrentType(Request);
+        if (allowed) {
+            //
+            // Sticky PID allowed, forward request instantly
+            // 
+            WdfRequestFormatRequestUsingCurrentType(Request);
 
-        //
-        // Send request down the stack
-        // 
-        WDF_REQUEST_SEND_OPTIONS_INIT(&options,
-            WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
+            //
+            // Send request down the stack
+            // 
+            WDF_REQUEST_SEND_OPTIONS_INIT(&options,
+                WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
 
-        ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(Device), &options);
+            ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(Device), &options);
 
-        if (ret == FALSE) {
-            status = WdfRequestGetStatus(Request);
-            TraceEvents(TRACE_LEVEL_ERROR,
-                TRACE_DEVICE,
-                "WdfRequestSend failed: %!STATUS!", status);
-            WdfRequestComplete(Request, status);
+            if (ret == FALSE) {
+                status = WdfRequestGetStatus(Request);
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_DEVICE,
+                    "WdfRequestSend failed: %!STATUS!", status);
+                WdfRequestComplete(Request, status);
+            }
+
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access pending)");
+            return;
         }
-
-        return;
+        else {
+            //
+            // Sticky PID denied, fail request instantly
+            // 
+            goto blockAccess;
+        }
     }
 
     //

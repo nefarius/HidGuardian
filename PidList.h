@@ -7,6 +7,8 @@ typedef struct _PID_LIST_NODE
 {
     ULONG Pid;
 
+    BOOLEAN IsAllowed;
+
     struct _PID_LIST_NODE* next;
 
 } PID_LIST_NODE, *PPID_LIST_NODE;
@@ -36,7 +38,7 @@ VOID FORCEINLINE PID_LIST_DESTROY(PID_LIST_NODE ** head)
     }
 }
 
-BOOLEAN FORCEINLINE PID_LIST_PUSH(PID_LIST_NODE ** head, ULONG pid)
+BOOLEAN FORCEINLINE PID_LIST_PUSH(PID_LIST_NODE ** head, ULONG pid, BOOLEAN allowed)
 {
     PPID_LIST_NODE new_node;
 
@@ -47,6 +49,7 @@ BOOLEAN FORCEINLINE PID_LIST_PUSH(PID_LIST_NODE ** head, ULONG pid)
     }
 
     new_node->Pid = pid;
+    new_node->IsAllowed = allowed;
     new_node->next = *head;
     *head = new_node;
 
@@ -85,7 +88,7 @@ BOOLEAN FORCEINLINE PID_LIST_REMOVE_BY_PID(PID_LIST_NODE ** head, ULONG pid)
     return TRUE;
 }
 
-BOOLEAN FORCEINLINE PID_LIST_CONTAINS(PID_LIST_NODE ** head, ULONG pid)
+BOOLEAN FORCEINLINE PID_LIST_CONTAINS(PID_LIST_NODE ** head, ULONG pid, BOOLEAN* allowed)
 {
     PPID_LIST_NODE current = *head;
 
@@ -94,6 +97,9 @@ BOOLEAN FORCEINLINE PID_LIST_CONTAINS(PID_LIST_NODE ** head, ULONG pid)
     // 
     while (current->next != NULL) {
         if (current->Pid == pid) {
+            if (allowed != NULL) {
+                *allowed = current->IsAllowed;
+            }
             return TRUE;
         }
         current = current->next;

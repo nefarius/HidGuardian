@@ -379,6 +379,16 @@ VOID HidGuardianSidebandIoDeviceControl(
             }
 
             //
+            // Cache result in driver to improve speed
+            // 
+            if (pSetCreateRequest->IsSticky) {
+                //
+                // TODO: handle duplicated PIDs
+                // 
+                PID_LIST_PUSH(&pDeviceCtx->StickyPidList, pRequestCtx->ProcessId, pSetCreateRequest->IsAllowed);
+            }
+
+            //
             // Request was permitted, pass it down the stack
             // 
             if (pSetCreateRequest->IsAllowed) {

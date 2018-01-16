@@ -101,6 +101,11 @@ typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
     // 
     IN BOOLEAN IsAllowed;
 
+    //
+    // If TRUE, the decision will be cached in the driver for the current PID
+    // 
+    IN BOOLEAN IsSticky;
+
 } HIDGUARDIAN_SET_CREATE_REQUEST, *PHIDGUARDIAN_SET_CREATE_REQUEST;
 
 #include <poppack.h>
