@@ -102,6 +102,11 @@ HidGuardianCreateDevice(
             return STATUS_INSUFFICIENT_RESOURCES;
         }
 
+        //
+        // Always allow SYSTEM PID 4
+        // 
+        PID_LIST_PUSH(&deviceContext->StickyPidList, 4);
+
         WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
         deviceAttributes.ParentObject = device;
 
@@ -315,12 +320,19 @@ VOID EvtDeviceFileCreate(
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
+    pControlCtx = ControlDeviceGetContext(ControlDevice);
+    pDeviceCtx = DeviceGetContext(Device);
     pid = CURRENT_PROCESS_ID();
 
-    if (pid <= 4) {
+    TraceEvents(TRACE_LEVEL_VERBOSE,
+        TRACE_DEVICE,
+        "Current PID: %d",
+        pid);
+
+    if (PID_LIST_CONTAINS(&pDeviceCtx->StickyPidList, pid)) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
-            "Request belongs to system PID %d, allowing access",
+            "Request belongs to sticky PID %d, allowing access",
             pid);
 
         WdfRequestFormatRequestUsingCurrentType(Request);
@@ -343,9 +355,6 @@ VOID EvtDeviceFileCreate(
 
         return;
     }
-
-    pControlCtx = ControlDeviceGetContext(ControlDevice);
-    pDeviceCtx = DeviceGetContext(Device);
 
     //
     // Get inverted call to communicate with the user-mode application
