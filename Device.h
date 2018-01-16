@@ -29,7 +29,7 @@ SOFTWARE.
 
 EXTERN_C_START
 
-#define MAX_HARDWARE_ID_SIZE        0xFF
+#define MAX_HARDWARE_ID_SIZE        0x400
 
 //
 // Returns the current caller process id.
