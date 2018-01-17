@@ -114,12 +114,15 @@ typedef struct _CONTROL_DEVICE_CONTEXT
 {
     WDFQUEUE InvertedCallQueue;
 
+    BOOLEAN IsServicePresent;
+
 } CONTROL_DEVICE_CONTEXT, *PCONTROL_DEVICE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(CONTROL_DEVICE_CONTEXT, ControlDeviceGetContext)
 
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL HidGuardianSidebandIoDeviceControl;
+EVT_WDF_DEVICE_FILE_CREATE  HidGuardianSidebandDeviceFileCreate;
 EVT_WDF_FILE_CLEANUP HidGuardianSidebandFileCleanup;
 
 _Must_inspect_result_

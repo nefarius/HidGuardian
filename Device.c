@@ -525,13 +525,23 @@ EvtFileCleanup(
     WDFFILEOBJECT  FileObject
 )
 {
-    WDFDEVICE           device;
-    PDEVICE_CONTEXT     pDeviceCtx;
+    WDFDEVICE                   device;
+    PDEVICE_CONTEXT             pDeviceCtx;
+    ULONG                       pid;
+    PCONTROL_DEVICE_CONTEXT     pControlCtx;
 
     device = WdfFileObjectGetDevice(FileObject);
     pDeviceCtx = DeviceGetContext(device);
+    pControlCtx = ControlDeviceGetContext(ControlDevice);
+    pid = CURRENT_PROCESS_ID();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", CURRENT_PROCESS_ID());
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", pid);
+
+    if (!pControlCtx->IsServicePresent && PID_LIST_REMOVE_BY_PID(&pDeviceCtx->StickyPidList, pid)) {
+        TraceEvents(TRACE_LEVEL_INFORMATION, 
+            TRACE_DEVICE, 
+            "Our guardian service is gone, removed sticky PID: %d", pid);
+    }
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }

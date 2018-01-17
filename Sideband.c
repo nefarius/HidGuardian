@@ -35,6 +35,7 @@ WDFDEVICE       ControlDevice = NULL;
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, HidGuardianCreateControlDevice)
 #pragma alloc_text (PAGE, HidGuardianDeleteControlDevice)
+#pragma alloc_text (PAGE, HidGuardianSidebandDeviceFileCreate)
 #pragma alloc_text (PAGE, HidGuardianSidebandFileCleanup)
 #endif
 
@@ -126,7 +127,12 @@ HidGuardianCreateControlDevice(
     //
     // Clean-up actions once service disconnects
     // 
-    WDF_FILEOBJECT_CONFIG_INIT(&foCfg, NULL, NULL, HidGuardianSidebandFileCleanup);
+    WDF_FILEOBJECT_CONFIG_INIT(
+        &foCfg, 
+        HidGuardianSidebandDeviceFileCreate,
+        NULL, 
+        HidGuardianSidebandFileCleanup
+    );
     WdfDeviceInitSetFileObjectConfig(pInit, &foCfg, WDF_NO_OBJECT_ATTRIBUTES);
 
     //
@@ -457,6 +463,32 @@ VOID HidGuardianSidebandIoDeviceControl(
 
 _Use_decl_annotations_
 VOID
+HidGuardianSidebandDeviceFileCreate(
+    WDFDEVICE  Device,
+    WDFREQUEST  Request,
+    WDFFILEOBJECT  FileObject
+)
+{
+    PCONTROL_DEVICE_CONTEXT pControlCtx;
+
+    UNREFERENCED_PARAMETER(Device);
+    UNREFERENCED_PARAMETER(FileObject);
+
+    PAGED_CODE();
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
+
+    pControlCtx = ControlDeviceGetContext(ControlDevice);
+
+    pControlCtx->IsServicePresent = TRUE;
+
+    WdfRequestComplete(Request, STATUS_SUCCESS);
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
+}
+
+_Use_decl_annotations_
+VOID
 HidGuardianSidebandFileCleanup(
     WDFFILEOBJECT  FileObject
 )
@@ -471,6 +503,8 @@ HidGuardianSidebandFileCleanup(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
+
+    pControlCtx->IsServicePresent = FALSE;
 
     //
     // Purge & restart queue so no orphaned requests remain
