@@ -358,7 +358,7 @@ VOID EvtDeviceFileCreate(
                 WdfRequestComplete(Request, status);
             }
 
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access pending)");
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access granted)");
             return;
         }
         else {
