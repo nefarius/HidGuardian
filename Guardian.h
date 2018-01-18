@@ -26,3 +26,4 @@ SOFTWARE.
 #pragma once
 
 NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext);
+VOID GetDefaultAction(PDEVICE_CONTEXT DeviceContext);

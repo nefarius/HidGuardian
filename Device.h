@@ -52,6 +52,8 @@ typedef struct _DEVICE_CONTEXT
 
     PPID_LIST_NODE  StickyPidList;
 
+    BOOLEAN         AllowByDefault;
+
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
 //

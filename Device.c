@@ -146,8 +146,8 @@ HidGuardianCreateDevice(
         if (NT_SUCCESS(status)) {
             className = WdfMemoryGetBuffer(classNameMemory, NULL);
 
-            TraceEvents(TRACE_LEVEL_INFORMATION, 
-                TRACE_DEVICE, 
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_DEVICE,
                 "Current device class: %ls", className);
         }
 
@@ -205,7 +205,7 @@ HidGuardianCreateDevice(
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
                 "HidGuardianCreateControlDevice failed with status %!STATUS!", status);
-            
+
             return status;
         }
 
@@ -217,6 +217,12 @@ HidGuardianCreateDevice(
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
             "AmIAffected status %!STATUS!", status);
+
+        //
+        // Fetch default action to take what to do if service isn't available
+        // from registry key.
+        // 
+        GetDefaultAction(deviceContext);
     }
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
@@ -337,32 +343,13 @@ VOID EvtDeviceFileCreate(
             //
             // Sticky PID allowed, forward request instantly
             // 
-            WdfRequestFormatRequestUsingCurrentType(Request);
-
-            //
-            // Send request down the stack
-            // 
-            WDF_REQUEST_SEND_OPTIONS_INIT(&options,
-                WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
-
-            ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(Device), &options);
-
-            if (ret == FALSE) {
-                status = WdfRequestGetStatus(Request);
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_DEVICE,
-                    "WdfRequestSend failed: %!STATUS!", status);
-                WdfRequestComplete(Request, status);
-            }
-
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access granted)");
-            return;
+            goto allowAccess;
         }
         else {
             //
             // Sticky PID denied, fail request instantly
             // 
-            goto defaultAction;
+            goto blockAccess;
         }
     }
 
@@ -433,11 +420,11 @@ VOID EvtDeviceFileCreate(
                     TRACE_DEVICE,
                     "Size for string: %d", hwidBufferLength);
 
-                if (hwidBufferLength >= pDeviceCtx->HardwareIDsLength) 
+                if (hwidBufferLength >= pDeviceCtx->HardwareIDsLength)
                 {
                     RtlCopyMemory(
-                        pGetCreateRequest->HardwareIds, 
-                        pDeviceCtx->HardwareIDs, 
+                        pGetCreateRequest->HardwareIds,
+                        pDeviceCtx->HardwareIDs,
                         pDeviceCtx->HardwareIDsLength
                     );
                 }
@@ -458,6 +445,8 @@ VOID EvtDeviceFileCreate(
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_DEVICE,
             "Packet size mismatch: %d", pGetCreateRequest->Size);
+
+        goto defaultAction;
     }
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);
@@ -477,7 +466,6 @@ VOID EvtDeviceFileCreate(
             TRACE_DEVICE,
             "WdfObjectAllocateContext failed with status %!STATUS!", status);
 
-        // TODO: implement missing clean-up
         goto defaultAction;
     }
 
@@ -503,17 +491,54 @@ VOID EvtDeviceFileCreate(
     //
     // Request is queued and pending, we're done here
     // 
-    
+
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access pending)");
+
     return;
 
 defaultAction:
+
+    if (pDeviceCtx->AllowByDefault) {
+        goto allowAccess;
+    }
+    else {
+        goto blockAccess;
+    }
+
+allowAccess:
+
+    WdfRequestFormatRequestUsingCurrentType(Request);
+
+    //
+    // Send request down the stack
+    // 
+    WDF_REQUEST_SEND_OPTIONS_INIT(&options,
+        WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
+
+    ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(Device), &options);
+
+    if (ret == FALSE) {
+        status = WdfRequestGetStatus(Request);
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_DEVICE,
+            "WdfRequestSend failed: %!STATUS!", status);
+        WdfRequestComplete(Request, status);
+    }
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access granted)");
+
+    return;
+
+blockAccess:
+
     //
     // If forwarding fails, fall back to blocking access
     // 
     WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access blocked)");
+
+    return;
 }
 
 _Use_decl_annotations_
@@ -535,8 +560,8 @@ EvtFileCleanup(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", pid);
 
     if (!pControlCtx->IsServicePresent && PID_LIST_REMOVE_BY_PID(&pDeviceCtx->StickyPidList, pid)) {
-        TraceEvents(TRACE_LEVEL_INFORMATION, 
-            TRACE_DEVICE, 
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_DEVICE,
             "Our guardian service is gone, removed sticky PID: %d", pid);
     }
 
