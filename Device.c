@@ -365,7 +365,7 @@ VOID EvtDeviceFileCreate(
             //
             // Sticky PID denied, fail request instantly
             // 
-            goto blockAccess;
+            goto defaultAction;
         }
     }
 
@@ -378,7 +378,7 @@ VOID EvtDeviceFileCreate(
             TRACE_DEVICE,
             "WdfIoQueueRetrieveNextRequest failed with status %!STATUS!", status);
 
-        goto blockAccess;
+        goto defaultAction;
     }
 
     //
@@ -481,7 +481,7 @@ VOID EvtDeviceFileCreate(
             "WdfObjectAllocateContext failed with status %!STATUS!", status);
 
         // TODO: implement missing clean-up
-        goto blockAccess;
+        goto defaultAction;
     }
 
     //
@@ -500,7 +500,7 @@ VOID EvtDeviceFileCreate(
             TRACE_DEVICE,
             "WdfRequestForwardToIoQueue failed with status %!STATUS!", status);
 
-        goto blockAccess;
+        goto defaultAction;
     }
 
     //
@@ -510,7 +510,7 @@ VOID EvtDeviceFileCreate(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access pending)");
     return;
 
-blockAccess:
+defaultAction:
     //
     // If forwarding fails, fall back to blocking access
     // 
