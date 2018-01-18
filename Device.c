@@ -205,11 +205,8 @@ HidGuardianCreateDevice(
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
                 "HidGuardianCreateControlDevice failed with status %!STATUS!", status);
-            //
-            // Let us not fail AddDevice just because we weren't able to create the
-            // control device.
-            //
-            status = STATUS_SUCCESS;
+            
+            return status;
         }
 
         //
