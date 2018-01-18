@@ -31,7 +31,6 @@ SOFTWARE.
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, AmIAffected)
-#pragma alloc_text (PAGE, AmIWhitelisted)
 #endif
 
 //
@@ -210,60 +209,3 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
     return (affected) ? STATUS_SUCCESS : STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
 }
 
-//
-// Checks if the given Process ID is white-listed.
-// 
-BOOLEAN AmIWhitelisted(DWORD Pid)
-{
-    NTSTATUS            status;
-    WDFKEY              keyParams;
-    WDFKEY              keyPid;
-    DECLARE_UNICODE_STRING_SIZE(keyPidName, 128);
-
-    PAGED_CODE();
-
-    //
-    // Get the filter drivers Parameter key
-    // 
-    status = WdfDriverOpenParametersRegistryKey(WdfGetDriver(), STANDARD_RIGHTS_READ, WDF_NO_OBJECT_ATTRIBUTES, &keyParams);
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_GUARDIAN,
-            "WdfDriverOpenParametersRegistryKey failed: %!STATUS!", status);
-        return FALSE;
-    }
-
-    //
-    // Build key path
-    // 
-    status = RtlUnicodeStringPrintf(&keyPidName, L"Whitelist\\%d", Pid);
-    if (!NT_SUCCESS(status)) {
-        KdPrint((DRIVERNAME "RtlUnicodeStringPrintf failed: 0x%x\n", status));
-        WdfRegistryClose(keyParams);
-        return FALSE;
-    }
-
-    //
-    // Try to open key
-    // 
-    status = WdfRegistryOpenKey(
-        keyParams,
-        &keyPidName,
-        STANDARD_RIGHTS_READ,
-        WDF_NO_OBJECT_ATTRIBUTES,
-        &keyPid
-    );
-
-    //
-    // Key exists, process is white-listed
-    // 
-    if (NT_SUCCESS(status)) {
-        WdfRegistryClose(keyPid);
-        WdfRegistryClose(keyParams);
-        return TRUE;
-    }
-
-    WdfRegistryClose(keyParams);
-
-    return FALSE;
-}
