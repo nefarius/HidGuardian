@@ -3,3 +3,8 @@
 ################################################################################
 
 /.vs/HidGuardian/v15
+/build/obj/Release
+/Release
+/sys/Release
+/sys/x64/Release
+/x64/Release

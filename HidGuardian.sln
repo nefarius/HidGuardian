@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = ".build", "build\.build.csproj", "{75663D12-0CEC-4BB8-BF05-0F03EA95718B}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HidGuardian", "sys\HidGuardian.vcxproj", "{09219ACC-89F1-496F-93B8-FEDCA43B030D}"
 EndProject
 Global
@@ -17,6 +19,22 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Debug|ARM.Build.0 = Debug|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Debug|x64.Build.0 = Debug|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Debug|x86.Build.0 = Debug|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Release|ARM.ActiveCfg = Release|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Release|ARM.Build.0 = Release|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Release|ARM64.Build.0 = Release|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Release|x64.ActiveCfg = Release|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Release|x64.Build.0 = Release|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Release|x86.ActiveCfg = Release|Any CPU
+		{75663D12-0CEC-4BB8-BF05-0F03EA95718B}.Release|x86.Build.0 = Release|Any CPU
 		{09219ACC-89F1-496F-93B8-FEDCA43B030D}.Debug|ARM.ActiveCfg = Debug|ARM
 		{09219ACC-89F1-496F-93B8-FEDCA43B030D}.Debug|ARM.Build.0 = Debug|ARM
 		{09219ACC-89F1-496F-93B8-FEDCA43B030D}.Debug|ARM.Deploy.0 = Debug|ARM
