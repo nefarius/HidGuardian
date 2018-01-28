@@ -8,3 +8,5 @@
 /sys/Release
 /sys/x64/Release
 /x64/Release
+/build/bin/Release
+/packages

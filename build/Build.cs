@@ -38,13 +38,15 @@ class Build : NukeBuild
             .DependsOn(Clean)
             .Executes(() =>
             {
-                MSBuild(s => DefaultMSBuildRestore);
+                MSBuild(s => DefaultMSBuildRestore.SetTargetPlatform(MSBuildTargetPlatform.x64));
+                MSBuild(s => DefaultMSBuildRestore.SetTargetPlatform(MSBuildTargetPlatform.x86));
             });
 
     Target Compile => _ => _
             .DependsOn(Restore)
             .Executes(() =>
             {
-                MSBuild(s => DefaultMSBuildCompile);
+                MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x64));
+                MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x86));
             });
 }
