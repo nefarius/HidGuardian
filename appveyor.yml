@@ -3,9 +3,9 @@ image: Visual Studio 2017
 build_script:
 - ps: .\build.ps1 -configuration release
 artifacts:
-- path: x64\Release\HidGuardian
+- path: bin\x64\HidGuardian
   name: HidGuardian_unsigned_x64
-- path: Release\HidGuardian
+- path: bin\x86\HidGuardian
   name: HidGuardian_unsigned_x86
 deploy:
 - provider: Environment
