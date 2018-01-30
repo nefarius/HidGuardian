@@ -407,10 +407,14 @@ VOID HidGuardianSidebandIoDeviceControl(
             // Cache result in driver to improve speed
             // 
             if (pSetCreateRequest->IsSticky) {
-                //
-                // TODO: handle duplicated PIDs
-                // 
-                PID_LIST_PUSH(&pDeviceCtx->StickyPidList, pRequestCtx->ProcessId, pSetCreateRequest->IsAllowed);
+                if (!PID_LIST_CONTAINS(&pDeviceCtx->StickyPidList, pRequestCtx->ProcessId, NULL)) {
+                    PID_LIST_PUSH(&pDeviceCtx->StickyPidList, pRequestCtx->ProcessId, pSetCreateRequest->IsAllowed);
+                }
+                else {
+                    TraceEvents(TRACE_LEVEL_WARNING,
+                        TRACE_DEVICE,
+                        "Sticky PID %d already present in cache", pRequestCtx->ProcessId);
+                }
             }
 
             //
