@@ -11,3 +11,5 @@
 /build/bin/Release
 /packages
 /bin/x86
+/bin/x64
+/build/obj/Debug

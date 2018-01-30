@@ -57,6 +57,7 @@ HidGuardianCreateControlDevice(
     WDFQUEUE                    queue;
     WDF_FILEOBJECT_CONFIG       foCfg;
     PCONTROL_DEVICE_CONTEXT     pControlCtx;
+
     DECLARE_CONST_UNICODE_STRING(ntDeviceName, NTDEVICE_NAME_STRING);
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, SYMBOLIC_NAME_STRING);
 
@@ -304,6 +305,10 @@ VOID HidGuardianSidebandIoDeviceControl(
     {
 #pragma region IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST
 
+        //
+        // Queues an inverted call for the driver to respond 
+        // back to the user-mode service.
+        // 
     case IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST:
 
         TraceEvents(TRACE_LEVEL_INFORMATION,
@@ -326,6 +331,9 @@ VOID HidGuardianSidebandIoDeviceControl(
 
 #pragma region IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST
 
+        //
+        // Receives a decision made by the user-mode service.
+        // 
     case IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST:
 
         TraceEvents(TRACE_LEVEL_INFORMATION,
@@ -338,7 +346,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             &bufferLength);
 
         //
-        // Validate buffer of request
+        // Validate buffer size of request
         // 
         if (NT_SUCCESS(status) && InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST))
         {
@@ -375,13 +383,24 @@ VOID HidGuardianSidebandIoDeviceControl(
 
             pRequestCtx = CreateRequestGetContext(authRequest);
 
+            //
+            // Validate that the response matches the request
+            // 
             if (pSetCreateRequest->RequestId != pRequestCtx->RequestId) {
                 TraceEvents(TRACE_LEVEL_ERROR,
                     TRACE_DEVICE,
-                    "Request ID mismatch: %d != %d",
+                    "Request ID mismatch: %X != %X",
                     pSetCreateRequest->RequestId,
                     pRequestCtx->RequestId);
-                // TODO: handle this case
+                
+                status = WdfRequestForwardToIoQueue(Request, pDeviceCtx->PendingAuthQueue);
+                if (!NT_SUCCESS(status)) {
+                    TraceEvents(TRACE_LEVEL_ERROR,
+                        TRACE_DEVICE,
+                        "Failed to re-enqueue request with ID %X", pRequestCtx->RequestId);
+                }
+
+                break;
             }
 
             //

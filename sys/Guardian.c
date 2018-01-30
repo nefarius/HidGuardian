@@ -31,6 +31,7 @@ SOFTWARE.
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, AmIAffected)
+#pragma alloc_text (PAGE, GetDefaultAction)
 #endif
 
 //
@@ -46,6 +47,7 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
     BOOLEAN                 affected = FALSE;
     ULONG                   force = 0;
     PCWSTR                  szIter = NULL;
+    
     DECLARE_CONST_UNICODE_STRING(valueAffectedMultiSz, L"AffectedDevices");
     DECLARE_CONST_UNICODE_STRING(valueForceUl, L"Force");
     DECLARE_CONST_UNICODE_STRING(valueExemptedMultiSz, L"ExemptedDevices");
@@ -209,12 +211,17 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
     return (affected) ? STATUS_SUCCESS : STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
 }
 
+//
+// Read the default action (allow or block) from registry.
+// 
 VOID GetDefaultAction(PDEVICE_CONTEXT DeviceContext)
 {
     NTSTATUS status;
     WDFKEY                  keyParams;
     ULONG                   allowByDefault = 0;
     DECLARE_CONST_UNICODE_STRING(allowByDefaultUl, L"AllowByDefault");
+
+    PAGED_CODE();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_GUARDIAN, "%!FUNC! Entry");
 
