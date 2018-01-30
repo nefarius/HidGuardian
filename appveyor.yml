@@ -2,6 +2,14 @@ version: 2.0.{build}
 image: Visual Studio 2017
 build_script:
 - ps: .\build.ps1 -configuration release
+after_build:
+- ps: |
+    Invoke-WebRequest "https://github.com/electron/rcedit/releases/download/v1.0.0/rcedit-x64.exe" -OutFile rcedit.exe
+    .\rcedit.exe bin\x64\HidGuardian\HidGuardian.sys --set-file-version "$env:APPVEYOR_BUILD_VERSION"
+    .\rcedit.exe bin\x64\HidGuardian\HidGuardian.sys --set-product-version "$env:APPVEYOR_BUILD_VERSION"
+    Invoke-WebRequest "https://github.com/electron/rcedit/releases/download/v1.0.0/rcedit-x86.exe" -OutFile rcedit.exe
+    .\rcedit.exe bin\x86\HidGuardian\HidGuardian.sys --set-file-version "$env:APPVEYOR_BUILD_VERSION"
+    .\rcedit.exe bin\x86\HidGuardian\HidGuardian.sys --set-product-version "$env:APPVEYOR_BUILD_VERSION"
 artifacts:
 - path: bin\x64\HidGuardian
   name: HidGuardian_unsigned_x64

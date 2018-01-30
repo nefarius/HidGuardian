@@ -63,6 +63,8 @@
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
     <RootNamespace>HidGuardian</RootNamespace>
     <WindowsTargetPlatformVersion>$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <AppVeyorBuildVersion Condition=" '$(APPVEYOR_BUILD_VERSION)' == '' ">*</AppVeyorBuildVersion>
+    <AppVeyorBuildVersion Condition=" '$(APPVEYOR_BUILD_VERSION)' != '' ">$(APPVEYOR_BUILD_VERSION)</AppVeyorBuildVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -206,7 +208,7 @@
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;$(DDK_LIB_PATH)ntstrsafe.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
     </Link>
     <Inf>
-      <TimeStamp>*</TimeStamp>
+      <TimeStamp>$(AppVeyorBuildVersion)</TimeStamp>
     </Inf>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -220,7 +222,7 @@
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;$(DDK_LIB_PATH)ntstrsafe.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
     </Link>
     <Inf>
-      <TimeStamp>1.14.3.0</TimeStamp>
+      <TimeStamp>$(AppVeyorBuildVersion)</TimeStamp>
     </Inf>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -234,7 +236,7 @@
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;$(DDK_LIB_PATH)ntstrsafe.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
     </Link>
     <Inf>
-      <TimeStamp>*</TimeStamp>
+      <TimeStamp>$(AppVeyorBuildVersion)</TimeStamp>
     </Inf>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -248,7 +250,7 @@
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;$(DDK_LIB_PATH)ntstrsafe.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
     </Link>
     <Inf>
-      <TimeStamp>1.14.3.0</TimeStamp>
+      <TimeStamp>$(AppVeyorBuildVersion)</TimeStamp>
     </Inf>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
@@ -262,7 +264,7 @@
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;$(DDK_LIB_PATH)ntstrsafe.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
     </Link>
     <Inf>
-      <TimeStamp>*</TimeStamp>
+      <TimeStamp>$(AppVeyorBuildVersion)</TimeStamp>
     </Inf>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -276,7 +278,7 @@
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;$(DDK_LIB_PATH)ntstrsafe.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
     </Link>
     <Inf>
-      <TimeStamp>1.14.3.0</TimeStamp>
+      <TimeStamp>$(AppVeyorBuildVersion)</TimeStamp>
     </Inf>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
@@ -290,7 +292,7 @@
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;$(DDK_LIB_PATH)ntstrsafe.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
     </Link>
     <Inf>
-      <TimeStamp>1.14.3.0</TimeStamp>
+      <TimeStamp>$(AppVeyorBuildVersion)</TimeStamp>
     </Inf>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -304,7 +306,7 @@
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;$(DDK_LIB_PATH)ntstrsafe.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
     </Link>
     <Inf>
-      <TimeStamp>*</TimeStamp>
+      <TimeStamp>$(AppVeyorBuildVersion)</TimeStamp>
     </Inf>
   </ItemDefinitionGroup>
   <ItemGroup>
