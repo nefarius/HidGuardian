@@ -8,14 +8,8 @@
 .Set CompressionType=MSZIP
 .Set Cabinet=on
 .Set Compress=on
-.Set CabinetNameTemplate=HidGuardian.cab
-.Set DestinationDir=HidGuardian_x64
-.\bin\x64\HidGuardian\HidGuardian.inf
-.\bin\x64\HidGuardian\HidGuardian.sys
-.\bin\x64\HidGuardian.pdb
-.\bin\x64\HidGuardian\WdfCoinstaller01009.dll
-.Set DestinationDir=HidGuardian_x86
-.\bin\x86\HidGuardian\HidGuardian.inf
-.\bin\x86\HidGuardian\HidGuardian.sys
-.\bin\x86\HidGuardian.pdb
-.\bin\x86\HidGuardian\WdfCoinstaller01009.dll
+.Set DestinationDir=HidGuardian
+HidGuardian\HidGuardian.inf
+HidGuardian\HidGuardian.sys
+HidGuardian.pdb
+HidGuardian\WdfCoinstaller01009.dll
