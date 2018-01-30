@@ -4,12 +4,12 @@ build_script:
 - ps: .\build.ps1 -configuration release
 after_build:
 - ps: |
-    Invoke-WebRequest "https://github.com/electron/rcedit/releases/download/v1.0.0/rcedit-x64.exe" -OutFile rcedit.exe
-    .\rcedit.exe bin\x64\HidGuardian\HidGuardian.sys --set-file-version "$env:APPVEYOR_BUILD_VERSION"
-    .\rcedit.exe bin\x64\HidGuardian\HidGuardian.sys --set-product-version "$env:APPVEYOR_BUILD_VERSION"
-    Invoke-WebRequest "https://github.com/electron/rcedit/releases/download/v1.0.0/rcedit-x86.exe" -OutFile rcedit.exe
-    .\rcedit.exe bin\x86\HidGuardian\HidGuardian.sys --set-file-version "$env:APPVEYOR_BUILD_VERSION"
-    .\rcedit.exe bin\x86\HidGuardian\HidGuardian.sys --set-product-version "$env:APPVEYOR_BUILD_VERSION"
+    Invoke-WebRequest "https://github.com/pavel-a/ddverpatch/files/1215010/verpatch-1.0.15.1-x86-codeplex.zip" -OutFile verpatch-1.0.15.1-x86-codeplex.zip
+    Expand-Archive verpatch-1.0.15.1-x86-codeplex.zip -DestinationPath .
+    .\verpatch.exe .\bin\x64\HidGuardian\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x64\HidGuardian\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x86\HidGuardian\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x86\HidGuardian\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
     makecab.exe /d SourceDir=bin\x64 /d CabinetNameTemplate=HidGuardian_x64.cab /f HidGuardian.ddf
     makecab.exe /d SourceDir=bin\x86 /d CabinetNameTemplate=HidGuardian_x86.cab /f HidGuardian.ddf
 artifacts:
