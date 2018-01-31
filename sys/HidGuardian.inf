@@ -15,21 +15,27 @@ DefaultDestDir = 12
 HidGuardian_Device_CoInstaller_CopyFiles = 11
 
 ; ================= Class section =====================
-[SourceDisksNames]
-1 = %DiskName%,,,""
+[SourceDisksNames.amd64]
+1 = %DiskName%,,,"\x64"
+
+[SourceDisksNames.x86]
+1 = %DiskName%,,,"\x86"
 
 [SourceDisksFiles]
-HidGuardian.sys  = 1,,
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+HidGuardian.sys = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll = 1
 
 ;*****************************************
 ; Install Section
 ;*****************************************
 
 [Manufacturer]
-%ManufacturerName%=Standard,NT$ARCH$
+%ManufacturerName%=Standard,NTamd64,NTx86
 
-[Standard.NT$ARCH$]
+[Standard.NTamd64]
+%HidGuardian.DeviceDesc%=HidGuardian_Device, Root\HidGuardian
+
+[Standard.NTx86]
 %HidGuardian.DeviceDesc%=HidGuardian_Device, Root\HidGuardian
 
 [HidGuardian_Device.NT]
