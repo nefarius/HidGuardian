@@ -9,13 +9,13 @@
 .Set Cabinet=on
 .Set Compress=on
 .Set CabinetNameTemplate=HidGuardian.cab
-.Set DestinationDir=
+.Set DestinationDir=HidGuardian
 .\artifacts\HidGuardian.inf
-.Set DestinationDir=x64
+.Set DestinationDir=HidGuardian\x64
 .\artifacts\x64\HidGuardian.sys
 .\artifacts\x64\HidGuardian.pdb
 .\artifacts\x64\WdfCoinstaller01009.dll
-.Set DestinationDir=x86
+.Set DestinationDir=HidGuardian\x86
 .\artifacts\x86\HidGuardian.sys
 .\artifacts\x86\HidGuardian.pdb
 .\artifacts\x86\WdfCoinstaller01009.dll

@@ -50,8 +50,6 @@ class Build : NukeBuild
                 MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x64));
                 MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x86));
 
-                Console.WriteLine($"ARTIFACTS: {ArtifactsDirectory}");
-
                 EnsureExistingDirectory(Path.Combine(ArtifactsDirectory, @"x64"));
                 EnsureExistingDirectory(Path.Combine(ArtifactsDirectory, @"x86"));
 
