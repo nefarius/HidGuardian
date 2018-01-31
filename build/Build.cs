@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.Git;
@@ -13,7 +14,7 @@ using static Nuke.Core.EnvironmentInfo;
 class Build : NukeBuild
 {
     // Console application entry. Also defines the default target.
-    public static int Main () => Execute<Build>(x => x.Compile);
+    public static int Main() => Execute<Build>(x => x.Compile);
 
     // Auto-injection fields:
 
@@ -48,5 +49,41 @@ class Build : NukeBuild
             {
                 MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x64));
                 MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x86));
+
+                Console.WriteLine($"ARTIFACTS: {ArtifactsDirectory}");
+
+                EnsureExistingDirectory(Path.Combine(ArtifactsDirectory, @"x64"));
+                EnsureExistingDirectory(Path.Combine(ArtifactsDirectory, @"x86"));
+
+                File.Copy(
+                    Path.Combine(WorkingDirectory, @"bin\x64\HidGuardian.inf"),
+                    Path.Combine(ArtifactsDirectory, @"HidGuardian.inf")
+                    );
+
+                File.Copy(
+                    Path.Combine(WorkingDirectory, @"bin\x64\HidGuardian.pdb"),
+                    Path.Combine(ArtifactsDirectory, @"x64\HidGuardian.pdb")
+                    );
+                File.Copy(
+                    Path.Combine(WorkingDirectory, @"bin\x64\HidGuardian\HidGuardian.sys"),
+                    Path.Combine(ArtifactsDirectory, @"x64\HidGuardian.sys")
+                    );
+                File.Copy(
+                    Path.Combine(WorkingDirectory, @"bin\x64\HidGuardian\WdfCoinstaller01009.dll"),
+                    Path.Combine(ArtifactsDirectory, @"x64\WdfCoinstaller01009.dll")
+                    );
+
+                File.Copy(
+                    Path.Combine(WorkingDirectory, @"bin\x86\HidGuardian.pdb"),
+                    Path.Combine(ArtifactsDirectory, @"x86\HidGuardian.pdb")
+                );
+                File.Copy(
+                    Path.Combine(WorkingDirectory, @"bin\x86\HidGuardian\HidGuardian.sys"),
+                    Path.Combine(ArtifactsDirectory, @"x86\HidGuardian.sys")
+                );
+                File.Copy(
+                    Path.Combine(WorkingDirectory, @"bin\x86\HidGuardian\WdfCoinstaller01009.dll"),
+                    Path.Combine(ArtifactsDirectory, @"x86\WdfCoinstaller01009.dll")
+                );
             });
 }
