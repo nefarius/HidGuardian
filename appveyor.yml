@@ -10,8 +10,7 @@ after_build:
     .\verpatch.exe .\bin\x64\HidGuardian\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
     .\verpatch.exe .\bin\x86\HidGuardian\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
     .\verpatch.exe .\bin\x86\HidGuardian\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
-    makecab.exe /d SourceDir=bin\x64 /d CabinetNameTemplate=HidGuardian_x64.cab /f HidGuardian.ddf
-    makecab.exe /d SourceDir=bin\x86 /d CabinetNameTemplate=HidGuardian_x86.cab /f HidGuardian.ddf
+    makecab.exe /f HidGuardian.ddf
 artifacts:
 - path: disk1\HidGuardian_x64.cab
   name: HidGuardian_unsigned_x64
