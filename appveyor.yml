@@ -6,10 +6,10 @@ after_build:
 - ps: |
     Invoke-WebRequest "https://github.com/pavel-a/ddverpatch/files/1215010/verpatch-1.0.15.1-x86-codeplex.zip" -OutFile verpatch-1.0.15.1-x86-codeplex.zip
     Expand-Archive verpatch-1.0.15.1-x86-codeplex.zip -DestinationPath .
-    .\verpatch.exe .\bin\x64\HidGuardian\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x64\HidGuardian\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x86\HidGuardian\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x86\HidGuardian\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\artifacts\x64\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\artifacts\x64\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\artifacts\x86\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\artifacts\x86\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
     makecab.exe /f HidGuardian.ddf
 artifacts:
 - path: disk1\HidGuardian.cab
