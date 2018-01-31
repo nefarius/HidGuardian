@@ -12,10 +12,8 @@ after_build:
     .\verpatch.exe .\bin\x86\HidGuardian\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
     makecab.exe /f HidGuardian.ddf
 artifacts:
-- path: disk1\HidGuardian_x64.cab
-  name: HidGuardian_unsigned_x64
-- path: disk1\HidGuardian_x86.cab
-  name: HidGuardian_unsigned_x86
+- path: disk1\HidGuardian.cab
+  name: HidGuardian_unsigned_x86_amd64
 deploy:
 - provider: Environment
   name: BUILDBOT
