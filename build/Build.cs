@@ -50,6 +50,7 @@ class Build : NukeBuild
                 MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x64));
                 MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x86));
 
+                #region Ugly hack, fix me!
                 EnsureExistingDirectory(Path.Combine(ArtifactsDirectory, @"x64"));
                 EnsureExistingDirectory(Path.Combine(ArtifactsDirectory, @"x86"));
 
@@ -83,5 +84,6 @@ class Build : NukeBuild
                     Path.Combine(WorkingDirectory, @"bin\x86\HidGuardian\WdfCoinstaller01009.dll"),
                     Path.Combine(ArtifactsDirectory, @"x86\WdfCoinstaller01009.dll")
                 );
+                #endregion
             });
 }
