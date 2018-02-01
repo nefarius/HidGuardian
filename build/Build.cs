@@ -12,6 +12,7 @@ using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using static Nuke.Core.IO.FileSystemTasks;
 using static Nuke.Core.IO.PathConstruction;
 using static Nuke.Core.EnvironmentInfo;
+using RP = Nuke.Core.IO.PathConstruction.RelativePath;
 
 class Build : NukeBuild
 {
@@ -56,17 +57,17 @@ class Build : NukeBuild
 
                 EnsureExistingDirectory(ArtifactsDirectory / "x64");
                 EnsureExistingDirectory(ArtifactsDirectory / "x86");
-
-                new Dictionary<string, string>
+                
+                new Dictionary<RP, RP>
                 {
-                    { SolutionDirectory / "bin" / "x64" / "HidGuardian.inf", /* => */ ArtifactsDirectory / "HidGuardian.inf" },
-                    { SolutionDirectory / "bin" / "x64" / "HidGuardian.pdb", /* => */ ArtifactsDirectory / "x64" / "HidGuardian.pdb" },
-                    { SolutionDirectory / "bin" / "x64" / "HidGuardian" / "HidGuardian.sys", /* => */ ArtifactsDirectory / "x64" / "HidGuardian.sys" },
-                    { SolutionDirectory / "bin" / "x64" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ ArtifactsDirectory / "x64" / "WdfCoinstaller01009.dll" },
-                    { SolutionDirectory / "bin" / "x86" / "HidGuardian.pdb", /* => */ ArtifactsDirectory / "x86" / "HidGuardian.pdb" },
-                    { SolutionDirectory / "bin" / "x86" / "HidGuardian" / "HidGuardian.sys", /* => */ ArtifactsDirectory / "x86" / "HidGuardian.sys" },
-                    { SolutionDirectory / "bin" / "x86" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ ArtifactsDirectory / "x86" / "WdfCoinstaller01009.dll" }
-                }.ForEach((pair, i) => File.Copy(pair.Key, pair.Value));
+                    { (RP)"bin" / "x64" / "HidGuardian.inf", /* => */ (RP)"HidGuardian.inf" },
+                    { (RP)"bin" / "x64" / "HidGuardian.pdb", /* => */ (RP)"x64" / "HidGuardian.pdb" },
+                    { (RP)"bin" / "x64" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x64" / "HidGuardian.sys" },
+                    { (RP)"bin" / "x64" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x64" / "WdfCoinstaller01009.dll" },
+                    { (RP)"bin" / "x86" / "HidGuardian.pdb", /* => */ (RP)"x86" / "HidGuardian.pdb" },
+                    { (RP)"bin" / "x86" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x86" / "HidGuardian.sys" },
+                    { (RP)"bin" / "x86" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x86" / "WdfCoinstaller01009.dll" }
+                }.ForEach((pair, i) => File.Copy(SolutionDirectory / pair.Key, ArtifactsDirectory / pair.Value));
                 
                 #endregion
             });
