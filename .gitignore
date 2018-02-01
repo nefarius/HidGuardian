@@ -13,3 +13,17 @@
 /bin/x86
 /bin/x64
 /build/obj/Debug
+/.tmp
+/artifacts
+/build/bin/Debug
+/Debug
+/disk1
+/sys/Debug
+/verpatch.exe
+/verpatch-ReadMe.txt
+/verpatch-1.0.15.1-x86-codeplex.zip
+/ver-self.cmd
+/setup.rpt
+/setup.inf
+/drivers/HidGuardian
+/sys/HidGuardian.vcxproj.user

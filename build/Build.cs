@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
@@ -6,6 +7,7 @@ using Nuke.Common.Git;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Core;
+using Nuke.Core.Utilities.Collections;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using static Nuke.Core.IO.FileSystemTasks;
 using static Nuke.Core.IO.PathConstruction;
@@ -51,39 +53,21 @@ class Build : NukeBuild
                 MSBuild(s => DefaultMSBuildCompile.SetTargetPlatform(MSBuildTargetPlatform.x86));
 
                 #region Ugly hack, fix me!
-                EnsureExistingDirectory(Path.Combine(ArtifactsDirectory, @"x64"));
-                EnsureExistingDirectory(Path.Combine(ArtifactsDirectory, @"x86"));
 
-                File.Copy(
-                    Path.Combine(WorkingDirectory, @"bin\x64\HidGuardian.inf"),
-                    Path.Combine(ArtifactsDirectory, @"HidGuardian.inf")
-                    );
+                EnsureExistingDirectory(ArtifactsDirectory / "x64");
+                EnsureExistingDirectory(ArtifactsDirectory / "x86");
 
-                File.Copy(
-                    Path.Combine(WorkingDirectory, @"bin\x64\HidGuardian.pdb"),
-                    Path.Combine(ArtifactsDirectory, @"x64\HidGuardian.pdb")
-                    );
-                File.Copy(
-                    Path.Combine(WorkingDirectory, @"bin\x64\HidGuardian\HidGuardian.sys"),
-                    Path.Combine(ArtifactsDirectory, @"x64\HidGuardian.sys")
-                    );
-                File.Copy(
-                    Path.Combine(WorkingDirectory, @"bin\x64\HidGuardian\WdfCoinstaller01009.dll"),
-                    Path.Combine(ArtifactsDirectory, @"x64\WdfCoinstaller01009.dll")
-                    );
-
-                File.Copy(
-                    Path.Combine(WorkingDirectory, @"bin\x86\HidGuardian.pdb"),
-                    Path.Combine(ArtifactsDirectory, @"x86\HidGuardian.pdb")
-                );
-                File.Copy(
-                    Path.Combine(WorkingDirectory, @"bin\x86\HidGuardian\HidGuardian.sys"),
-                    Path.Combine(ArtifactsDirectory, @"x86\HidGuardian.sys")
-                );
-                File.Copy(
-                    Path.Combine(WorkingDirectory, @"bin\x86\HidGuardian\WdfCoinstaller01009.dll"),
-                    Path.Combine(ArtifactsDirectory, @"x86\WdfCoinstaller01009.dll")
-                );
+                new Dictionary<string, string>
+                {
+                    { SolutionDirectory / "bin" / "x64" / "HidGuardian.inf", /* => */ ArtifactsDirectory / "HidGuardian.inf" },
+                    { SolutionDirectory / "bin" / "x64" / "HidGuardian.pdb", /* => */ ArtifactsDirectory / "x64" / "HidGuardian.pdb" },
+                    { SolutionDirectory / "bin" / "x64" / "HidGuardian" / "HidGuardian.sys", /* => */ ArtifactsDirectory / "x64" / "HidGuardian.sys" },
+                    { SolutionDirectory / "bin" / "x64" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ ArtifactsDirectory / "x64" / "WdfCoinstaller01009.dll" },
+                    { SolutionDirectory / "bin" / "x86" / "HidGuardian.pdb", /* => */ ArtifactsDirectory / "x86" / "HidGuardian.pdb" },
+                    { SolutionDirectory / "bin" / "x86" / "HidGuardian" / "HidGuardian.sys", /* => */ ArtifactsDirectory / "x86" / "HidGuardian.sys" },
+                    { SolutionDirectory / "bin" / "x86" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ ArtifactsDirectory / "x86" / "WdfCoinstaller01009.dll" }
+                }.ForEach((pair, i) => File.Copy(pair.Key, pair.Value));
+                
                 #endregion
             });
 }
