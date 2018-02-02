@@ -2,6 +2,7 @@
 
 
 #define PID_LIST_TAG    'LPGH'
+#define SYSTEM_PID      0x04
 
 typedef struct _PID_LIST_NODE
 {
@@ -65,7 +66,7 @@ BOOLEAN FORCEINLINE PID_LIST_REMOVE_BY_PID(PID_LIST_NODE ** head, ULONG pid)
     // Search for PID
     // 
     while (current->next != NULL) {
-        if (current->Pid == pid) {
+        if (current->Pid == pid && pid != SYSTEM_PID) {
             break;
         }
         current = current->next;

@@ -105,7 +105,7 @@ HidGuardianCreateDevice(
         //
         // Always allow SYSTEM PID 4
         // 
-        PID_LIST_PUSH(&deviceContext->StickyPidList, 4, TRUE);
+        PID_LIST_PUSH(&deviceContext->StickyPidList, SYSTEM_PID, TRUE);
 
         WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
         deviceAttributes.ParentObject = device;
