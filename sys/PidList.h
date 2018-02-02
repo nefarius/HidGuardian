@@ -62,11 +62,13 @@ BOOLEAN FORCEINLINE PID_LIST_REMOVE_BY_PID(PID_LIST_NODE ** head, ULONG pid)
     PPID_LIST_NODE current = *head;
     PPID_LIST_NODE temp_node = NULL;
 
+    if (pid == SYSTEM_PID) return FALSE;
+
     //
     // Search for PID
     // 
     while (current->next != NULL) {
-        if (current->Pid == pid && pid != SYSTEM_PID) {
+        if (current->Pid == pid) {
             break;
         }
         current = current->next;
