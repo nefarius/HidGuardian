@@ -27,3 +27,5 @@
 /setup.inf
 /drivers/HidGuardian
 /sys/HidGuardian.vcxproj.user
+/sys/x64/Debug
+/x64/Debug

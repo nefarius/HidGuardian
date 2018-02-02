@@ -366,6 +366,7 @@ VOID HidGuardianSidebandIoDeviceControl(
                 TraceEvents(TRACE_LEVEL_ERROR,
                     TRACE_DEVICE,
                     "Device with index %d not found", pSetCreateRequest->DeviceIndex);
+                WdfWaitLockRelease(FilterDeviceCollectionLock);
                 break;
             }
                         
@@ -400,6 +401,7 @@ VOID HidGuardianSidebandIoDeviceControl(
                         "Failed to re-enqueue request with ID %X", pRequestCtx->RequestId);
                 }
 
+                WdfWaitLockRelease(FilterDeviceCollectionLock);
                 break;
             }
 
