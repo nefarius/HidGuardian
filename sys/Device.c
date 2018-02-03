@@ -305,7 +305,7 @@ VOID EvtDeviceFileCreate(
     NTSTATUS                            status;
     PCONTROL_DEVICE_CONTEXT             pControlCtx;
     WDFREQUEST                          invertedCall;
-    size_t                              bufferLength;
+    size_t                              bufferLength = 0;
     PHIDGUARDIAN_GET_CREATE_REQUEST     pGetCreateRequest;
     ULONG                               index;
     DWORD                               pid;
@@ -377,78 +377,74 @@ VOID EvtDeviceFileCreate(
     //
     // Validate output buffer
     // 
-    if (NT_SUCCESS(status) && bufferLength == pGetCreateRequest->Size)
+    if (!NT_SUCCESS(status) || bufferLength == pGetCreateRequest->Size)
     {
-        WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
-
-        //
-        // Search for our device in the collection to get index
-        // 
-        for (
-            index = 0;
-            index < WdfCollectionGetCount(FilterDeviceCollection);
-            index++
-            )
-        {
-            //
-            // Assign request and device details to inverted call
-            // 
-            if (WdfCollectionGetItem(FilterDeviceCollection, index) == Device)
-            {
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_DEVICE,
-                    "Request ID: %d",
-                    pGetCreateRequest->RequestId);
-
-                pGetCreateRequest->DeviceIndex = index;
-
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_DEVICE,
-                    "Found our device at index %d",
-                    pGetCreateRequest->DeviceIndex);
-
-                pGetCreateRequest->ProcessId = pid;
-
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_DEVICE,
-                    "PID associated to this request: %d",
-                    pGetCreateRequest->ProcessId);
-
-                hwidBufferLength = pGetCreateRequest->Size - sizeof(HIDGUARDIAN_GET_CREATE_REQUEST);
-
-                TraceEvents(TRACE_LEVEL_VERBOSE,
-                    TRACE_DEVICE,
-                    "Size for string: %d", hwidBufferLength);
-
-                if (hwidBufferLength >= pDeviceCtx->HardwareIDsLength)
-                {
-                    RtlCopyMemory(
-                        pGetCreateRequest->HardwareIds,
-                        pDeviceCtx->HardwareIDs,
-                        pDeviceCtx->HardwareIDsLength
-                    );
-                }
-
-                break;
-            }
-        }
-
-        WdfWaitLockRelease(FilterDeviceCollectionLock);
-
-        //
-        // Complete inverted call. Now it's up to the user-mode service
-        // to decide what to do and invoke another IRP
-        // 
-        WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
-    }
-    else {
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_DEVICE,
             "Packet size mismatch: %d", pGetCreateRequest->Size);
 
+        //
+        // There request data buffer is malformed, skip
+        // 
         goto defaultAction;
     }
 
+    WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
+
+    //
+    // Search for our device in the collection to get index
+    // 
+    for (
+        index = 0;
+        index < WdfCollectionGetCount(FilterDeviceCollection);
+        index++
+        )
+    {
+        //
+        // Assign request and device details to inverted call
+        // 
+        if (WdfCollectionGetItem(FilterDeviceCollection, index) == Device)
+        {
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_DEVICE,
+                "Request ID: %d",
+                pGetCreateRequest->RequestId);
+
+            pGetCreateRequest->DeviceIndex = index;
+
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_DEVICE,
+                "Found our device at index %d",
+                pGetCreateRequest->DeviceIndex);
+
+            pGetCreateRequest->ProcessId = pid;
+
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_DEVICE,
+                "PID associated to this request: %d",
+                pGetCreateRequest->ProcessId);
+
+            hwidBufferLength = pGetCreateRequest->Size - sizeof(HIDGUARDIAN_GET_CREATE_REQUEST);
+
+            TraceEvents(TRACE_LEVEL_VERBOSE,
+                TRACE_DEVICE,
+                "Size for string: %d", hwidBufferLength);
+
+            if (hwidBufferLength >= pDeviceCtx->HardwareIDsLength)
+            {
+                RtlCopyMemory(
+                    pGetCreateRequest->HardwareIds,
+                    pDeviceCtx->HardwareIDs,
+                    pDeviceCtx->HardwareIDsLength
+                );
+            }
+
+            break;
+        }
+    }
+
+    WdfWaitLockRelease(FilterDeviceCollectionLock);
+    
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);
     requestAttribs.ParentObject = Request;
 
@@ -489,6 +485,12 @@ VOID EvtDeviceFileCreate(
     }
 
     //
+    // Complete inverted call. Now it's up to the user-mode service
+    // to decide what to do and invoke another IRP
+    // 
+    WdfRequestCompleteWithInformation(invertedCall, STATUS_SUCCESS, bufferLength);
+
+    //
     // Request is queued and pending, we're done here
     // 
 
@@ -525,6 +527,11 @@ allowAccess:
         WdfRequestComplete(Request, status);
     }
 
+    //
+    // Report failure status back to user-mode
+    // 
+    WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
+
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access granted)");
 
     return;
@@ -535,6 +542,11 @@ blockAccess:
     // If forwarding fails, fall back to blocking access
     // 
     WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
+
+    //
+    // Report failure status back to user-mode
+    // 
+    WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access blocked)");
 
