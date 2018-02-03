@@ -10,8 +10,6 @@
 /x64/Release
 /build/bin/Release
 /packages
-/bin/x86
-/bin/x64
 /build/obj/Debug
 /.tmp
 /artifacts
@@ -29,3 +27,4 @@
 /sys/HidGuardian.vcxproj.user
 /sys/x64/Debug
 /x64/Debug
+/bin
