@@ -333,6 +333,9 @@ VOID EvtDeviceFileCreate(
         "Current PID: %d",
         pid);
 
+    //
+    // Check PID against internal list to speed up validation
+    // 
     if (PID_LIST_CONTAINS(&pDeviceCtx->StickyPidList, pid, &allowed)) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
@@ -383,11 +386,15 @@ VOID EvtDeviceFileCreate(
             TRACE_DEVICE,
             "Packet size mismatch: %d", pGetCreateRequest->Size);
 
+        WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
+
         //
         // There request data buffer is malformed, skip
         // 
         goto defaultAction;
     }
+
+#pragma region HOLDING LOCK
 
     WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
 
@@ -444,6 +451,8 @@ VOID EvtDeviceFileCreate(
     }
 
     WdfWaitLockRelease(FilterDeviceCollectionLock);
+
+#pragma endregion
     
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);
     requestAttribs.ParentObject = Request;
@@ -461,6 +470,8 @@ VOID EvtDeviceFileCreate(
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_DEVICE,
             "WdfObjectAllocateContext failed with status %!STATUS!", status);
+
+        WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
 
         goto defaultAction;
     }
@@ -480,6 +491,8 @@ VOID EvtDeviceFileCreate(
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_DEVICE,
             "WdfRequestForwardToIoQueue failed with status %!STATUS!", status);
+
+        WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
 
         goto defaultAction;
     }
@@ -527,11 +540,6 @@ allowAccess:
         WdfRequestComplete(Request, status);
     }
 
-    //
-    // Report failure status back to user-mode
-    // 
-    WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
-
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access granted)");
 
     return;
@@ -542,11 +550,6 @@ blockAccess:
     // If forwarding fails, fall back to blocking access
     // 
     WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
-
-    //
-    // Report failure status back to user-mode
-    // 
-    WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access blocked)");
 

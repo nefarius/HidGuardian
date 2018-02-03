@@ -142,6 +142,9 @@ HidGuardianCreateControlDevice(
     // 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&controlAttributes, CONTROL_DEVICE_CONTEXT);
 
+    controlAttributes.SynchronizationScope = WdfSynchronizationScopeDevice;
+    controlAttributes.ExecutionLevel = WdfExecutionLevelPassive;
+
     status = WdfDeviceCreate(&pInit,
         &controlAttributes,
         &controlDevice);
