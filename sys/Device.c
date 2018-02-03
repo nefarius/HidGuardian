@@ -380,11 +380,11 @@ VOID EvtDeviceFileCreate(
     //
     // Validate output buffer
     // 
-    if (!NT_SUCCESS(status) || bufferLength == pGetCreateRequest->Size)
+    if (!NT_SUCCESS(status) || bufferLength != pGetCreateRequest->Size)
     {
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_DEVICE,
-            "Packet size mismatch: %d", pGetCreateRequest->Size);
+            "Packet size mismatch: %d != %d", (ULONG)bufferLength, pGetCreateRequest->Size);
 
         WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
 
