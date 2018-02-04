@@ -161,13 +161,15 @@
   <ItemGroup>
     <ClCompile Include="PermissionRequestWorker.cpp" />
     <ClCompile Include="Zerberus.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClCompile Include="ZerberusService.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HidGuardian.h" />
     <ClInclude Include="PermissionRequestWorker.h" />
+    <ClInclude Include="ZerberusService.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
