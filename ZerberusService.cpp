@@ -30,10 +30,8 @@ using Poco::SharedPtr;
 
 
 int ZerberusService::main(const std::vector<std::string>& args)
-{
-    std::string logfile("%PROGRAMDATA%\\Zerberus.log");
-
-    AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(logfile)));
+{    
+    AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(_logfile)));
     AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
 
@@ -62,31 +60,48 @@ int ZerberusService::main(const std::vector<std::string>& args)
         logger.fatal("Couldn't open control device");
         return Application::EXIT_UNAVAILABLE;
     }
+        
+    SharedPtr<ThreadPool> pPermPool(new ThreadPool(_threadCount, _threadCount));
 
-    ThreadPool::defaultPool().addCapacity(10);
     std::vector<SharedPtr<PermissionRequestWorker>> workers;
 
-    for (size_t i = 0; i < 20; i++)
+    for (size_t i = 0; i < _threadCount; i++)
     {
         auto worker = new PermissionRequestWorker(controlDevice);
         workers.push_back(worker);
-        ThreadPool::defaultPool().start(*worker);
+        pPermPool->start(*worker);
     }
 
     waitForTerminationRequest();
 
     CloseHandle(controlDevice);
-    ThreadPool::defaultPool().joinAll();
+    pPermPool->joinAll();
     logger.information("Process terminating");
 
     return Application::EXIT_OK;
 }
 
-ZerberusService::ZerberusService()
+void ZerberusService::defineOptions(OptionSet & options)
 {
+    ServerApplication::defineOptions(options);
+
+    options.addOption(
+        Option("logfile", "l", "Path to logfile")
+        .required(true)
+        .repeatable(false)
+        .argument("<logfile>"));
+    options.addOption(
+        Option("threads", "t", "Count of worker threads")
+        .required(false)
+        .repeatable(false)
+        .argument("<threads>"));
 }
 
-
-ZerberusService::~ZerberusService()
+void ZerberusService::handleOption(const std::string & name, const std::string & value)
 {
+    ServerApplication::handleOption(name, value);
+
+    if (name == "logfile") _logfile = value;
+    if (name == "threads") _threadCount = stoi(value);
 }
+
