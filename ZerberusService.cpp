@@ -31,7 +31,7 @@ using Poco::SharedPtr;
 
 int ZerberusService::main(const std::vector<std::string>& args)
 {
-    std::string logfile("Zerberus.log");
+    std::string logfile("%PROGRAMDATA%\\Zerberus.log");
 
     AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(logfile)));
     AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
@@ -72,7 +72,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
         ThreadPool::defaultPool().start(*worker);
     }
 
-    ThreadPool::defaultPool().joinAll();
+    waitForTerminationRequest();
 
     CloseHandle(controlDevice);
 
