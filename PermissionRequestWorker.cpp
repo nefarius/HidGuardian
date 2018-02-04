@@ -19,6 +19,8 @@ void PermissionRequestWorker::run()
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
+    logger.information("Worker running");
+
     //
     // DeviceIoControl stuff
     // 
@@ -53,13 +55,36 @@ void PermissionRequestWorker::run()
             &lOverlapped
         );
 
-        if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) != 0) 
-        {
-            logger.information("GET request answered");
-        }
-        else 
+        if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
             logger.error("GET request failed");
+            break;
+        }
+
+        logger.information("GET request answered");
+
+        logger.information("RequestId: %lu", pHgGet->RequestId);
+        logger.information("DeviceIndex: %lu", pHgGet->DeviceIndex);
+
+        hgSet.RequestId = pHgGet->RequestId;
+        hgSet.DeviceIndex = pHgGet->DeviceIndex;
+
+        hgSet.IsAllowed = TRUE;
+        
+        DeviceIoControl(
+            _controlDevice,
+            IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST,
+            &hgSet,
+            sizeof(HIDGUARDIAN_SET_CREATE_REQUEST),
+            nullptr,
+            0,
+            &bytesReturned,
+            &lOverlapped
+        );
+
+        if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) == 0)
+        {
+            logger.error("SET request failed");
             break;
         }
     }
