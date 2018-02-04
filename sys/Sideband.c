@@ -142,9 +142,6 @@ HidGuardianCreateControlDevice(
     // 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&controlAttributes, CONTROL_DEVICE_CONTEXT);
 
-    controlAttributes.SynchronizationScope = WdfSynchronizationScopeDevice;
-    controlAttributes.ExecutionLevel = WdfExecutionLevelPassive;
-
     status = WdfDeviceCreate(&pInit,
         &controlAttributes,
         &controlDevice);
@@ -170,13 +167,8 @@ HidGuardianCreateControlDevice(
         goto Error;
     }
 
-    //
-    // Configure the default queue associated with the control device object
-    // to be Serial so that request passed to EvtIoDeviceControl are serialized.
-    //
-
     WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&ioQueueConfig,
-        WdfIoQueueDispatchSequential);
+        WdfIoQueueDispatchParallel);
 
     ioQueueConfig.EvtIoDeviceControl = HidGuardianSidebandIoDeviceControl;
 
@@ -300,6 +292,8 @@ VOID HidGuardianSidebandIoDeviceControl(
     BOOLEAN                             ret;
     PCREATE_REQUEST_CONTEXT             pRequestCtx;
 
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
+
     pControlCtx = ControlDeviceGetContext(WdfIoQueueGetDevice(Queue));
 
     UNREFERENCED_PARAMETER(OutputBufferLength);
@@ -325,6 +319,8 @@ VOID HidGuardianSidebandIoDeviceControl(
             WdfRequestComplete(Request, status);
             return;
         }
+
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit (inverted call queued)");
 
         return;
 
@@ -428,7 +424,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             if (pSetCreateRequest->IsAllowed) {
                 TraceEvents(TRACE_LEVEL_INFORMATION,
                     TRACE_SIDEBAND,
-                    "Request %d from PID %d is allowed", 
+                    "!! Request %d from PID %d is allowed", 
                     pRequestCtx->RequestId,
                     pRequestCtx->ProcessId);
 
@@ -456,7 +452,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             else {
                 TraceEvents(TRACE_LEVEL_INFORMATION,
                     TRACE_SIDEBAND,
-                    "Request %d from PID %d is not allowed",
+                    "!! Request %d from PID %d is not allowed",
                     pRequestCtx->RequestId,
                     pRequestCtx->ProcessId);
 
@@ -469,7 +465,6 @@ VOID HidGuardianSidebandIoDeviceControl(
             WdfWaitLockRelease(FilterDeviceCollectionLock);
         }
         else {
-            //InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST)
             TraceEvents(TRACE_LEVEL_WARNING,
                 TRACE_SIDEBAND,
                 "Buffer size mismatch: %d != %d",
@@ -486,6 +481,8 @@ VOID HidGuardianSidebandIoDeviceControl(
     }
 
     WdfRequestComplete(Request, status);
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
 }
 #pragma warning(pop) // enable 28118 again
 

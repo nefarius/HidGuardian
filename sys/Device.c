@@ -330,7 +330,7 @@ VOID EvtDeviceFileCreate(
 
     TraceEvents(TRACE_LEVEL_VERBOSE,
         TRACE_DEVICE,
-        "Current PID: %d",
+        ">> Current PID: %d",
         pid);
 
     //
@@ -354,6 +354,13 @@ VOID EvtDeviceFileCreate(
             // 
             goto blockAccess;
         }
+    }
+
+    //
+    // Skip checks if no decision-maker is present
+    // 
+    if (!pControlCtx->IsServicePresent) {
+        goto defaultAction;
     }
 
     //
@@ -514,9 +521,11 @@ VOID EvtDeviceFileCreate(
 defaultAction:
 
     if (pDeviceCtx->AllowByDefault) {
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "Default action requested: allow");
         goto allowAccess;
     }
     else {
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "Default action requested: deny");
         goto blockAccess;
     }
 
