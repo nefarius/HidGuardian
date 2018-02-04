@@ -60,12 +60,13 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     if (controlDevice == INVALID_HANDLE_VALUE) {
         logger.fatal("Couldn't open control device");
-        return -1;
+        return Application::EXIT_UNAVAILABLE;
     }
 
+    ThreadPool::defaultPool().addCapacity(10);
     std::vector<SharedPtr<PermissionRequestWorker>> workers;
 
-    for (size_t i = 0; i < 15; i++)
+    for (size_t i = 0; i < 20; i++)
     {
         auto worker = new PermissionRequestWorker(controlDevice);
         workers.push_back(worker);
@@ -75,6 +76,8 @@ int ZerberusService::main(const std::vector<std::string>& args)
     waitForTerminationRequest();
 
     CloseHandle(controlDevice);
+    ThreadPool::defaultPool().joinAll();
+    logger.information("Process terminating");
 
     return Application::EXIT_OK;
 }
