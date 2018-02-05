@@ -40,7 +40,14 @@ int ZerberusService::main(const std::vector<std::string>& args)
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
 
     pSplitter->addChannel(pFileChannel);
-    pSplitter->addChannel(pCons);
+    
+    //
+    // Print to console if run interactively
+    // 
+    if (config().getBool("application.runAsService", false))
+    {
+        pSplitter->addChannel(pCons);
+    }    
 
     AutoPtr<PatternFormatter> pPF(new PatternFormatter("%Y-%m-%d %H:%M:%S.%i %s [%p]: %t"));
     AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
