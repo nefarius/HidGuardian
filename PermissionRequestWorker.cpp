@@ -33,6 +33,7 @@ void PermissionRequestWorker::run()
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
     logger.information("Worker running");
+    _rnd.seed();
 
     //
     // DeviceIoControl stuff
@@ -57,7 +58,7 @@ void PermissionRequestWorker::run()
 
         pHgGet->RequestId = reqId;
 
-        logger.information("Queuing inverted call %lu", reqId);
+        logger.information("Queuing inverted call %lu", pHgGet->RequestId);
 
         DeviceIoControl(
             _controlDevice,
@@ -72,11 +73,11 @@ void PermissionRequestWorker::run()
 
         if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
-            logger.error("Inverted call %lu failed", reqId);
+            logger.error("Inverted call %lu failed", pHgGet->RequestId);
             break;
         }
 
-        logger.information("Inverted call %lu completed", reqId);
+        logger.information("Inverted call %lu completed", pHgGet->RequestId);
 
         logger.information("RequestId: %lu", pHgGet->RequestId);
         logger.information("DeviceIndex: %lu", pHgGet->DeviceIndex);
@@ -166,7 +167,7 @@ void PermissionRequestWorker::run()
         logger.debug("IsAllowed: %b", (bool)hgSet.IsAllowed);
         logger.debug("IsSticky: %b", (bool)hgSet.IsSticky);
 
-        logger.information("Sending permission request %lu", reqId);
+        logger.information("Sending permission request %lu", pHgGet->RequestId);
 
         DeviceIoControl(
             _controlDevice,
@@ -181,11 +182,11 @@ void PermissionRequestWorker::run()
 
         if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
-            logger.error("Permission request %lu failed", reqId);
+            logger.error("Permission request %lu failed", pHgGet->RequestId);
             break;
         }
 
-        logger.information("Permission request %lu finished successfully", reqId);
+        logger.information("Permission request %lu finished successfully", pHgGet->RequestId);
     }
 
     free(pHgGet);
