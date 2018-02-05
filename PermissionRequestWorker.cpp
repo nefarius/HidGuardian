@@ -6,6 +6,7 @@
 
 #include <locale>
 #include <codecvt>
+#include <sstream>
 
 using Poco::Logger;
 using Poco::Data::Statement;
@@ -75,28 +76,26 @@ void PermissionRequestWorker::run()
         hgSet.RequestId = pHgGet->RequestId;
         hgSet.DeviceIndex = pHgGet->DeviceIndex;
 
-        std::vector<std::string> hardwareIds;
+        std::stringstream hwIds;
 
         for (PCWSTR szIter = pHgGet->HardwareIds; *szIter; szIter += wcslen(szIter) + 1)
         {
             using convert_type = std::codecvt_utf8<wchar_t>;
             std::wstring_convert<convert_type, wchar_t> converter;
-            std::string converted_str = converter.to_bytes(szIter);
 
-            logger.information("Hardware ID: %s", converted_str);
-
-            hardwareIds.push_back(converted_str);
+            hwIds << "\"" << converter.to_bytes(szIter) << "\", ";
         }
 
         Statement select(_session);
-        
-        std::string demoHwId("HID_DEVICE");
 
-        select << "SELECT IsAllowed, IsPermanent FROM AccessRules WHERE HardwareId=?",
-            into(hgSet.IsAllowed),
-            into(hgSet.IsSticky),
-            use(demoHwId),
+        select << "SELECT IsAllowed, IsPermanent FROM AccessRules WHERE HardwareId IN (" 
+            << hwIds.str().substr(0, hwIds.str().size() - 2) << ")",
+            into(hgSet.IsAllowed), 
+            into(hgSet.IsSticky), 
             now;
+
+        logger.information("IsAllowed: %b", (bool)hgSet.IsAllowed);
+        logger.information("IsSticky: %b", (bool)hgSet.IsSticky);
 
         DeviceIoControl(
             _controlDevice,
@@ -115,8 +114,6 @@ void PermissionRequestWorker::run()
             break;
         }
     }
-
-    //DeviceIoControl(_controlDevice, IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST, nullptr, 0, nullptr, 0, &bytesReturned, nullptr);
 
     free(pHgGet);
     CloseHandle(lOverlapped.hEvent);
