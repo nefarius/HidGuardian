@@ -82,15 +82,20 @@ void PermissionRequestWorker::run()
         hgSet.RequestId = pHgGet->RequestId;
         hgSet.DeviceIndex = pHgGet->DeviceIndex;
 
-        std::stringstream hwIds;
+#pragma region Extract Hardware IDs
+
+        std::vector<std::string> hardwareIds;
 
         for (PCWSTR szIter = pHgGet->HardwareIds; *szIter; szIter += wcslen(szIter) + 1)
         {
             using convert_type = std::codecvt_utf8<wchar_t>;
             std::wstring_convert<convert_type, wchar_t> converter;
-
-            hwIds << "\"" << converter.to_bytes(szIter) << "\", ";
+            hardwareIds.push_back(converter.to_bytes(szIter));
         }
+
+#pragma endregion
+
+#pragma region Get process details
 
         HANDLE hProcess = OpenProcess(
             PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
@@ -129,15 +134,32 @@ void PermissionRequestWorker::run()
             CloseHandle(hProcess);
         }
 
+#pragma endregion
+
+#pragma region Database query
+                
         Statement select(_session);
         
-        select << "SELECT IsAllowed, IsPermanent FROM AccessRules WHERE HardwareId IN ("
-            << hwIds.str().substr(0, hwIds.str().size() - 2) << ") AND (ModuleName=? OR ImagePath=?)",
+        select << "SELECT IsAllowed, IsPermanent FROM AccessRules WHERE HardwareId IN (";
+
+        //
+        // Convert list of Hardware IDs to statement
+        // 
+        const auto separator = ", ";
+        const auto* sep = "";
+        for (const auto& item : hardwareIds) {
+            select << sep << '"' << item << '"';
+            sep = separator;
+        }
+
+        select << ") AND (ModuleName=? OR ImagePath=?)",
             into(hgSet.IsAllowed),
             into(hgSet.IsSticky),
             use(moduleName),
             use(imagePath),
             now;
+
+#pragma endregion
 
         logger.debug("IsAllowed: %b", (bool)hgSet.IsAllowed);
         logger.debug("IsSticky: %b", (bool)hgSet.IsSticky);
