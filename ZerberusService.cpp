@@ -59,7 +59,10 @@ int ZerberusService::main(const std::vector<std::string>& args)
     AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
     AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
 
-    Logger::root().setChannel(pAsync);
+    if (config().getBool("logging.enabled", false))
+    {
+        Logger::root().setChannel(pAsync);
+    }
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
