@@ -355,16 +355,26 @@ VOID HidGuardianSidebandIoDeviceControl(
             // Get device & context this authentication request is targeted at
             // 
             device = WdfCollectionGetItem(FilterDeviceCollection, pSetCreateRequest->DeviceIndex);
+
+            if (!device) {
+                status = STATUS_INVALID_PARAMETER;
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_DEVICE,
+                    "Device with index %d not found", pSetCreateRequest->DeviceIndex);
+                WdfWaitLockRelease(FilterDeviceCollectionLock);
+                break;
+            }
+
             pDeviceCtx = DeviceGetContext(device);
 
             //
             // User input might be bogus
             // 
-            if (!device || !pDeviceCtx) {
+            if (!pDeviceCtx) {
                 status = STATUS_INVALID_PARAMETER;
                 TraceEvents(TRACE_LEVEL_ERROR,
                     TRACE_DEVICE,
-                    "Device with index %d not found", pSetCreateRequest->DeviceIndex);
+                    "Context of device with index %d not found", pSetCreateRequest->DeviceIndex);
                 WdfWaitLockRelease(FilterDeviceCollectionLock);
                 break;
             }
