@@ -105,7 +105,7 @@ void PermissionRequestWorker::run()
 
             imagePath = converter.to_bytes(lpFilename.begin());
 
-            logger.information("Process path: %s", imagePath);
+            logger.debug("Process path: %s", imagePath);
 
             if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
                 &cbNeeded))
@@ -114,7 +114,7 @@ void PermissionRequestWorker::run()
                 
                 moduleName = converter.to_bytes(szProcessName.begin());
 
-                logger.information("Process name: %s", moduleName);
+                logger.debug("Process name: %s", moduleName);
             }
 
             CloseHandle(hProcess);
@@ -130,8 +130,8 @@ void PermissionRequestWorker::run()
             use(imagePath),
             now;
 
-        logger.information("IsAllowed: %b", (bool)hgSet.IsAllowed);
-        logger.information("IsSticky: %b", (bool)hgSet.IsSticky);
+        logger.debug("IsAllowed: %b", (bool)hgSet.IsAllowed);
+        logger.debug("IsSticky: %b", (bool)hgSet.IsSticky);
 
         DeviceIoControl(
             _controlDevice,
