@@ -16,8 +16,11 @@ class PermissionRequestWorker :
     Session _session;
 
 public:
-    PermissionRequestWorker(HANDLE controlDevice, const Session& dbSession);
-    ~PermissionRequestWorker();
+    PermissionRequestWorker(HANDLE controlDevice, const Session& dbSession) 
+        : _controlDevice(controlDevice), _session(dbSession)
+    {
+    }
+    ~PermissionRequestWorker() {};
 
     void run() override;
 };

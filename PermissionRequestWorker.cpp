@@ -13,15 +13,6 @@ using Poco::Data::Statement;
 using namespace Poco::Data::Keywords;
 
 
-PermissionRequestWorker::PermissionRequestWorker(HANDLE controlDevice, const Session& dbSession) : _controlDevice(controlDevice), _session(dbSession)
-{
-}
-
-
-PermissionRequestWorker::~PermissionRequestWorker()
-{
-}
-
 void PermissionRequestWorker::run()
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
