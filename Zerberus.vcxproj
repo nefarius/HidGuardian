@@ -166,6 +166,7 @@
   <ItemGroup>
     <ClInclude Include="HidGuardian.h" />
     <ClInclude Include="PermissionRequestWorker.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="ZerberusService.h" />
   </ItemGroup>
   <ItemGroup>
@@ -173,6 +174,12 @@
     <None Include="Zerberus.ini">
       <DeploymentContent>false</DeploymentContent>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Zerberus.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="devil.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
