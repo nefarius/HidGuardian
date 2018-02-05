@@ -1,12 +1,21 @@
 #include "PermissionRequestWorker.h"
 #include "HidGuardian.h"
 
+//
+// STL
+// 
 #include <locale>
 #include <codecvt>
 #include <sstream>
 
+//
+// Windows
+// 
 #include <Psapi.h>
 
+//
+// POCO
+// 
 #include <Poco/Logger.h>
 #include <Poco/Data/Session.h>
 #include <Poco/Buffer.h>
@@ -32,7 +41,7 @@ void PermissionRequestWorker::run()
     OVERLAPPED lOverlapped = { 0 };
     lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-    ULONG pHgGetSize = sizeof(HIDGUARDIAN_GET_CREATE_REQUEST) + 1024;
+    ULONG pHgGetSize = sizeof(HIDGUARDIAN_GET_CREATE_REQUEST) + _bufferSize;
     PHIDGUARDIAN_GET_CREATE_REQUEST pHgGet;
     HIDGUARDIAN_SET_CREATE_REQUEST hgSet;
 
@@ -95,8 +104,8 @@ void PermissionRequestWorker::run()
         {
             HMODULE hMod;
             DWORD cbNeeded;
-            Buffer<wchar_t> szProcessName(1024);
-            Buffer<wchar_t> lpFilename(1024);
+            Buffer<wchar_t> szProcessName(_bufferSize);
+            Buffer<wchar_t> lpFilename(_bufferSize);
 
             GetModuleFileNameEx(hProcess, NULL, lpFilename.begin(), lpFilename.size());
 

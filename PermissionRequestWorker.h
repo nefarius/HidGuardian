@@ -14,6 +14,7 @@ class PermissionRequestWorker :
     HANDLE _controlDevice;
     Random _rnd;
     Session _session;
+    const int _bufferSize = 1024;
 
 public:
     PermissionRequestWorker(HANDLE controlDevice, const Session& dbSession) 
