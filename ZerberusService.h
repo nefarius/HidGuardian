@@ -13,6 +13,7 @@ class ZerberusService :
 private:
     std::string _logfile;
     int _threadCount = 20;
+    std::string _database;
 protected:
     int main(const std::vector<std::string>& args);
     void defineOptions(OptionSet& options);

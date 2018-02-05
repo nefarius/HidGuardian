@@ -14,6 +14,8 @@
 #include <Poco/SplitterChannel.h>
 #include <Poco/ThreadPool.h>
 #include <Poco/SharedPtr.h>
+#include <Poco/Data/Session.h>
+#include <Poco/Data/SQLite/Connector.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -27,6 +29,8 @@ using Poco::WindowsConsoleChannel;
 using Poco::SplitterChannel;
 using Poco::ThreadPool;
 using Poco::SharedPtr;
+using Poco::Data::Session;
+using Poco::Data::SQLite::Connector;
 
 
 int ZerberusService::main(const std::vector<std::string>& args)
@@ -60,7 +64,10 @@ int ZerberusService::main(const std::vector<std::string>& args)
         logger.fatal("Couldn't open control device");
         return Application::EXIT_UNAVAILABLE;
     }
-        
+
+    Poco::Data::SQLite::Connector::registerConnector();
+    Session session("SQLite", _database);
+
     SharedPtr<ThreadPool> pPermPool(new ThreadPool(_threadCount, _threadCount));
 
     std::vector<SharedPtr<PermissionRequestWorker>> workers;
@@ -86,7 +93,7 @@ void ZerberusService::defineOptions(OptionSet & options)
     ServerApplication::defineOptions(options);
 
     options.addOption(
-        Option("logfile", "l", "Path to logfile")
+        Option("logfile", "l", "Path to log file")
         .required(true)
         .repeatable(false)
         .argument("<logfile>"));
@@ -95,6 +102,11 @@ void ZerberusService::defineOptions(OptionSet & options)
         .required(false)
         .repeatable(false)
         .argument("<threads>"));
+    options.addOption(
+        Option("database", "d", "Path to database file")
+        .required(false)
+        .repeatable(false)
+        .argument("<database>"));
 }
 
 void ZerberusService::handleOption(const std::string & name, const std::string & value)
@@ -103,5 +115,6 @@ void ZerberusService::handleOption(const std::string & name, const std::string &
 
     if (name == "logfile") _logfile = value;
     if (name == "threads") _threadCount = stoi(value);
+    if (name == "database") _database = value;
 }
 
