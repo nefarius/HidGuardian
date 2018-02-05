@@ -16,6 +16,7 @@
 #include <Poco/SharedPtr.h>
 #include <Poco/Data/Session.h>
 #include <Poco/Data/SQLite/Connector.h>
+#include <Poco/Data/SQLite/Utility.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -83,14 +84,20 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     logger.information("Control device opened");
 
-    auto threads = config().getInt("threadpool.count", 20);
+    auto dbFile = config().getString("database.path", "Zerberus.db");
+    logger.information("Loading database [%s]", dbFile);
+    
     Poco::Data::SQLite::Connector::registerConnector();
-    Session session("SQLite", config().getString("database.path", "Zerberus.db"));
+    Session session("SQLite", ":memory:");
 
+    Poco::Data::SQLite::Utility::fileToMemory(session, dbFile);
+
+    logger.information("Database loaded");
+
+    auto threads = config().getInt("threadpool.count", 20);
     SharedPtr<ThreadPool> pPermPool(new ThreadPool(threads, threads));
-
     std::vector<SharedPtr<PermissionRequestWorker>> workers;
-
+    
     for (size_t i = 0; i < threads; i++)
     {
         auto worker = new PermissionRequestWorker(controlDevice, session);
