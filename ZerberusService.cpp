@@ -33,23 +33,29 @@ using Poco::Data::Session;
 using Poco::Data::SQLite::Connector;
 
 
+void ZerberusService::initialize(Application & self)
+{
+    loadConfiguration(); // load default configuration files
+    Application::initialize(self);
+}
+
 int ZerberusService::main(const std::vector<std::string>& args)
-{    
-    AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(_logfile)));
+{
+    AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(config().getString("logging.path"))));
     AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
 
     pSplitter->addChannel(pFileChannel);
-    
+
     //
     // Print to console if run interactively
     // 
-    if (config().getBool("application.runAsService", false))
+    if (!config().getBool("application.runAsService", false))
     {
         pSplitter->addChannel(pCons);
-    }    
+    }
 
-    AutoPtr<PatternFormatter> pPF(new PatternFormatter("%Y-%m-%d %H:%M:%S.%i %s [%p]: %t"));
+    AutoPtr<PatternFormatter> pPF(new PatternFormatter(config().getString("logging.pattern", "%Y-%m-%d %H:%M:%S.%i %s [%p]: %t")));
     AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
     AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
 
@@ -57,7 +63,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
-    logger.information("Hello there");
+    logger.information("Opening control device");
 
     HANDLE controlDevice = CreateFile(L"\\\\.\\HidGuardian",
         GENERIC_READ | GENERIC_WRITE,
@@ -72,14 +78,17 @@ int ZerberusService::main(const std::vector<std::string>& args)
         return Application::EXIT_UNAVAILABLE;
     }
 
-    Poco::Data::SQLite::Connector::registerConnector();
-    Session session("SQLite", _database);
+    logger.information("Control device opened");
 
-    SharedPtr<ThreadPool> pPermPool(new ThreadPool(_threadCount, _threadCount));
+    auto threads = config().getInt("threadpool.count", 20);
+    Poco::Data::SQLite::Connector::registerConnector();
+    Session session("SQLite", config().getString("database.path", "Zerberus.db"));
+
+    SharedPtr<ThreadPool> pPermPool(new ThreadPool(threads, threads));
 
     std::vector<SharedPtr<PermissionRequestWorker>> workers;
 
-    for (size_t i = 0; i < _threadCount; i++)
+    for (size_t i = 0; i < threads; i++)
     {
         auto worker = new PermissionRequestWorker(controlDevice, session);
         workers.push_back(worker);
@@ -98,30 +107,10 @@ int ZerberusService::main(const std::vector<std::string>& args)
 void ZerberusService::defineOptions(OptionSet & options)
 {
     ServerApplication::defineOptions(options);
-
-    options.addOption(
-        Option("logfile", "l", "Path to log file")
-        .required(true)
-        .repeatable(false)
-        .argument("<logfile>"));
-    options.addOption(
-        Option("threads", "t", "Count of worker threads")
-        .required(false)
-        .repeatable(false)
-        .argument("<threads>"));
-    options.addOption(
-        Option("database", "d", "Path to database file")
-        .required(true)
-        .repeatable(false)
-        .argument("<database>"));
 }
 
 void ZerberusService::handleOption(const std::string & name, const std::string & value)
 {
     ServerApplication::handleOption(name, value);
-
-    if (name == "logfile") _logfile = value;
-    if (name == "threads") _threadCount = stoi(value);
-    if (name == "database") _database = value;
 }
 

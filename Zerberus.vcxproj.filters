@@ -38,5 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Zerberus.ini" />
   </ItemGroup>
 </Project>

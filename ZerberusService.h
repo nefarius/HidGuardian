@@ -10,11 +10,8 @@ using namespace Poco::Util;
 class ZerberusService :
     public Poco::Util::ServerApplication
 {
-private:
-    std::string _logfile;
-    int _threadCount = 20;
-    std::string _database;
 protected:
+    void initialize(Application& self);
     int main(const std::vector<std::string>& args);
     void defineOptions(OptionSet& options);
     void handleOption(const std::string& name, const std::string& value);
