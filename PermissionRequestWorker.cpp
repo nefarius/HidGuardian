@@ -4,6 +4,9 @@
 #include <Poco/Logger.h>
 #include <Poco/Data/Session.h>
 
+#include <locale>
+#include <codecvt>
+
 using Poco::Logger;
 using Poco::Data::Statement;
 using namespace Poco::Data::Keywords;
@@ -71,6 +74,19 @@ void PermissionRequestWorker::run()
 
         hgSet.RequestId = pHgGet->RequestId;
         hgSet.DeviceIndex = pHgGet->DeviceIndex;
+
+        std::vector<std::string> hardwareIds;
+
+        for (PCWSTR szIter = pHgGet->HardwareIds; *szIter; szIter += wcslen(szIter) + 1)
+        {
+            using convert_type = std::codecvt_utf8<wchar_t>;
+            std::wstring_convert<convert_type, wchar_t> converter;
+            std::string converted_str = converter.to_bytes(szIter);
+
+            logger.information("Hardware ID: %s", converted_str);
+
+            hardwareIds.push_back(converted_str);
+        }
 
         Statement select(_session);
         
