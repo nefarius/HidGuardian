@@ -1,16 +1,22 @@
 #include "PermissionRequestWorker.h"
 #include "HidGuardian.h"
 
-#include <Poco/Logger.h>
-#include <Poco/Data/Session.h>
-
 #include <locale>
 #include <codecvt>
 #include <sstream>
 
+#include <Psapi.h>
+
+#include <Poco/Logger.h>
+#include <Poco/Data/Session.h>
+#include <Poco/Buffer.h>
+#include <Poco/String.h>
+
 using Poco::Logger;
 using Poco::Data::Statement;
 using namespace Poco::Data::Keywords;
+using Poco::Buffer;
+using Poco::icompare;
 
 
 void PermissionRequestWorker::run()
@@ -77,12 +83,51 @@ void PermissionRequestWorker::run()
             hwIds << "\"" << converter.to_bytes(szIter) << "\", ";
         }
 
-        Statement select(_session);
+        HANDLE hProcess = OpenProcess(
+            PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+            FALSE,
+            pHgGet->ProcessId);
 
-        select << "SELECT IsAllowed, IsPermanent FROM AccessRules WHERE HardwareId IN (" 
-            << hwIds.str().substr(0, hwIds.str().size() - 2) << ")",
-            into(hgSet.IsAllowed), 
-            into(hgSet.IsSticky), 
+        std::string imagePath;
+        std::string moduleName;
+
+        if (NULL != hProcess)
+        {
+            HMODULE hMod;
+            DWORD cbNeeded;
+            Buffer<wchar_t> szProcessName(1024);
+            Buffer<wchar_t> lpFilename(1024);
+
+            GetModuleFileNameEx(hProcess, NULL, lpFilename.begin(), lpFilename.size());
+
+            using convert_type = std::codecvt_utf8<wchar_t>;
+            std::wstring_convert<convert_type, wchar_t> converter;
+
+            imagePath = converter.to_bytes(lpFilename.begin());
+
+            logger.information("Process path: %s", imagePath);
+
+            if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
+                &cbNeeded))
+            {
+                GetModuleBaseName(hProcess, hMod, szProcessName.begin(), szProcessName.size());
+                
+                moduleName = converter.to_bytes(szProcessName.begin());
+
+                logger.information("Process name: %s", moduleName);
+            }
+
+            CloseHandle(hProcess);
+        }
+
+        Statement select(_session);
+        
+        select << "SELECT IsAllowed, IsPermanent FROM AccessRules WHERE HardwareId IN ("
+            << hwIds.str().substr(0, hwIds.str().size() - 2) << ") AND (ModuleName=? OR ImagePath=?)",
+            into(hgSet.IsAllowed),
+            into(hgSet.IsSticky),
+            use(moduleName),
+            use(imagePath),
             now;
 
         logger.information("IsAllowed: %b", (bool)hgSet.IsAllowed);
