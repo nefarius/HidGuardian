@@ -57,6 +57,8 @@ void PermissionRequestWorker::run()
 
         pHgGet->RequestId = reqId;
 
+        logger.information("Queuing inverted call %lu", reqId);
+
         DeviceIoControl(
             _controlDevice,
             IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST,
@@ -70,11 +72,11 @@ void PermissionRequestWorker::run()
 
         if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
-            logger.error("GET request failed");
+            logger.error("Inverted call %lu failed", reqId);
             break;
         }
 
-        logger.information("GET request answered");
+        logger.information("Inverted call %lu completed", reqId);
 
         logger.information("RequestId: %lu", pHgGet->RequestId);
         logger.information("DeviceIndex: %lu", pHgGet->DeviceIndex);
@@ -164,6 +166,8 @@ void PermissionRequestWorker::run()
         logger.debug("IsAllowed: %b", (bool)hgSet.IsAllowed);
         logger.debug("IsSticky: %b", (bool)hgSet.IsSticky);
 
+        logger.information("Sending permission request %lu", reqId);
+
         DeviceIoControl(
             _controlDevice,
             IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST,
@@ -177,9 +181,11 @@ void PermissionRequestWorker::run()
 
         if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
-            logger.error("SET request failed");
+            logger.error("Permission request %lu failed", reqId);
             break;
         }
+
+        logger.information("Permission request %lu finished successfully", reqId);
     }
 
     free(pHgGet);
