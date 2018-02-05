@@ -74,7 +74,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     for (size_t i = 0; i < _threadCount; i++)
     {
-        auto worker = new PermissionRequestWorker(controlDevice);
+        auto worker = new PermissionRequestWorker(controlDevice, session);
         workers.push_back(worker);
         pPermPool->start(*worker);
     }
@@ -104,7 +104,7 @@ void ZerberusService::defineOptions(OptionSet & options)
         .argument("<threads>"));
     options.addOption(
         Option("database", "d", "Path to database file")
-        .required(false)
+        .required(true)
         .repeatable(false)
         .argument("<database>"));
 }

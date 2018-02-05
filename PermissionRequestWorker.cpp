@@ -2,11 +2,14 @@
 #include "HidGuardian.h"
 
 #include <Poco/Logger.h>
+#include <Poco/Data/Session.h>
 
 using Poco::Logger;
+using Poco::Data::Statement;
+using namespace Poco::Data::Keywords;
 
 
-PermissionRequestWorker::PermissionRequestWorker(HANDLE controlDevice) : _controlDevice(controlDevice)
+PermissionRequestWorker::PermissionRequestWorker(HANDLE controlDevice, const Session& dbSession) : _controlDevice(controlDevice), _session(dbSession)
 {
 }
 
@@ -69,8 +72,16 @@ void PermissionRequestWorker::run()
         hgSet.RequestId = pHgGet->RequestId;
         hgSet.DeviceIndex = pHgGet->DeviceIndex;
 
-        hgSet.IsAllowed = TRUE;
+        Statement select(_session);
         
+        std::string demoHwId("HID_DEVICE");
+
+        select << "SELECT IsAllowed, IsPermanent FROM AccessRules WHERE HardwareId=?",
+            into(hgSet.IsAllowed),
+            into(hgSet.IsSticky),
+            use(demoHwId),
+            now;
+
         DeviceIoControl(
             _controlDevice,
             IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST,
