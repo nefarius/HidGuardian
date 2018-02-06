@@ -63,6 +63,11 @@ int ZerberusService::main(const std::vector<std::string>& args)
     if (config().getBool("logging.enabled", false))
     {
         Logger::root().setChannel(pAsync);
+
+        if (config().getBool("logging.debug", false))
+        {
+            Logger::root().setLevel(Message::PRIO_DEBUG);
+        }
     }
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
