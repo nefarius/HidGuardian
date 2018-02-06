@@ -59,7 +59,7 @@ void PermissionRequestWorker::run()
         pHgGet->RequestId = reqId;
 
         if (logger.is(Poco::Message::PRIO_DEBUG))
-            logger.information("Queuing inverted call %lu", pHgGet->RequestId);
+            logger.debug("Queuing inverted call %lu", pHgGet->RequestId);
 
         DeviceIoControl(
             _controlDevice,
