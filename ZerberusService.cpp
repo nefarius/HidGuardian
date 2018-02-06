@@ -99,6 +99,8 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     logger.information("Database loaded");
 
+    logger.information("Spawning worker threads");
+
     auto threads = config().getInt("threadpool.count", 20);
     SharedPtr<ThreadPool> pPermPool(new ThreadPool(threads, threads));
     std::vector<SharedPtr<PermissionRequestWorker>> workers;
@@ -108,6 +110,13 @@ int ZerberusService::main(const std::vector<std::string>& args)
         auto worker = new PermissionRequestWorker(controlDevice, session);
         workers.push_back(worker);
         pPermPool->start(*worker);
+    }
+
+    logger.information("Done, up and running");
+
+    if (!config().getBool("application.runAsService", false))
+    {
+        logger.information("Press CTRL+C to terminate");
     }
 
     waitForTerminationRequest();

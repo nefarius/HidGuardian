@@ -32,7 +32,7 @@ void PermissionRequestWorker::run()
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
-    logger.information("Worker running");
+    logger.debug("Worker running");
     _rnd.seed();
 
     //
@@ -58,7 +58,8 @@ void PermissionRequestWorker::run()
 
         pHgGet->RequestId = reqId;
 
-        logger.information("Queuing inverted call %lu", pHgGet->RequestId);
+        if (logger.is(Poco::Message::PRIO_DEBUG))
+            logger.information("Queuing inverted call %lu", pHgGet->RequestId);
 
         DeviceIoControl(
             _controlDevice,
@@ -77,10 +78,11 @@ void PermissionRequestWorker::run()
             break;
         }
 
-        logger.information("Inverted call %lu completed", pHgGet->RequestId);
-
-        logger.information("RequestId: %lu", pHgGet->RequestId);
-        logger.information("DeviceIndex: %lu", pHgGet->DeviceIndex);
+        if (logger.is(Poco::Message::PRIO_DEBUG)) {
+            logger.debug("Inverted call %lu completed", pHgGet->RequestId);
+            logger.debug("RequestId: %lu", pHgGet->RequestId);
+            logger.debug("DeviceIndex: %lu", pHgGet->DeviceIndex);
+        }
 
         hgSet.RequestId = pHgGet->RequestId;
         hgSet.DeviceIndex = pHgGet->DeviceIndex;
@@ -122,16 +124,12 @@ void PermissionRequestWorker::run()
 
             imagePath = converter.to_bytes(lpFilename.begin());
 
-            logger.debug("Process path: %s", imagePath);
-
             if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
                 &cbNeeded))
             {
                 GetModuleBaseName(hProcess, hMod, szProcessName.begin(), szProcessName.size());
-                
-                moduleName = converter.to_bytes(szProcessName.begin());
 
-                logger.debug("Process name: %s", moduleName);
+                moduleName = converter.to_bytes(szProcessName.begin());
             }
 
             CloseHandle(hProcess);
@@ -140,9 +138,9 @@ void PermissionRequestWorker::run()
 #pragma endregion
 
 #pragma region Database query
-                
+
         Statement select(_session);
-        
+
         select << "SELECT IsAllowed, IsPermanent FROM AccessRules WHERE HardwareId IN (";
 
         //
@@ -164,10 +162,13 @@ void PermissionRequestWorker::run()
 
 #pragma endregion
 
-        logger.debug("IsAllowed: %b", (bool)hgSet.IsAllowed);
-        logger.debug("IsSticky: %b", (bool)hgSet.IsSticky);
-
-        logger.information("Sending permission request %lu", pHgGet->RequestId);
+        if (logger.is(Poco::Message::PRIO_DEBUG)) {
+            logger.debug("Process path: %s", imagePath);
+            logger.debug("Process name: %s", moduleName);
+            logger.debug("IsAllowed: %b", (bool)hgSet.IsAllowed);
+            logger.debug("IsSticky: %b", (bool)hgSet.IsSticky);
+            logger.debug("Sending permission request %lu", pHgGet->RequestId);
+        }
 
         DeviceIoControl(
             _controlDevice,
@@ -186,7 +187,8 @@ void PermissionRequestWorker::run()
             break;
         }
 
-        logger.information("Permission request %lu finished successfully", pHgGet->RequestId);
+        if (logger.is(Poco::Message::PRIO_DEBUG))
+            logger.debug("Permission request %lu finished successfully", pHgGet->RequestId);
     }
 
     free(pHgGet);
