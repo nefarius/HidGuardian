@@ -84,6 +84,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     logger.information("Opening control device");
 
+    //
+    // Try to open the control device
+    // 
     HANDLE controlDevice = CreateFile(L"\\\\.\\HidGuardian",
         GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -92,8 +95,19 @@ int ZerberusService::main(const std::vector<std::string>& args)
         FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_OVERLAPPED,
         nullptr);
 
-    if (controlDevice == INVALID_HANDLE_VALUE) {
-        logger.fatal("Couldn't open control device");
+    //
+    // Log error state
+    // 
+    if (controlDevice == INVALID_HANDLE_VALUE) 
+    {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            logger.fatal("Couldn't find control device, please make sure HidGuardian is installed properly");
+        }
+
+        if (GetLastError() == ERROR_ACCESS_DENIED) {
+            logger.fatal("Couldn't access control device, please make sure you run the program as Administrator");
+        }
+
         return Application::EXIT_UNAVAILABLE;
     }
 
