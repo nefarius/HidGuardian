@@ -17,6 +17,7 @@
 #include <Poco/Data/Session.h>
 #include <Poco/Data/SQLite/Connector.h>
 #include <Poco/Data/SQLite/Utility.h>
+#include <Poco/File.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -32,6 +33,7 @@ using Poco::ThreadPool;
 using Poco::SharedPtr;
 using Poco::Data::Session;
 using Poco::Data::SQLite::Connector;
+using namespace Poco::Data::Keywords;
 
 
 void ZerberusService::initialize(Application & self)
@@ -42,10 +44,12 @@ void ZerberusService::initialize(Application & self)
 
 int ZerberusService::main(const std::vector<std::string>& args)
 {
+    //
+    // Prepare to log to file and optionally console window
+    // 
     AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(config().getString("logging.path"))));
     AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
-
     pSplitter->addChannel(pFileChannel);
 
     //
@@ -56,10 +60,16 @@ int ZerberusService::main(const std::vector<std::string>& args)
         pSplitter->addChannel(pCons);
     }
 
+    //
+    // Prepare logging formatting
+    // 
     AutoPtr<PatternFormatter> pPF(new PatternFormatter(config().getString("logging.pattern", "%Y-%m-%d %H:%M:%S.%i %s [%p]: %t")));
     AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
     AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
 
+    //
+    // Do we even log?
+    // 
     if (config().getBool("logging.enabled", false))
     {
         Logger::root().setChannel(pAsync);
@@ -89,13 +99,38 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     logger.information("Control device opened");
 
-    auto dbFile = config().getString("database.path", "Zerberus.db");
-    logger.information("Loading database [%s]", dbFile);
-    
     Poco::Data::SQLite::Connector::registerConnector();
-    Session session("SQLite", ":memory:");
 
-    Poco::Data::SQLite::Utility::fileToMemory(session, dbFile);
+    //
+    // Get database path
+    // 
+    Poco::File dbFile(config().getString("database.path", "Zerberus.db"));
+    logger.information("Loading database [%s]", dbFile.path());
+
+    //
+    // Create database if not found at the provided path
+    // 
+    if (!dbFile.exists()) 
+    {
+        logger.information("Database doesn't exist, creating empty one");
+
+        Session freshDb("SQLite", ":memory:");
+
+        freshDb << R"(CREATE TABLE `AccessRules` (
+	                    `HardwareId`    TEXT NOT NULL,
+	                    `IsAllowed`     INTEGER NOT NULL,
+	                    `IsPermanent`   INTEGER NOT NULL,
+	                    `ModuleName`    TEXT,
+	                    `ImagePath`     TEXT);)", now;
+
+        Poco::Data::SQLite::Utility::memoryToFile(dbFile.path(), freshDb);
+    }
+
+    //
+    // Create in-memory database, initialize from file
+    // 
+    Session session("SQLite", ":memory:");
+    Poco::Data::SQLite::Utility::fileToMemory(session, dbFile.path());
 
     logger.information("Database loaded");
 
@@ -104,7 +139,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     auto threads = config().getInt("threadpool.count", 20);
     SharedPtr<ThreadPool> pPermPool(new ThreadPool(threads, threads));
     std::vector<SharedPtr<PermissionRequestWorker>> workers;
-    
+
     for (size_t i = 0; i < threads; i++)
     {
         auto worker = new PermissionRequestWorker(controlDevice, session);
