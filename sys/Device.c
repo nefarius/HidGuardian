@@ -316,6 +316,7 @@ VOID EvtDeviceFileCreate(
     BOOLEAN                             ret;
     WDF_REQUEST_SEND_OPTIONS            options;
     BOOLEAN                             allowed;
+    LONGLONG                            lockTimeout = WDF_REL_TIMEOUT_IN_US(10);
 
     UNREFERENCED_PARAMETER(FileObject);
 
@@ -403,7 +404,15 @@ VOID EvtDeviceFileCreate(
 
 #pragma region HOLDING LOCK
 
-    WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
+    status = WdfWaitLockAcquire(FilterDeviceCollectionLock, &lockTimeout);
+
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_DEVICE,
+            "Couldn't acquire device collection lock in time");
+        
+        goto defaultAction;
+    }
 
     //
     // Search for our device in the collection to get index

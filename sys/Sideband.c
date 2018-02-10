@@ -291,6 +291,7 @@ VOID HidGuardianSidebandIoDeviceControl(
     WDF_REQUEST_SEND_OPTIONS            options;
     BOOLEAN                             ret;
     PCREATE_REQUEST_CONTEXT             pRequestCtx;
+    LONGLONG                            lockTimeout = WDF_REL_TIMEOUT_IN_US(10);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
 
@@ -349,7 +350,14 @@ VOID HidGuardianSidebandIoDeviceControl(
         // 
         if (NT_SUCCESS(status) && InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST))
         {
-            WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
+            status = WdfWaitLockAcquire(FilterDeviceCollectionLock, &lockTimeout);
+
+            if (!NT_SUCCESS(status)) {
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_SIDEBAND,
+                    "Couldn't acquire device collection lock in time");
+                break;
+            }
 
             //
             // Get device & context this authentication request is targeted at
@@ -359,7 +367,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             if (!device) {
                 status = STATUS_INVALID_PARAMETER;
                 TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_DEVICE,
+                    TRACE_SIDEBAND,
                     "Device with index %d not found", pSetCreateRequest->DeviceIndex);
                 WdfWaitLockRelease(FilterDeviceCollectionLock);
                 break;
@@ -373,7 +381,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             if (!pDeviceCtx) {
                 status = STATUS_INVALID_PARAMETER;
                 TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_DEVICE,
+                    TRACE_SIDEBAND,
                     "Context of device with index %d not found", pSetCreateRequest->DeviceIndex);
                 WdfWaitLockRelease(FilterDeviceCollectionLock);
                 break;
@@ -385,7 +393,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->PendingAuthQueue, &authRequest);
             if (!NT_SUCCESS(status)) {
                 TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_DEVICE,
+                    TRACE_SIDEBAND,
                     "WdfIoQueueRetrieveNextRequest (PendingAuthQueue) failed with status %!STATUS!", status);
                 WdfWaitLockRelease(FilterDeviceCollectionLock);
                 break;
@@ -398,7 +406,7 @@ VOID HidGuardianSidebandIoDeviceControl(
             // 
             if (pSetCreateRequest->RequestId != pRequestCtx->RequestId) {
                 TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_DEVICE,
+                    TRACE_SIDEBAND,
                     "Request ID mismatch: %X != %X",
                     pSetCreateRequest->RequestId,
                     pRequestCtx->RequestId);
@@ -406,7 +414,7 @@ VOID HidGuardianSidebandIoDeviceControl(
                 status = WdfRequestForwardToIoQueue(Request, pDeviceCtx->PendingAuthQueue);
                 if (!NT_SUCCESS(status)) {
                     TraceEvents(TRACE_LEVEL_ERROR,
-                        TRACE_DEVICE,
+                        TRACE_SIDEBAND,
                         "Failed to re-enqueue request with ID %X", pRequestCtx->RequestId);
                 }
 
@@ -423,7 +431,7 @@ VOID HidGuardianSidebandIoDeviceControl(
                 }
                 else {
                     TraceEvents(TRACE_LEVEL_WARNING,
-                        TRACE_DEVICE,
+                        TRACE_SIDEBAND,
                         "Sticky PID %d already present in cache", pRequestCtx->ProcessId);
                 }
             }
