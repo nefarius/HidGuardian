@@ -28,7 +28,9 @@ SOFTWARE.
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, HidGuardianCreateDevice)
-#pragma alloc_text (PAGE, EvtDeviceFileCreate)
+#pragma alloc_text (PAGE, HidGuardianEvtDeviceContextCleanup)
+#pragma alloc_text (PAGE, EvtWdfCreateRequestsQueueIoDefault)
+#pragma alloc_text (PAGE, EvtFileCleanup)
 #endif
 
 
@@ -55,7 +57,11 @@ HidGuardianCreateDevice(
 
     WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
     deviceAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-    WDF_FILEOBJECT_CONFIG_INIT(&deviceConfig, EvtDeviceFileCreate, NULL, EvtFileCleanup);
+    WDF_FILEOBJECT_CONFIG_INIT(&deviceConfig, 
+        WDF_NO_EVENT_CALLBACK, 
+        WDF_NO_EVENT_CALLBACK, 
+        EvtFileCleanup
+    );
 
     WdfDeviceInitSetFileObjectConfig(
         DeviceInit,
@@ -181,6 +187,36 @@ HidGuardianCreateDevice(
 
 #pragma endregion
 
+#pragma region Create CreateRequestsQueue I/O Queue
+
+        WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchSequential);
+        queueConfig.EvtIoDefault = EvtWdfCreateRequestsQueueIoDefault;
+
+        status = WdfIoQueueCreate(device,
+            &queueConfig,
+            WDF_NO_OBJECT_ATTRIBUTES,
+            &deviceContext->CreateRequestsQueue
+        );
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfIoQueueCreate (CreateRequestsQueue) failed with %!STATUS!", status);
+            return status;
+        }
+
+        status = WdfDeviceConfigureRequestDispatching(device, 
+            deviceContext->CreateRequestsQueue, 
+            WdfRequestTypeCreate
+        );
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfDeviceConfigureRequestDispatching failed with %!STATUS!", status);
+            return status;
+        }
+
+#pragma endregion
+
         //
         // Add this device to the FilterDevice collection.
         //
@@ -293,16 +329,15 @@ WDF status code
 }
 #pragma warning(pop) // enable 28118 again
 
-//
-// Catches CreateFile(...) calls.
-// 
-VOID EvtDeviceFileCreate(
-    _In_ WDFDEVICE     Device,
-    _In_ WDFREQUEST    Request,
-    _In_ WDFFILEOBJECT FileObject
+_Use_decl_annotations_
+VOID
+EvtWdfCreateRequestsQueueIoDefault(
+    WDFQUEUE  Queue,
+    WDFREQUEST  Request
 )
 {
     NTSTATUS                            status;
+    WDFDEVICE                           device;
     PCONTROL_DEVICE_CONTEXT             pControlCtx;
     WDFREQUEST                          invertedCall;
     size_t                              bufferLength = 0;
@@ -318,15 +353,14 @@ VOID EvtDeviceFileCreate(
     BOOLEAN                             allowed;
     LONGLONG                            lockTimeout = WDF_REL_TIMEOUT_IN_US(10);
 
-    UNREFERENCED_PARAMETER(FileObject);
-
 
     PAGED_CODE();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
+    device = WdfIoQueueGetDevice(Queue);
     pControlCtx = ControlDeviceGetContext(ControlDevice);
-    pDeviceCtx = DeviceGetContext(Device);
+    pDeviceCtx = DeviceGetContext(device);
     pid = CURRENT_PROCESS_ID();
 
     TraceEvents(TRACE_LEVEL_VERBOSE,
@@ -410,7 +444,7 @@ VOID EvtDeviceFileCreate(
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_DEVICE,
             "Couldn't acquire device collection lock in time");
-        
+
         goto defaultAction;
     }
 
@@ -426,7 +460,7 @@ VOID EvtDeviceFileCreate(
         //
         // Assign request and device details to inverted call
         // 
-        if (WdfCollectionGetItem(FilterDeviceCollection, index) == Device)
+        if (WdfCollectionGetItem(FilterDeviceCollection, index) == device)
         {
             TraceEvents(TRACE_LEVEL_INFORMATION,
                 TRACE_DEVICE,
@@ -469,7 +503,7 @@ VOID EvtDeviceFileCreate(
     WdfWaitLockRelease(FilterDeviceCollectionLock);
 
 #pragma endregion
-    
+
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);
     requestAttribs.ParentObject = Request;
 
@@ -548,7 +582,7 @@ allowAccess:
     WDF_REQUEST_SEND_OPTIONS_INIT(&options,
         WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
 
-    ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(Device), &options);
+    ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(device), &options);
 
     if (ret == FALSE) {
         status = WdfRequestGetStatus(Request);
@@ -570,8 +604,6 @@ blockAccess:
     WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access blocked)");
-
-    return;
 }
 
 _Use_decl_annotations_
@@ -584,6 +616,8 @@ EvtFileCleanup(
     PDEVICE_CONTEXT             pDeviceCtx;
     ULONG                       pid;
     PCONTROL_DEVICE_CONTEXT     pControlCtx;
+
+    PAGED_CODE();
 
     device = WdfFileObjectGetDevice(FileObject);
     pDeviceCtx = DeviceGetContext(device);

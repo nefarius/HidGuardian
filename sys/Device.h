@@ -50,6 +50,8 @@ typedef struct _DEVICE_CONTEXT
 
     WDFQUEUE        PendingAuthQueue;
 
+    WDFQUEUE        CreateRequestsQueue;
+
     PPID_LIST_NODE  StickyPidList;
 
     BOOLEAN         AllowByDefault;
@@ -82,7 +84,7 @@ HidGuardianCreateDevice(
     );
 
 EVT_WDF_DEVICE_CONTEXT_CLEANUP HidGuardianEvtDeviceContextCleanup;
-EVT_WDF_DEVICE_FILE_CREATE EvtDeviceFileCreate;
-EVT_WDF_FILE_CLEANUP  EvtFileCleanup;
+EVT_WDF_FILE_CLEANUP EvtFileCleanup;
+EVT_WDF_IO_QUEUE_IO_DEFAULT EvtWdfCreateRequestsQueueIoDefault;
 
 EXTERN_C_END
