@@ -265,8 +265,6 @@ WDF status code
 
     pDeviceCtx = DeviceGetContext(Device);
 
-    WdfIoQueuePurgeSynchronously(pDeviceCtx->PendingAuthQueue);
-
     PID_LIST_DESTROY(&pDeviceCtx->StickyPidList);
 
     WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
