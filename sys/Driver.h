@@ -28,6 +28,7 @@ SOFTWARE.
 #include <ntddk.h>
 #include <wdf.h>
 
+#include "HidGuardian.h"
 #include "PidList.h"
 #include "Sideband.h"
 #include "device.h"

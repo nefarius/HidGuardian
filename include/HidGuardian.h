@@ -1,7 +1,9 @@
 #pragma once
 
-#include <Windows.h>
-#include <devioctl.h>
+
+#define CONTROL_DEVICE_PATH         L"\\\\.\\HidGuardian"
+#define NTDEVICE_NAME_STRING        L"\\Device\\HidGuardian"
+#define SYMBOLIC_NAME_STRING        L"\\DosDevices\\HidGuardian"
 
 #define IOCTL_INDEX                 0x801
 #define FILE_DEVICE_HIDGUARDIAN     32768U
@@ -21,6 +23,7 @@
                                                                     IOCTL_INDEX + 0x01, \
                                                                     METHOD_BUFFERED,    \
                                                                     FILE_WRITE_ACCESS)
+
 
 #include <pshpack1.h>
 

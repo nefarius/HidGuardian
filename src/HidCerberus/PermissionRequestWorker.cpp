@@ -1,4 +1,6 @@
 #include "PermissionRequestWorker.h"
+
+#include <devioctl.h>
 #include "HidGuardian.h"
 
 //

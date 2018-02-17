@@ -1,5 +1,7 @@
 #include "ZerberusService.h"
 #include "PermissionRequestWorker.h"
+#include <devioctl.h>
+#include "HidGuardian.h"
 
 #define POCO_NO_UNWINDOWS
 #include <Poco/AutoPtr.h>
@@ -87,7 +89,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     //
     // Try to open the control device
     // 
-    HANDLE controlDevice = CreateFile(L"\\\\.\\HidGuardian",
+    HANDLE controlDevice = CreateFile(CONTROL_DEVICE_PATH,
         GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
         nullptr,
