@@ -20,6 +20,7 @@
 #include <Poco/Data/SQLite/Connector.h>
 #include <Poco/Data/SQLite/Utility.h>
 #include <Poco/File.h>
+#include "DeviceEnumerator.h"
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -49,11 +50,18 @@ int ZerberusService::main(const std::vector<std::string>& args)
     //
     // Prepare to log to file and optionally console window
     // 
-    AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(config().getString("logging.path"))));
+    
+    auto logFilePath = config().getString("logging.path", "");
+
     AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
-    pSplitter->addChannel(pFileChannel);
-
+    
+    if (!logFilePath.empty())
+    {
+        AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(logFilePath)));
+        pSplitter->addChannel(pFileChannel);
+    }
+    
     //
     // Print to console if run interactively
     // 
@@ -72,7 +80,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     //
     // Do we even log?
     // 
-    if (config().getBool("logging.enabled", false))
+    if (config().getBool("logging.enabled", true))
     {
         Logger::root().setChannel(pAsync);
 

@@ -165,12 +165,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DeviceEnumerator.cpp" />
     <ClCompile Include="PermissionRequestWorker.cpp" />
     <ClCompile Include="Zerberus.cpp" />
     <ClCompile Include="ZerberusService.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\HidGuardian.h" />
+    <ClInclude Include="DeviceEnumerator.h" />
     <ClInclude Include="PermissionRequestWorker.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ZerberusService.h" />
