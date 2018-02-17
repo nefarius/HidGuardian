@@ -1,0 +1,19 @@
+version: 2.0.{build}.0
+image: Visual Studio 2017
+build_script:
+- ps: .\build.ps1 -configuration release
+after_build:
+- ps: |
+    Invoke-WebRequest "https://github.com/pavel-a/ddverpatch/files/1215010/verpatch-1.0.15.1-x86-codeplex.zip" -OutFile verpatch-1.0.15.1-x86-codeplex.zip
+    Expand-Archive verpatch-1.0.15.1-x86-codeplex.zip -DestinationPath .
+    .\verpatch.exe .\artifacts\x64\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\artifacts\x64\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\artifacts\x86\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\artifacts\x86\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
+    makecab.exe /f HidGuardian.ddf
+artifacts:
+- path: disk1\HidGuardian.cab
+  name: HidGuardian_unsigned_x86_amd64
+deploy:
+- provider: Environment
+  name: BUILDBOT
