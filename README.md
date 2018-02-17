@@ -1,3 +1,5 @@
+![](devil.png)
+
 # HidGuardian
 Blocks various input devices from being accessed by user-mode applications.
 
