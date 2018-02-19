@@ -233,14 +233,14 @@ void ZerberusService::defineOptions(OptionSet & options)
     ServerApplication::defineOptions(options);
 
     options.addOption(
-        Option("help", "h", "display help")
+        Option("help", "h", "Display this help.")
         .required(false)
         .repeatable(false)
         .binding("core.oneShot")
         .callback(OptionCallback<ZerberusService>(this, &ZerberusService::help)));
 
     options.addOption(
-        Option("enumerateDeviceInterface", "e", "Returns a list of instance paths of devices with the specified interface GUID")
+        Option("enumerateDeviceInterface", "e", "Returns a list of instance paths of devices with the specified interface GUID.")
         .required(false)
         .repeatable(true)
         .argument("GUID")
@@ -248,7 +248,7 @@ void ZerberusService::defineOptions(OptionSet & options)
         .callback(OptionCallback<ZerberusService>(this, &ZerberusService::enumerateDeviceInterface)));
 
     options.addOption(
-        Option("devicePath", "d", "The path of the device to guard")
+        Option("devicePath", "d", "The path of the device to guard.")
         .required(true)
         .repeatable(false)
         .argument("path")
