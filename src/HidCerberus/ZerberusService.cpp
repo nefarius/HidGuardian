@@ -53,7 +53,7 @@ void ZerberusService::enumerateDeviceInterface(const std::string& name, const st
 
     for (auto& device : devices)
     {
-        std::cout << device << "\n";
+        std::cout << "Device path: " << device << "\n";
     }
 
     stopOptionsProcessing();
