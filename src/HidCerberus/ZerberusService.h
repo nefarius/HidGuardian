@@ -10,6 +10,9 @@ using namespace Poco::Util;
 class ZerberusService :
     public Poco::Util::ServerApplication
 {
+    void enumerateDeviceInterface(const std::string& name, const std::string& value);
+    void help(const std::string& name, const std::string& value);
+    void displayHelp();
 protected:
     void initialize(Application& self);
     int main(const std::vector<std::string>& args);

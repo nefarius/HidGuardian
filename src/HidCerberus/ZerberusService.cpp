@@ -1,5 +1,6 @@
 #include "ZerberusService.h"
 #include "PermissionRequestWorker.h"
+#include "DeviceEnumerator.h"
 #include <devioctl.h>
 #include "HidGuardian.h"
 
@@ -20,7 +21,9 @@
 #include <Poco/Data/SQLite/Connector.h>
 #include <Poco/Data/SQLite/Utility.h>
 #include <Poco/File.h>
-#include "DeviceEnumerator.h"
+#include <Poco/Buffer.h>
+#include <Poco/Util/RegExpValidator.h>
+#include <Poco/Util/HelpFormatter.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -37,7 +40,39 @@ using Poco::SharedPtr;
 using Poco::Data::Session;
 using Poco::Data::SQLite::Connector;
 using namespace Poco::Data::Keywords;
+using Poco::Buffer;
+using Poco::Util::RegExpValidator;
+using Poco::Util::HelpFormatter;
 
+
+void ZerberusService::enumerateDeviceInterface(const std::string& name, const std::string& value)
+{
+    auto interfaceGuid = DeviceEnumerator::stringToGuid(value);
+
+    auto devices = DeviceEnumerator::enumerateDeviceInterface(&interfaceGuid);
+
+    for (auto& device : devices)
+    {
+        std::cout << device << "\n";
+    }
+
+    stopOptionsProcessing();
+}
+
+void ZerberusService::help(const std::string & name, const std::string & value)
+{
+    displayHelp();
+    stopOptionsProcessing();
+}
+
+void ZerberusService::displayHelp()
+{
+    HelpFormatter helpFormatter(options());
+    helpFormatter.setCommand(commandName());
+    helpFormatter.setUsage("[options]");
+    helpFormatter.setHeader("HidGuardian management and control application.");
+    helpFormatter.format(std::cout);
+}
 
 void ZerberusService::initialize(Application & self)
 {
@@ -47,21 +82,25 @@ void ZerberusService::initialize(Application & self)
 
 int ZerberusService::main(const std::vector<std::string>& args)
 {
+    if (config().has("core.oneShot")) {
+        return Application::EXIT_OK;
+    }
+
     //
     // Prepare to log to file and optionally console window
     // 
-    
+
     auto logFilePath = config().getString("logging.path", "");
 
     AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
-    
+
     if (!logFilePath.empty())
     {
         AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(logFilePath)));
         pSplitter->addChannel(pFileChannel);
     }
-    
+
     //
     // Print to console if run interactively
     // 
@@ -92,12 +131,14 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
-    logger.information("Opening control device");
+    auto devicePath = config().getString("args.devicePath");
+
+    logger.information("Opening control device %s", devicePath);
 
     //
     // Try to open the control device
     // 
-    HANDLE controlDevice = CreateFile(CONTROL_DEVICE_PATH,
+    HANDLE controlDevice = CreateFileA(devicePath.c_str(),
         GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
         nullptr,
@@ -108,7 +149,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     //
     // Log error state
     // 
-    if (controlDevice == INVALID_HANDLE_VALUE) 
+    if (controlDevice == INVALID_HANDLE_VALUE)
     {
         if (GetLastError() == ERROR_FILE_NOT_FOUND) {
             logger.fatal("Couldn't find control device, please make sure HidGuardian is installed properly");
@@ -134,7 +175,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     //
     // Create database if not found at the provided path
     // 
-    if (!dbFile.exists()) 
+    if (!dbFile.exists())
     {
         logger.information("Database doesn't exist, creating empty one");
 
@@ -190,6 +231,28 @@ int ZerberusService::main(const std::vector<std::string>& args)
 void ZerberusService::defineOptions(OptionSet & options)
 {
     ServerApplication::defineOptions(options);
+
+    options.addOption(
+        Option("help", "h", "display help")
+        .required(false)
+        .repeatable(false)
+        .binding("core.oneShot")
+        .callback(OptionCallback<ZerberusService>(this, &ZerberusService::help)));
+
+    options.addOption(
+        Option("enumerateDeviceInterface", "e", "Returns a list of instance paths of devices with the specified interface GUID")
+        .required(false)
+        .repeatable(true)
+        .argument("GUID")
+        .binding("core.oneShot")
+        .callback(OptionCallback<ZerberusService>(this, &ZerberusService::enumerateDeviceInterface)));
+
+    options.addOption(
+        Option("devicePath", "d", "The path of the device to guard")
+        .required(true)
+        .repeatable(false)
+        .argument("path")
+        .binding("args.devicePath"));
 }
 
 void ZerberusService::handleOption(const std::string & name, const std::string & value)

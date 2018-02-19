@@ -187,6 +187,24 @@ HidGuardianCreateDevice(
 
 #pragma endregion
 
+#pragma region Create InvertedCallQueue I/O Queue
+
+        WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchManual);
+
+        status = WdfIoQueueCreate(device,
+            &queueConfig,
+            WDF_NO_OBJECT_ATTRIBUTES,
+            &deviceContext->InvertedCallQueue
+        );
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfIoQueueCreate (InvertedCallQueue) failed with %!STATUS!", status);
+            return status;
+        }
+
+#pragma endregion
+
 #pragma region Create CreateRequestsQueue I/O Queue
 
         WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchSequential);
@@ -394,14 +412,16 @@ EvtWdfCreateRequestsQueueIoDefault(
     //
     // Skip checks if no decision-maker is present
     // 
+#ifdef BLARGH
     if (!pControlCtx->IsServicePresent) {
         goto defaultAction;
     }
+#endif
 
     //
     // Get inverted call to communicate with the user-mode application
     // 
-    status = WdfIoQueueRetrieveNextRequest(pControlCtx->InvertedCallQueue, &invertedCall);
+    status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->InvertedCallQueue, &invertedCall);
     if (!NT_SUCCESS(status)) {
         TraceEvents(TRACE_LEVEL_WARNING,
             TRACE_DEVICE,

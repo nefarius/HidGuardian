@@ -36,5 +36,7 @@ HidGuardianQueueInitialize(
 // Events from the IoQueue object
 //
 EVT_WDF_IO_QUEUE_IO_DEFAULT HidGuardianEvtIoDefault;
+EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL HidGuardianEvtIoDeviceControl;
+
 
 EXTERN_C_END

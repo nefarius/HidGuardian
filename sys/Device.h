@@ -52,6 +52,8 @@ typedef struct _DEVICE_CONTEXT
 
     WDFQUEUE        CreateRequestsQueue;
 
+    WDFQUEUE        InvertedCallQueue;
+
     PPID_LIST_NODE  StickyPidList;
 
     BOOLEAN         AllowByDefault;
