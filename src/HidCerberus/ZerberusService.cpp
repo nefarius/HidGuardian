@@ -24,6 +24,7 @@
 #include <Poco/Buffer.h>
 #include <Poco/Util/RegExpValidator.h>
 #include <Poco/Util/HelpFormatter.h>
+#include "GuardedDevice.h"
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -130,40 +131,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     }
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
-
-    auto devicePath = config().getString("args.devicePath");
-
-    logger.information("Opening control device %s", devicePath);
-
-    //
-    // Try to open the control device
-    // 
-    HANDLE controlDevice = CreateFileA(devicePath.c_str(),
-        GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_OVERLAPPED,
-        nullptr);
-
-    //
-    // Log error state
-    // 
-    if (controlDevice == INVALID_HANDLE_VALUE)
-    {
-        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-            logger.fatal("Couldn't find control device, please make sure HidGuardian is installed properly");
-        }
-
-        if (GetLastError() == ERROR_ACCESS_DENIED) {
-            logger.fatal("Couldn't access control device, please make sure you run the program as Administrator");
-        }
-
-        return Application::EXIT_UNAVAILABLE;
-    }
-
-    logger.information("Control device opened");
-
+    
     Poco::Data::SQLite::Connector::registerConnector();
 
     //
@@ -199,18 +167,22 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     logger.information("Database loaded");
 
-    logger.information("Spawning worker threads");
+    auto devicePath = config().getString("args.devicePath");
 
-    auto threads = config().getInt("threadpool.count", 20);
-    SharedPtr<ThreadPool> pPermPool(new ThreadPool(threads, threads));
-    std::vector<AutoPtr<PermissionRequestWorker>> workers;
+    logger.information("Opening control device %s", devicePath);
 
-    for (size_t i = 0; i < threads; i++)
+    AutoPtr<GuardedDevice> dev(new GuardedDevice(devicePath, config(), session));
+
+    try
     {
-        auto worker = new PermissionRequestWorker(controlDevice, session);
-        workers.push_back(worker);
-        pPermPool->start(*worker);
+        dev->open();
+        dev->guard();
     }
+    catch (const std::exception& ex)
+    {
+        logger.fatal("Fatal error: %s", std::string(ex.what()));
+        return Application::EXIT_UNAVAILABLE;
+    }    
 
     logger.information("Done, up and running");
 
@@ -221,8 +193,6 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     waitForTerminationRequest();
 
-    CloseHandle(controlDevice);
-    pPermPool->joinAll();
     logger.information("Process terminating");
 
     return Application::EXIT_OK;

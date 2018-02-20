@@ -3,12 +3,18 @@
 #include <devioctl.h>
 
 
-GuardedDevice::GuardedDevice(const std::string & devicePath) : _devicePath(devicePath)
+GuardedDevice::GuardedDevice(const std::string & devicePath, const LayeredConfiguration& config, const Session& session)
+    : _devicePath(devicePath), _config(config), _session(session)
 {
+    _workerCount = config.getInt("threadpool.count", 20);
+    _workerPool = new ThreadPool(_workerCount, _workerCount);
 }
 
 GuardedDevice::~GuardedDevice()
 {
+    if (_deviceHandle != INVALID_HANDLE_VALUE) {
+        CloseHandle(_deviceHandle);
+    }
 }
 
 void GuardedDevice::open()
@@ -58,4 +64,14 @@ void GuardedDevice::open()
     }
 
     CloseHandle(lOverlapped.hEvent);
+}
+
+void GuardedDevice::guard()
+{
+    for (size_t i = 0; i < _workerCount; i++)
+    {
+        auto worker = new PermissionRequestWorker(_deviceHandle, _session);
+        _workers.push_back(worker);
+        _workerPool->start(*worker);
+    }
 }
