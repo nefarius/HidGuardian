@@ -33,35 +33,35 @@ SOFTWARE.
 NTSTATUS
 HidGuardianQueueInitialize(
     _In_ WDFDEVICE Device
-    )
+)
 {
     WDFQUEUE queue;
     NTSTATUS status;
     WDF_IO_QUEUE_CONFIG    queueConfig;
 
     PAGED_CODE();
-    
+
     //
     // Configure a default queue so that requests that are not
     // configure-fowarded using WdfDeviceConfigureRequestDispatching to goto
     // other queues get dispatched here.
     //
     WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(
-         &queueConfig,
+        &queueConfig,
         WdfIoQueueDispatchParallel
-        );
+    );
 
     queueConfig.EvtIoDefault = HidGuardianEvtIoDefault;
     queueConfig.EvtIoDeviceControl = HidGuardianEvtIoDeviceControl;
 
     status = WdfIoQueueCreate(
-                 Device,
-                 &queueConfig,
-                 WDF_NO_OBJECT_ATTRIBUTES,
-                 &queue
-                 );
+        Device,
+        &queueConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &queue
+    );
 
-    if( !NT_SUCCESS(status) ) {
+    if (!NT_SUCCESS(status)) {
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_QUEUE, "WdfIoQueueCreate failed %!STATUS!", status);
         return status;
     }
@@ -89,7 +89,7 @@ VOID HidGuardianEvtIoDefault(
 
     if (ret == FALSE) {
         status = WdfRequestGetStatus(Request);
-        TraceEvents(TRACE_LEVEL_ERROR, 
+        TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_QUEUE,
             "WdfRequestSend failed: %!STATUS!", status);
         WdfRequestComplete(Request, status);
@@ -120,7 +120,7 @@ HidGuardianEvtIoDeviceControl(
 
     UNREFERENCED_PARAMETER(OutputBufferLength);
     UNREFERENCED_PARAMETER(InputBufferLength);
-    
+
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Entry");
 
     device = WdfIoQueueGetDevice(Queue);
@@ -275,6 +275,16 @@ HidGuardianEvtIoDeviceControl(
                 (ULONG)bufferLength,
                 (ULONG)sizeof(HIDGUARDIAN_SET_CREATE_REQUEST));
         }
+
+        break;
+
+#pragma endregion
+
+#pragma region IOCTL_HIDGUARDIAN_IS_ACTIVE
+
+    case IOCTL_HIDGUARDIAN_IS_ACTIVE:
+
+        status = STATUS_SUCCESS;
 
         break;
 

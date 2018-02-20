@@ -24,6 +24,11 @@
                                                                     METHOD_BUFFERED,    \
                                                                     FILE_WRITE_ACCESS)
 
+#define IOCTL_HIDGUARDIAN_IS_ACTIVE                 CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
+                                                                    IOCTL_INDEX + 0x02, \
+                                                                    METHOD_BUFFERED,    \
+                                                                    FILE_ANY_ACCESS)
+
 
 #include <pshpack1.h>
 
