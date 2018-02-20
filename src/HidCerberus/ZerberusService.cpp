@@ -3,6 +3,7 @@
 #include "DeviceEnumerator.h"
 #include <devioctl.h>
 #include "HidGuardian.h"
+#include "GuardedDevice.h"
 
 #define POCO_NO_UNWINDOWS
 #include <Poco/AutoPtr.h>
@@ -15,7 +16,6 @@
 #include <Poco/Path.h>
 #include <Poco/WindowsConsoleChannel.h>
 #include <Poco/SplitterChannel.h>
-#include <Poco/ThreadPool.h>
 #include <Poco/SharedPtr.h>
 #include <Poco/Data/Session.h>
 #include <Poco/Data/SQLite/Connector.h>
@@ -24,7 +24,6 @@
 #include <Poco/Buffer.h>
 #include <Poco/Util/RegExpValidator.h>
 #include <Poco/Util/HelpFormatter.h>
-#include "GuardedDevice.h"
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -36,7 +35,6 @@ using Poco::AsyncChannel;
 using Poco::Path;
 using Poco::WindowsConsoleChannel;
 using Poco::SplitterChannel;
-using Poco::ThreadPool;
 using Poco::SharedPtr;
 using Poco::Data::Session;
 using Poco::Data::SQLite::Connector;
