@@ -4,12 +4,14 @@
 #include <Poco/Runnable.h>
 #include <Poco/Random.h>
 #include <Poco/Data/Session.h>
+#include <Poco/RefCountedObject.h>
 
 using Poco::Random;
 using Poco::Data::Session;
+using Poco::RefCountedObject;
 
 class PermissionRequestWorker : 
-    public Poco::Runnable
+    public Poco::Runnable, public RefCountedObject
 {
     HANDLE _controlDevice;
     Random _rnd;
@@ -21,8 +23,10 @@ public:
         : _controlDevice(controlDevice), _session(dbSession)
     {
     }
-    ~PermissionRequestWorker() {};
-
+    
     void run() override;
+
+protected:
+    ~PermissionRequestWorker() {};
 };
 

@@ -203,7 +203,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto threads = config().getInt("threadpool.count", 20);
     SharedPtr<ThreadPool> pPermPool(new ThreadPool(threads, threads));
-    std::vector<SharedPtr<PermissionRequestWorker>> workers;
+    std::vector<AutoPtr<PermissionRequestWorker>> workers;
 
     for (size_t i = 0; i < threads; i++)
     {
