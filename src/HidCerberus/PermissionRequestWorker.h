@@ -1,32 +1,30 @@
 #pragma once
 
 #define POCO_NO_UNWINDOWS
-#include <Poco/Runnable.h>
+#include <Poco/Task.h>
 #include <Poco/Random.h>
 #include <Poco/Data/Session.h>
-#include <Poco/RefCountedObject.h>
 
 using Poco::Random;
 using Poco::Data::Session;
-using Poco::RefCountedObject;
 
-class PermissionRequestWorker : 
-    public Poco::Runnable, public RefCountedObject
+class PermissionRequestWorker :
+    public Poco::Task
 {
-    HANDLE _controlDevice;
+    HANDLE _deviceHandle;
     Random _rnd;
     Session _session;
     const int _bufferSize = 1024;
 
 public:
-    PermissionRequestWorker(HANDLE controlDevice, const Session& dbSession) 
-        : _controlDevice(controlDevice), _session(dbSession)
+    PermissionRequestWorker(HANDLE deviceHandle, const Session& dbSession)
+        : _deviceHandle(deviceHandle), _session(dbSession), Task("PermissionRequestWorker")
     {
     }
-    
-    void run() override;
+
+    void runTask() override;
 
 protected:
-    ~PermissionRequestWorker() {};
+    ~PermissionRequestWorker() {}
 };
 

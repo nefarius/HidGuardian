@@ -30,7 +30,7 @@ using Poco::Buffer;
 using Poco::icompare;
 
 
-void PermissionRequestWorker::run()
+void PermissionRequestWorker::runTask()
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
@@ -50,7 +50,7 @@ void PermissionRequestWorker::run()
 
     pHgGet = (PHIDGUARDIAN_GET_CREATE_REQUEST)malloc(pHgGetSize);
 
-    while (true)
+    while (!isCancelled())
     {
         ZeroMemory(&hgSet, sizeof(HIDGUARDIAN_SET_CREATE_REQUEST));
         ZeroMemory(pHgGet, pHgGetSize);
@@ -61,10 +61,10 @@ void PermissionRequestWorker::run()
         pHgGet->RequestId = reqId;
 
         if (logger.is(Poco::Message::PRIO_DEBUG))
-            logger.debug("Queuing inverted call %lu", pHgGet->RequestId);
+            logger.debug("Looking for quests (ID: %lu)", pHgGet->RequestId);
 
         DeviceIoControl(
-            _controlDevice,
+            _deviceHandle,
             IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST,
             pHgGet,
             pHgGetSize,
@@ -74,20 +74,23 @@ void PermissionRequestWorker::run()
             &lOverlapped
         );
 
-        if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) == 0)
+        if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
-            logger.error("Inverted call %lu failed", pHgGet->RequestId);
+            if (GetLastError() == ERROR_NO_MORE_ITEMS) {
+                sleep(200);
+                continue;
+            }
+
+            logger.error("Request (ID: %lu) failed: %lu", pHgGet->RequestId, (ULONG)GetLastError());
             break;
         }
 
         if (logger.is(Poco::Message::PRIO_DEBUG)) {
-            logger.debug("Inverted call %lu completed", pHgGet->RequestId);
-            logger.debug("RequestId: %lu", pHgGet->RequestId);
-            logger.debug("DeviceIndex: %lu", pHgGet->DeviceIndex);
+            logger.debug("Request (ID: %lu) completed", pHgGet->RequestId);
+            logger.debug("PID: %lu", pHgGet->ProcessId);
         }
 
         hgSet.RequestId = pHgGet->RequestId;
-        hgSet.DeviceIndex = pHgGet->DeviceIndex;
 
 #pragma region Extract Hardware IDs
 
@@ -97,7 +100,13 @@ void PermissionRequestWorker::run()
         {
             using convert_type = std::codecvt_utf8<wchar_t>;
             std::wstring_convert<convert_type, wchar_t> converter;
-            hardwareIds.push_back(converter.to_bytes(szIter));
+            std::string id(converter.to_bytes(szIter));
+
+            if (logger.is(Poco::Message::PRIO_DEBUG)) {
+                logger.debug("Hardware ID: %s", id);
+            }
+
+            hardwareIds.push_back(id);
         }
 
 #pragma endregion
@@ -119,7 +128,7 @@ void PermissionRequestWorker::run()
             Buffer<wchar_t> szProcessName(_bufferSize);
             Buffer<wchar_t> lpFilename(_bufferSize);
 
-            GetModuleFileNameEx(hProcess, NULL, lpFilename.begin(), lpFilename.size());
+            GetModuleFileNameEx(hProcess, NULL, lpFilename.begin(), (DWORD)lpFilename.size());
 
             using convert_type = std::codecvt_utf8<wchar_t>;
             std::wstring_convert<convert_type, wchar_t> converter;
@@ -129,7 +138,7 @@ void PermissionRequestWorker::run()
             if (EnumProcessModules(hProcess, &hMod, sizeof(hMod),
                 &cbNeeded))
             {
-                GetModuleBaseName(hProcess, hMod, szProcessName.begin(), szProcessName.size());
+                GetModuleBaseName(hProcess, hMod, szProcessName.begin(), (DWORD)szProcessName.size());
 
                 moduleName = converter.to_bytes(szProcessName.begin());
             }
@@ -173,7 +182,7 @@ void PermissionRequestWorker::run()
         }
 
         DeviceIoControl(
-            _controlDevice,
+            _deviceHandle,
             IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST,
             &hgSet,
             sizeof(HIDGUARDIAN_SET_CREATE_REQUEST),
@@ -183,7 +192,7 @@ void PermissionRequestWorker::run()
             &lOverlapped
         );
 
-        if (GetOverlappedResult(_controlDevice, &lOverlapped, &bytesReturned, TRUE) == 0)
+        if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
             logger.error("Permission request %lu failed", pHgGet->RequestId);
             break;

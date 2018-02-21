@@ -47,16 +47,41 @@ typedef struct _DEVICE_CONTEXT
     PCWSTR          HardwareIDs;
 
     size_t          HardwareIDsLength;
-
-    WDFQUEUE        PendingAuthQueue;
-
+       
+    //
+    // Queue for incoming create requests
+    // 
     WDFQUEUE        CreateRequestsQueue;
 
-    WDFQUEUE        InvertedCallQueue;
+    //
+    // Queue for pending create requests (for pickup by Cerberus)
+    // 
+    WDFQUEUE        PendingCreateRequestsQueue;
 
+    //
+    // Queue for pending create requests (while waiting for answer)
+    // 
+    WDFQUEUE        PendingAuthQueue;
+
+    //
+    // Linked list containing cached Process IDs and their access state
+    // 
     PPID_LIST_NODE  StickyPidList;
 
+    //
+    // Default behavior for requests unguarded by Cerberus
+    // 
     BOOLEAN         AllowByDefault;
+
+    //
+    // Process ID of Cerberus (if connected)
+    // 
+    ULONG           CerberusPid;
+
+    //
+    // State of Cerberus connection
+    // 
+    BOOLEAN         IsCerberusConnected;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
@@ -87,6 +112,5 @@ HidGuardianCreateDevice(
 
 EVT_WDF_DEVICE_CONTEXT_CLEANUP HidGuardianEvtDeviceContextCleanup;
 EVT_WDF_FILE_CLEANUP EvtFileCleanup;
-EVT_WDF_IO_QUEUE_IO_DEFAULT EvtWdfCreateRequestsQueueIoDefault;
 
 EXTERN_C_END

@@ -57,9 +57,9 @@ HidGuardianCreateDevice(
 
     WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
     deviceAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-    WDF_FILEOBJECT_CONFIG_INIT(&deviceConfig, 
-        WDF_NO_EVENT_CALLBACK, 
-        WDF_NO_EVENT_CALLBACK, 
+    WDF_FILEOBJECT_CONFIG_INIT(&deviceConfig,
+        WDF_NO_EVENT_CALLBACK,
+        WDF_NO_EVENT_CALLBACK,
         EvtFileCleanup
     );
 
@@ -187,19 +187,19 @@ HidGuardianCreateDevice(
 
 #pragma endregion
 
-#pragma region Create InvertedCallQueue I/O Queue
+#pragma region Create PendingCreateRequestsQueue I/O Queue
 
         WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchManual);
 
         status = WdfIoQueueCreate(device,
             &queueConfig,
             WDF_NO_OBJECT_ATTRIBUTES,
-            &deviceContext->InvertedCallQueue
+            &deviceContext->PendingCreateRequestsQueue
         );
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
-                "WdfIoQueueCreate (InvertedCallQueue) failed with %!STATUS!", status);
+                "WdfIoQueueCreate (PendingCreateRequestsQueue) failed with %!STATUS!", status);
             return status;
         }
 
@@ -222,8 +222,8 @@ HidGuardianCreateDevice(
             return status;
         }
 
-        status = WdfDeviceConfigureRequestDispatching(device, 
-            deviceContext->CreateRequestsQueue, 
+        status = WdfDeviceConfigureRequestDispatching(device,
+            deviceContext->CreateRequestsQueue,
             WdfRequestTypeCreate
         );
         if (!NT_SUCCESS(status)) {
@@ -349,285 +349,6 @@ WDF status code
 
 _Use_decl_annotations_
 VOID
-EvtWdfCreateRequestsQueueIoDefault(
-    WDFQUEUE  Queue,
-    WDFREQUEST  Request
-)
-{
-    NTSTATUS                            status;
-    WDFDEVICE                           device;
-    PCONTROL_DEVICE_CONTEXT             pControlCtx;
-    WDFREQUEST                          invertedCall;
-    size_t                              bufferLength = 0;
-    PHIDGUARDIAN_GET_CREATE_REQUEST     pGetCreateRequest;
-    ULONG                               index;
-    DWORD                               pid;
-    PDEVICE_CONTEXT                     pDeviceCtx;
-    WDF_OBJECT_ATTRIBUTES               requestAttribs;
-    PCREATE_REQUEST_CONTEXT             pRequestCtx = NULL;
-    ULONG                               hwidBufferLength;
-    BOOLEAN                             ret;
-    WDF_REQUEST_SEND_OPTIONS            options;
-    BOOLEAN                             allowed;
-    LONGLONG                            lockTimeout = WDF_REL_TIMEOUT_IN_US(10);
-
-
-    PAGED_CODE();
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
-
-    device = WdfIoQueueGetDevice(Queue);
-    pControlCtx = ControlDeviceGetContext(ControlDevice);
-    pDeviceCtx = DeviceGetContext(device);
-    pid = CURRENT_PROCESS_ID();
-
-    TraceEvents(TRACE_LEVEL_VERBOSE,
-        TRACE_DEVICE,
-        ">> Current PID: %d",
-        pid);
-
-    //
-    // Check PID against internal list to speed up validation
-    // 
-    if (PID_LIST_CONTAINS(&pDeviceCtx->StickyPidList, pid, &allowed)) {
-        TraceEvents(TRACE_LEVEL_INFORMATION,
-            TRACE_DEVICE,
-            "Request belongs to sticky PID %d, processing",
-            pid);
-
-        if (allowed) {
-            //
-            // Sticky PID allowed, forward request instantly
-            // 
-            goto allowAccess;
-        }
-        else {
-            //
-            // Sticky PID denied, fail request instantly
-            // 
-            goto blockAccess;
-        }
-    }
-
-    //
-    // Skip checks if no decision-maker is present
-    // 
-#ifdef BLARGH
-    if (!pControlCtx->IsServicePresent) {
-        goto defaultAction;
-    }
-#endif
-
-    //
-    // Get inverted call to communicate with the user-mode application
-    // 
-    status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->InvertedCallQueue, &invertedCall);
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_WARNING,
-            TRACE_DEVICE,
-            "WdfIoQueueRetrieveNextRequest failed with status %!STATUS!", status);
-
-        goto defaultAction;
-    }
-
-    //
-    // Get buffer of request
-    // 
-    status = WdfRequestRetrieveOutputBuffer(
-        invertedCall,
-        sizeof(HIDGUARDIAN_GET_CREATE_REQUEST),
-        (void*)&pGetCreateRequest,
-        &bufferLength);
-
-    //
-    // Validate output buffer
-    // 
-    if (!NT_SUCCESS(status) || bufferLength != pGetCreateRequest->Size)
-    {
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_DEVICE,
-            "Packet size mismatch: %d != %d", (ULONG)bufferLength, pGetCreateRequest->Size);
-
-        WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
-
-        //
-        // There request data buffer is malformed, skip
-        // 
-        goto defaultAction;
-    }
-
-#pragma region HOLDING LOCK
-
-    status = WdfWaitLockAcquire(FilterDeviceCollectionLock, &lockTimeout);
-
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_DEVICE,
-            "Couldn't acquire device collection lock in time");
-
-        goto defaultAction;
-    }
-
-    //
-    // Search for our device in the collection to get index
-    // 
-    for (
-        index = 0;
-        index < WdfCollectionGetCount(FilterDeviceCollection);
-        index++
-        )
-    {
-        //
-        // Assign request and device details to inverted call
-        // 
-        if (WdfCollectionGetItem(FilterDeviceCollection, index) == device)
-        {
-            TraceEvents(TRACE_LEVEL_INFORMATION,
-                TRACE_DEVICE,
-                "Request ID: %d",
-                pGetCreateRequest->RequestId);
-
-            pGetCreateRequest->DeviceIndex = index;
-
-            TraceEvents(TRACE_LEVEL_INFORMATION,
-                TRACE_DEVICE,
-                "Found our device at index %d",
-                pGetCreateRequest->DeviceIndex);
-
-            pGetCreateRequest->ProcessId = pid;
-
-            TraceEvents(TRACE_LEVEL_INFORMATION,
-                TRACE_DEVICE,
-                "PID associated to this request: %d",
-                pGetCreateRequest->ProcessId);
-
-            hwidBufferLength = pGetCreateRequest->Size - sizeof(HIDGUARDIAN_GET_CREATE_REQUEST);
-
-            TraceEvents(TRACE_LEVEL_VERBOSE,
-                TRACE_DEVICE,
-                "Size for string: %d", hwidBufferLength);
-
-            if (hwidBufferLength >= pDeviceCtx->HardwareIDsLength)
-            {
-                RtlCopyMemory(
-                    pGetCreateRequest->HardwareIds,
-                    pDeviceCtx->HardwareIDs,
-                    pDeviceCtx->HardwareIDsLength
-                );
-            }
-
-            break;
-        }
-    }
-
-    WdfWaitLockRelease(FilterDeviceCollectionLock);
-
-#pragma endregion
-
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);
-    requestAttribs.ParentObject = Request;
-
-    //
-    // Add custom context to request so we can validate it later
-    // 
-    status = WdfObjectAllocateContext(
-        Request,
-        &requestAttribs,
-        (PVOID)&pRequestCtx
-    );
-
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_DEVICE,
-            "WdfObjectAllocateContext failed with status %!STATUS!", status);
-
-        WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
-
-        goto defaultAction;
-    }
-
-    //
-    // Pass identification information to request context
-    // 
-    pRequestCtx->ProcessId = pGetCreateRequest->ProcessId;
-    pRequestCtx->RequestId = pGetCreateRequest->RequestId;
-
-    //
-    // Information has been passed to user-land, queue this request for 
-    // later confirmation (or block) action.
-    // 
-    status = WdfRequestForwardToIoQueue(Request, pDeviceCtx->PendingAuthQueue);
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_DEVICE,
-            "WdfRequestForwardToIoQueue failed with status %!STATUS!", status);
-
-        WdfRequestCompleteWithInformation(invertedCall, status, bufferLength);
-
-        goto defaultAction;
-    }
-
-    //
-    // Complete inverted call. Now it's up to the user-mode service
-    // to decide what to do and invoke another IRP
-    // 
-    WdfRequestCompleteWithInformation(invertedCall, STATUS_SUCCESS, bufferLength);
-
-    //
-    // Request is queued and pending, we're done here
-    // 
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access pending)");
-
-    return;
-
-defaultAction:
-
-    if (pDeviceCtx->AllowByDefault) {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "Default action requested: allow");
-        goto allowAccess;
-    }
-    else {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "Default action requested: deny");
-        goto blockAccess;
-    }
-
-allowAccess:
-
-    WdfRequestFormatRequestUsingCurrentType(Request);
-
-    //
-    // Send request down the stack
-    // 
-    WDF_REQUEST_SEND_OPTIONS_INIT(&options,
-        WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
-
-    ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(device), &options);
-
-    if (ret == FALSE) {
-        status = WdfRequestGetStatus(Request);
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_DEVICE,
-            "WdfRequestSend failed: %!STATUS!", status);
-        WdfRequestComplete(Request, status);
-    }
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access granted)");
-
-    return;
-
-blockAccess:
-
-    //
-    // If forwarding fails, fall back to blocking access
-    // 
-    WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit (access blocked)");
-}
-
-_Use_decl_annotations_
-VOID
 EvtFileCleanup(
     WDFFILEOBJECT  FileObject
 )
@@ -635,21 +356,28 @@ EvtFileCleanup(
     WDFDEVICE                   device;
     PDEVICE_CONTEXT             pDeviceCtx;
     ULONG                       pid;
-    PCONTROL_DEVICE_CONTEXT     pControlCtx;
+
 
     PAGED_CODE();
 
     device = WdfFileObjectGetDevice(FileObject);
     pDeviceCtx = DeviceGetContext(device);
-    pControlCtx = ControlDeviceGetContext(ControlDevice);
     pid = CURRENT_PROCESS_ID();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", pid);
 
-    if (!pControlCtx->IsServicePresent && PID_LIST_REMOVE_BY_PID(&pDeviceCtx->StickyPidList, pid)) {
+    if (pDeviceCtx->CerberusPid == pid) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
-            "Our guardian service is gone, removed sticky PID: %d", pid);
+            "Cerberus has left the realm");
+
+        pDeviceCtx->IsCerberusConnected = FALSE;
+
+        WdfIoQueuePurgeSynchronously(pDeviceCtx->PendingCreateRequestsQueue);
+        WdfIoQueueStart(pDeviceCtx->PendingCreateRequestsQueue);
+
+        WdfIoQueuePurgeSynchronously(pDeviceCtx->PendingAuthQueue);
+        WdfIoQueueStart(pDeviceCtx->PendingAuthQueue);
     }
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");

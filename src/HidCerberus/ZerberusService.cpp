@@ -135,7 +135,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     //
     // Get database path
     // 
-    Poco::File dbFile(config().getString("database.path", "Zerberus.db"));
+    Poco::File dbFile(config().getString("database.path", "HidCerberus.db"));
     logger.information("Loading database [%s]", dbFile.path());
 
     //
@@ -167,14 +167,13 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto devicePath = config().getString("args.devicePath");
 
-    logger.information("Opening control device %s", devicePath);
+    logger.information("Opening device %s", devicePath);
 
-    AutoPtr<GuardedDevice> dev(new GuardedDevice(devicePath, config(), session));
+    AutoPtr<GuardedDevice> dev;
 
     try
     {
-        dev->open();
-        dev->guard();
+        dev = new GuardedDevice(devicePath, config(), session);
     }
     catch (const std::exception& ex)
     {

@@ -2,26 +2,17 @@
 #include <HidGuardian.h>
 #include <devioctl.h>
 
+#include <Poco/Logger.h>
+
+using Poco::Logger;
+
 
 GuardedDevice::GuardedDevice(const std::string & devicePath, const LayeredConfiguration& config, const Session& session)
     : _devicePath(devicePath), _config(config), _session(session)
-{
-    _workerCount = config.getInt("threadpool.count", 20);
-    _workerPool = new ThreadPool(_workerCount, _workerCount);
-}
-
-GuardedDevice::~GuardedDevice()
-{
-    if (_deviceHandle != INVALID_HANDLE_VALUE) {
-        CloseHandle(_deviceHandle);
-    }
-}
-
-void GuardedDevice::open()
-{
+{    
     DWORD bytesReturned = 0;
     OVERLAPPED lOverlapped = { 0 };
-    
+
     _deviceHandle = CreateFileA(_devicePath.c_str(),
         GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -63,15 +54,35 @@ void GuardedDevice::open()
         throw std::runtime_error("The device doesn't have HidGuardian attached.");
     }
 
+    DeviceIoControl(
+        _deviceHandle,
+        IOCTL_HIDGUARDIAN_REGISTER_CERBERUS,
+        nullptr,
+        0,
+        nullptr,
+        0,
+        &bytesReturned,
+        &lOverlapped
+    );
+
+    if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
+    {
+        CloseHandle(lOverlapped.hEvent);
+        throw std::runtime_error("Couldn't register Cerberus to driver.");
+    }
+
     CloseHandle(lOverlapped.hEvent);
+
+    _taskManager.start(new PermissionRequestWorker(_deviceHandle, _session));
 }
 
-void GuardedDevice::guard()
+GuardedDevice::~GuardedDevice()
 {
-    for (size_t i = 0; i < _workerCount; i++)
-    {
-        auto worker = new PermissionRequestWorker(_deviceHandle, _session);
-        _workers.push_back(worker);
-        _workerPool->start(*worker);
+    _taskManager.cancelAll();
+    _taskManager.joinAll();
+
+    if (_deviceHandle != INVALID_HANDLE_VALUE) {
+        CloseHandle(_deviceHandle);
     }
 }
+

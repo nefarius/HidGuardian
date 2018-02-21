@@ -283,7 +283,6 @@ VOID HidGuardianSidebandIoDeviceControl(
 {
     NTSTATUS                            status = STATUS_INVALID_PARAMETER;
     size_t                              bufferLength;
-    PCONTROL_DEVICE_CONTEXT             pControlCtx;
     PHIDGUARDIAN_SET_CREATE_REQUEST     pSetCreateRequest;
     WDFDEVICE                           device;
     WDFREQUEST                          authRequest;
@@ -291,43 +290,16 @@ VOID HidGuardianSidebandIoDeviceControl(
     WDF_REQUEST_SEND_OPTIONS            options;
     BOOLEAN                             ret;
     PCREATE_REQUEST_CONTEXT             pRequestCtx;
-    LONGLONG                            lockTimeout = WDF_REL_TIMEOUT_IN_US(10);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
 
-    pControlCtx = ControlDeviceGetContext(WdfIoQueueGetDevice(Queue));
+    device = WdfIoQueueGetDevice(Queue);
+    pDeviceCtx = DeviceGetContext(device);
 
     UNREFERENCED_PARAMETER(OutputBufferLength);
 
     switch (IoControlCode)
     {
-#pragma region IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST
-
-        //
-        // Queues an inverted call for the driver to respond 
-        // back to the user-mode service.
-        // 
-    case IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST:
-
-        TraceEvents(TRACE_LEVEL_INFORMATION,
-            TRACE_SIDEBAND, "IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST");
-
-        status = WdfRequestForwardToIoQueue(Request, pControlCtx->InvertedCallQueue);
-        if (!NT_SUCCESS(status)) {
-            TraceEvents(TRACE_LEVEL_ERROR,
-                TRACE_SIDEBAND,
-                "WdfRequestForwardToIoQueue failed with status %!STATUS!", status);
-            WdfRequestComplete(Request, status);
-            return;
-        }
-
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit (inverted call queued)");
-
-        return;
-
-        break;
-
-#pragma endregion
 
 #pragma region IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST
 
@@ -349,44 +321,7 @@ VOID HidGuardianSidebandIoDeviceControl(
         // Validate buffer size of request
         // 
         if (NT_SUCCESS(status) && InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST))
-        {
-            status = WdfWaitLockAcquire(FilterDeviceCollectionLock, &lockTimeout);
-
-            if (!NT_SUCCESS(status)) {
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_SIDEBAND,
-                    "Couldn't acquire device collection lock in time");
-                break;
-            }
-
-            //
-            // Get device & context this authentication request is targeted at
-            // 
-            device = WdfCollectionGetItem(FilterDeviceCollection, pSetCreateRequest->DeviceIndex);
-
-            if (!device) {
-                status = STATUS_INVALID_PARAMETER;
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_SIDEBAND,
-                    "Device with index %d not found", pSetCreateRequest->DeviceIndex);
-                WdfWaitLockRelease(FilterDeviceCollectionLock);
-                break;
-            }
-
-            pDeviceCtx = DeviceGetContext(device);
-
-            //
-            // User input might be bogus
-            // 
-            if (!pDeviceCtx) {
-                status = STATUS_INVALID_PARAMETER;
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_SIDEBAND,
-                    "Context of device with index %d not found", pSetCreateRequest->DeviceIndex);
-                WdfWaitLockRelease(FilterDeviceCollectionLock);
-                break;
-            }
-                        
+        {                        
             //
             // Pop auth request from device queue
             // 
@@ -395,7 +330,6 @@ VOID HidGuardianSidebandIoDeviceControl(
                 TraceEvents(TRACE_LEVEL_ERROR,
                     TRACE_SIDEBAND,
                     "WdfIoQueueRetrieveNextRequest (PendingAuthQueue) failed with status %!STATUS!", status);
-                WdfWaitLockRelease(FilterDeviceCollectionLock);
                 break;
             }
 
@@ -418,7 +352,6 @@ VOID HidGuardianSidebandIoDeviceControl(
                         "Failed to re-enqueue request with ID %X", pRequestCtx->RequestId);
                 }
 
-                WdfWaitLockRelease(FilterDeviceCollectionLock);
                 break;
             }
 
@@ -479,8 +412,6 @@ VOID HidGuardianSidebandIoDeviceControl(
                 // 
                 WdfRequestComplete(authRequest, STATUS_ACCESS_DENIED);
             }
-
-            WdfWaitLockRelease(FilterDeviceCollectionLock);
         }
         else {
             TraceEvents(TRACE_LEVEL_WARNING,

@@ -37,6 +37,7 @@ HidGuardianQueueInitialize(
 //
 EVT_WDF_IO_QUEUE_IO_DEFAULT HidGuardianEvtIoDefault;
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL HidGuardianEvtIoDeviceControl;
+EVT_WDF_IO_QUEUE_IO_DEFAULT EvtWdfCreateRequestsQueueIoDefault;
 
 
 EXTERN_C_END

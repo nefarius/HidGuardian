@@ -5,7 +5,7 @@
 #define NTDEVICE_NAME_STRING        L"\\Device\\HidGuardian"
 #define SYMBOLIC_NAME_STRING        L"\\DosDevices\\HidGuardian"
 
-#define IOCTL_INDEX                 0x801
+#define IOCTL_INDEX                 0x901
 #define FILE_DEVICE_HIDGUARDIAN     32768U
 
 //
@@ -26,6 +26,11 @@
 
 #define IOCTL_HIDGUARDIAN_IS_ACTIVE                 CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
                                                                     IOCTL_INDEX + 0x02, \
+                                                                    METHOD_BUFFERED,    \
+                                                                    FILE_ANY_ACCESS)
+
+#define IOCTL_HIDGUARDIAN_REGISTER_CERBERUS         CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
+                                                                    IOCTL_INDEX + 0x03, \
                                                                     METHOD_BUFFERED,    \
                                                                     FILE_ANY_ACCESS)
 
@@ -52,11 +57,6 @@ typedef struct _HIDGUARDIAN_GET_CREATE_REQUEST
     OUT ULONG ProcessId;
 
     //
-    // Index of device this request belongs to (zero-based)
-    // 
-    OUT ULONG DeviceIndex;
-
-    //
     // Buffer containing Hardware ID string
     // 
     OUT WCHAR HardwareIds[];
@@ -70,11 +70,6 @@ typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
     // Arbitrary value to match request and response
     // 
     IN ULONG RequestId;
-
-    //
-    // Index of device this request belongs to (zero-based)
-    // 
-    IN ULONG DeviceIndex;
 
     //
     // TRUE if WdfRequestTypeCreate is allowed, FALSE otherwise
