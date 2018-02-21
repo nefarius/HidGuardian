@@ -4,6 +4,7 @@
 #include <devioctl.h>
 #include "HidGuardian.h"
 #include "GuardedDevice.h"
+#include "DeviceListener.h"
 
 #define POCO_NO_UNWINDOWS
 #include <Poco/AutoPtr.h>
@@ -17,13 +18,16 @@
 #include <Poco/WindowsConsoleChannel.h>
 #include <Poco/SplitterChannel.h>
 #include <Poco/SharedPtr.h>
-#include <Poco/Data/Session.h>
 #include <Poco/Data/SQLite/Connector.h>
 #include <Poco/Data/SQLite/Utility.h>
 #include <Poco/File.h>
 #include <Poco/Buffer.h>
 #include <Poco/Util/RegExpValidator.h>
 #include <Poco/Util/HelpFormatter.h>
+#include <Poco/ThreadPool.h>
+#include <Poco/BasicEvent.h>
+#include <Poco/Delegate.h>
+#include <Poco/AutoPtr.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -36,12 +40,15 @@ using Poco::Path;
 using Poco::WindowsConsoleChannel;
 using Poco::SplitterChannel;
 using Poco::SharedPtr;
-using Poco::Data::Session;
 using Poco::Data::SQLite::Connector;
 using namespace Poco::Data::Keywords;
 using Poco::Buffer;
 using Poco::Util::RegExpValidator;
 using Poco::Util::HelpFormatter;
+using Poco::ThreadPool;
+using Poco::BasicEvent;
+using Poco::Delegate;
+using Poco::AutoPtr;
 
 
 void ZerberusService::enumerateDeviceInterface(const std::string& name, const std::string& value)
@@ -71,6 +78,24 @@ void ZerberusService::displayHelp()
     helpFormatter.setUsage("[options]");
     helpFormatter.setHeader("HidGuardian management and control application.");
     helpFormatter.format(std::cout);
+}
+
+void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
+{
+    auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
+
+    logger.information("New device arrived: %s", name);
+
+    AutoPtr<GuardedDevice> dev;
+
+    try
+    {
+        dev = new GuardedDevice(name, config(), *_session);
+    }
+    catch (const std::exception& ex)
+    {
+        logger.fatal("Fatal error: %s", std::string(ex.what()));
+    }
 }
 
 void ZerberusService::initialize(Application & self)
@@ -160,14 +185,20 @@ int ZerberusService::main(const std::vector<std::string>& args)
     //
     // Create in-memory database, initialize from file
     // 
-    Session session("SQLite", ":memory:");
-    Poco::Data::SQLite::Utility::fileToMemory(session, dbFile.path());
+    _session = new Session("SQLite", ":memory:");
+    Poco::Data::SQLite::Utility::fileToMemory(*_session, dbFile.path());
 
     logger.information("Database loaded");
+        
+    logger.information("Starting listening for new devices");
 
-    auto devicePath = config().getString("args.devicePath");
+    AutoPtr<DeviceListener> dl(new DeviceListener);
 
-    logger.information("Opening device %s", devicePath);
+    dl->deviceArrived += Poco::delegate(this, &ZerberusService::onDeviceArrived);
+
+    ThreadPool::defaultPool().start(*dl);
+
+#ifdef NOPE
 
     AutoPtr<GuardedDevice> dev;
 
@@ -181,12 +212,16 @@ int ZerberusService::main(const std::vector<std::string>& args)
         return Application::EXIT_UNAVAILABLE;
     }    
 
+#endif
+
     logger.information("Done, up and running");
 
     if (!config().getBool("application.runAsService", false))
     {
         logger.information("Press CTRL+C to terminate");
     }
+
+
 
     waitForTerminationRequest();
 
@@ -216,7 +251,7 @@ void ZerberusService::defineOptions(OptionSet & options)
 
     options.addOption(
         Option("devicePath", "d", "The path of the device to guard.")
-        .required(true)
+        .required(false)
         .repeatable(false)
         .argument("path")
         .binding("args.devicePath"));

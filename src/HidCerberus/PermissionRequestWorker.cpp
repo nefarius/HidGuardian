@@ -77,7 +77,7 @@ void PermissionRequestWorker::runTask()
         if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
             if (GetLastError() == ERROR_NO_MORE_ITEMS) {
-                sleep(200);
+                Sleep(1000);
                 continue;
             }
 
