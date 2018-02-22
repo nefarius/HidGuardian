@@ -3,6 +3,10 @@
 #include "GuardedDevice.h"
 #include "DeviceListener.h"
 
+#include <initguid.h>
+#include <usbiodef.h>
+#include <hidclass.h>
+
 #define POCO_NO_UNWINDOWS
 #include <Poco/Util/Option.h>
 #include <Poco/Util/OptionSet.h>
@@ -188,7 +192,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
         
     logger.information("Starting listening for new devices");
 
-    AutoPtr<DeviceListener> dl(new DeviceListener);
+    AutoPtr<DeviceListener> dl(new DeviceListener({ GUID_DEVINTERFACE_USB_DEVICE, GUID_DEVINTERFACE_HID }));
 
     //
     // Listen for arriving devices

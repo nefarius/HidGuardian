@@ -1,6 +1,4 @@
 #include "DeviceListener.h"
-#include <initguid.h>
-#include <usbiodef.h>
 #include <Dbt.h>
 
 #include <locale>
@@ -10,7 +8,7 @@
 
 LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    DeviceListener *pThis;
+    DeviceListener* pThis;
 
     if (msg == WM_NCCREATE)
     {
@@ -48,8 +46,9 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
                     using convert_type = std::codecvt_utf8<wchar_t>;
                     std::wstring_convert<convert_type, wchar_t> converter;
+                    std::string name(converter.to_bytes(iface->dbcc_name));
 
-                    pThis->deviceArrived.notifyAsync(pThis, converter.to_bytes(iface->dbcc_name));
+                    pThis->deviceArrived.notify(pThis, name);
                 }
 
             default:
@@ -67,17 +66,22 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-DeviceListener::DeviceListener() : Task("DeviceListener"), _windowHandle(nullptr), _deviceNotify(nullptr)
+DeviceListener::DeviceListener(std::initializer_list<GUID> interfaceGuids) : Task("DeviceListener"),
+                                                                             _windowHandle(nullptr),
+                                                                             _deviceNotify(nullptr),
+                                                                             _interfaceGuids(interfaceGuids)
 {
 }
 
 DeviceListener::~DeviceListener()
 {
-    if (_deviceNotify != nullptr) {
+    if (_deviceNotify != nullptr)
+    {
         UnregisterDeviceNotification(_deviceNotify);
     }
-    
-    if (_windowHandle != nullptr) {
+
+    if (_windowHandle != nullptr)
+    {
         DestroyWindow(_windowHandle);
     }
 
@@ -126,19 +130,23 @@ void DeviceListener::runTask()
         throw std::runtime_error("Could not get create the temporary window");
     }
 
-    DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
-    ZeroMemory(&NotificationFilter, sizeof(NotificationFilter));
+    for(auto iface : _interfaceGuids)
+    {
+        DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
+        ZeroMemory(&NotificationFilter, sizeof(NotificationFilter));
 
-    NotificationFilter.dbcc_size = sizeof(NotificationFilter);
-    NotificationFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
-    NotificationFilter.dbcc_reserved = 0;
+        NotificationFilter.dbcc_size = sizeof(NotificationFilter);
+        NotificationFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
+        NotificationFilter.dbcc_reserved = 0;
 
-    NotificationFilter.dbcc_classguid = GUID_DEVINTERFACE_USB_DEVICE;
+        NotificationFilter.dbcc_classguid = iface;
 
-    _deviceNotify = RegisterDeviceNotification(_windowHandle, &NotificationFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
+        _deviceNotify = RegisterDeviceNotification(_windowHandle, &NotificationFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
 
-    if (_deviceNotify == nullptr) {
-        throw std::runtime_error("Couldn't register for device notification");
+        if (_deviceNotify == nullptr)
+        {
+            throw std::runtime_error("Couldn't register for device notification");
+        }
     }
 
     //

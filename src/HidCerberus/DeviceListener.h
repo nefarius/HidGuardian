@@ -4,6 +4,8 @@
 #include <Windows.h>
 
 #include <string>
+#include <vector>
+#include <initializer_list>
 
 #include <Poco/Task.h>
 #include <Poco/BasicEvent.h>
@@ -16,12 +18,13 @@ class DeviceListener :
     WNDCLASSEX _windowClass{};
     HWND _windowHandle;
     HDEVNOTIFY _deviceNotify;
+    std::vector<GUID> _interfaceGuids;
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 public:
     BasicEvent<std::string> deviceArrived;
 
-    DeviceListener();
+    DeviceListener(std::initializer_list<GUID> interfaceGuids);
     ~DeviceListener();
 
     void runTask() override;

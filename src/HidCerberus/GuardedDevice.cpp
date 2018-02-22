@@ -31,9 +31,13 @@ using Poco::icompare;
 
 GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
     : Task(devicePath), _devicePath(std::move(devicePath)), _session(session)
-{    
+{       
     DWORD bytesReturned = 0;
     OVERLAPPED lOverlapped = { 0 };
+
+    auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
+
+    logger.debug("Trying to open device %s", _devicePath);
 
     //
     // Open device
@@ -56,12 +60,18 @@ GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
         }
 
         if (GetLastError() == ERROR_ACCESS_DENIED) {
-            throw std::runtime_error("Couldn't access control device, please make sure the device isn't already guarded.");
+            throw std::runtime_error("Couldn't access device, please make sure the device isn't already guarded.");
         }
+
+        throw std::runtime_error("Couldn't access device, unknown error.");
     }
+
+    logger.debug("Device opened");
 
     lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
+    logger.debug("Checking for presence of HidGuardian");
+    
     //
     // Check if the device responds to a HidGuardian-provided IOCTL
     // 
@@ -81,6 +91,10 @@ GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
         CloseHandle(lOverlapped.hEvent);
         throw std::runtime_error("The device doesn't have HidGuardian attached.");
     }
+
+    logger.debug("HidGuardian present");
+
+    logger.debug("Registering ourselfs as Cerberus");
 
     //
     // Announce your process as the Cerberus
@@ -103,13 +117,15 @@ GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
     }
 
     CloseHandle(lOverlapped.hEvent);
+
+    logger.debug("Done, ready to operate");
 }
 
 void GuardedDevice::runTask()
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
-    logger.debug("Worker running");
+    logger.debug("Worker running (%s)", _devicePath);
     _rnd.seed();
 
     //
