@@ -48,7 +48,7 @@ void PermissionRequestWorker::runTask()
     PHIDGUARDIAN_GET_CREATE_REQUEST pHgGet;
     HIDGUARDIAN_SET_CREATE_REQUEST hgSet;
 
-    pHgGet = (PHIDGUARDIAN_GET_CREATE_REQUEST)malloc(pHgGetSize);
+    pHgGet = static_cast<PHIDGUARDIAN_GET_CREATE_REQUEST>(malloc(pHgGetSize));
 
     while (!isCancelled())
     {
@@ -56,7 +56,7 @@ void PermissionRequestWorker::runTask()
         ZeroMemory(pHgGet, pHgGetSize);
         pHgGet->Size = pHgGetSize;
 
-        auto reqId = _rnd.next();
+        const auto reqId = _rnd.next();
 
         pHgGet->RequestId = reqId;
 

@@ -3,10 +3,6 @@
 #include <Windows.h>
 #include <initguid.h>
 #include <SetupAPI.h>
-#pragma comment(lib, "setupapi.lib")
-
-#include <hidsdi.h>
-#pragma comment(lib, "hid.lib")
 
 #include <locale>
 #include <codecvt>
@@ -91,8 +87,6 @@ std::vector<std::string> DeviceEnumerator::enumerateDeviceInterface(LPGUID inter
             free(detailDataBuffer);
             continue;
         }
-
-        //detailDataBuffer->DevicePath
 
         using convert_type = std::codecvt_utf8<wchar_t>;
         std::wstring_convert<convert_type, wchar_t> converter;
