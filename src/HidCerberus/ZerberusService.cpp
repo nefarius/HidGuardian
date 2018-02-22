@@ -1,8 +1,6 @@
 #include "ZerberusService.h"
 #include "PermissionRequestWorker.h"
 #include "DeviceEnumerator.h"
-#include <devioctl.h>
-#include "HidGuardian.h"
 #include "GuardedDevice.h"
 #include "DeviceListener.h"
 
@@ -27,7 +25,6 @@
 #include <Poco/ThreadPool.h>
 #include <Poco/BasicEvent.h>
 #include <Poco/Delegate.h>
-#include <Poco/AutoPtr.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -71,7 +68,7 @@ void ZerberusService::help(const std::string & name, const std::string & value)
     stopOptionsProcessing();
 }
 
-void ZerberusService::displayHelp()
+void ZerberusService::displayHelp() const
 {
     HelpFormatter helpFormatter(options());
     helpFormatter.setCommand(commandName());
@@ -198,30 +195,12 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     ThreadPool::defaultPool().start(*dl);
 
-#ifdef NOPE
-
-    AutoPtr<GuardedDevice> dev;
-
-    try
-    {
-        dev = new GuardedDevice(devicePath, config(), session);
-    }
-    catch (const std::exception& ex)
-    {
-        logger.fatal("Fatal error: %s", std::string(ex.what()));
-        return Application::EXIT_UNAVAILABLE;
-    }    
-
-#endif
-
     logger.information("Done, up and running");
 
     if (!config().getBool("application.runAsService", false))
     {
         logger.information("Press CTRL+C to terminate");
     }
-
-
 
     waitForTerminationRequest();
 

@@ -18,7 +18,7 @@ class ZerberusService :
 
     void enumerateDeviceInterface(const std::string& name, const std::string& value);
     void help(const std::string& name, const std::string& value);
-    void displayHelp();
+    void displayHelp() const;
     void onDeviceArrived(const void* pSender, std::string& name);
 
 protected:
