@@ -5,6 +5,8 @@
 #include "DeviceListener.h"
 
 #define POCO_NO_UNWINDOWS
+#include <Poco/Util/Option.h>
+#include <Poco/Util/OptionSet.h>
 #include <Poco/AutoPtr.h>
 #include <Poco/Logger.h>
 #include <Poco/Message.h>

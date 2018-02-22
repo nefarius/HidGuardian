@@ -2,8 +2,6 @@
 
 #define POCO_NO_UNWINDOWS
 #include <Poco/Util/ServerApplication.h>
-#include <Poco/Util/Option.h>
-#include <Poco/Util/OptionSet.h>
 #include <Poco/SharedPtr.h>
 #include <Poco/Data/Session.h>
 
