@@ -89,7 +89,7 @@ void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
 
     try
     {
-        dev = new GuardedDevice(name, config(), *_session);
+        dev = new GuardedDevice(name, *_session);
     }
     catch (const std::exception& ex)
     {

@@ -3,12 +3,13 @@
 #include <devioctl.h>
 
 #include <Poco/Logger.h>
+#include <utility>
 
 using Poco::Logger;
 
 
-GuardedDevice::GuardedDevice(const std::string & devicePath, const LayeredConfiguration& config, const Session& session)
-    : _devicePath(devicePath), _config(config), _session(session)
+GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
+    : _devicePath(std::move(devicePath)), _session(session)
 {    
     DWORD bytesReturned = 0;
     OVERLAPPED lOverlapped = { 0 };
