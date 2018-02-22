@@ -17,7 +17,7 @@ artifacts:
 - path: disk1\HidGuardian.cab
   name: HidGuardian_unsigned_x86_amd64
 - path: 'bin\**\HidCerberus.exe'
-  name: HidCerberus.zip
+  name: HidCerberus
 deploy:
 - provider: Environment
   name: BUILDBOT
