@@ -1,4 +1,4 @@
-version: 2.0.{build}.0
+version: 3.0.{build}.0
 image: Visual Studio 2017
 before_build:
 - nuget restore
@@ -13,6 +13,10 @@ after_build:
     .\verpatch.exe .\artifacts\x86\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
     .\verpatch.exe .\artifacts\x86\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
     makecab.exe /f HidGuardian.ddf
+    .\verpatch.exe .\bin\x64\HidCerberus.exe "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x64\HidCerberus.exe /pv "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x86\HidCerberus.exe "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x86\HidCerberus.exe /pv "$env:APPVEYOR_BUILD_VERSION"
 artifacts:
 - path: disk1\HidGuardian.cab
   name: HidGuardian_unsigned_x86_amd64
