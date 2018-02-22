@@ -44,7 +44,7 @@ void PermissionRequestWorker::runTask()
     OVERLAPPED lOverlapped = { 0 };
     lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-    ULONG pHgGetSize = sizeof(HIDGUARDIAN_GET_CREATE_REQUEST) + _bufferSize;
+    const ULONG pHgGetSize = sizeof(HIDGUARDIAN_GET_CREATE_REQUEST) + _bufferSize;
     PHIDGUARDIAN_GET_CREATE_REQUEST pHgGet;
     HIDGUARDIAN_SET_CREATE_REQUEST hgSet;
 
@@ -63,6 +63,9 @@ void PermissionRequestWorker::runTask()
         if (logger.is(Poco::Message::PRIO_DEBUG))
             logger.debug("Looking for quests (ID: %lu)", pHgGet->RequestId);
 
+        //
+        // Query for pending create (open) requests
+        // 
         DeviceIoControl(
             _deviceHandle,
             IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST,
@@ -76,6 +79,9 @@ void PermissionRequestWorker::runTask()
 
         if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
+            //
+            // This condition is met if the drivers queue is empty
+            // 
             if (GetLastError() == ERROR_NO_MORE_ITEMS) {
                 Sleep(1000);
                 continue;
@@ -96,11 +102,14 @@ void PermissionRequestWorker::runTask()
 
         std::vector<std::string> hardwareIds;
 
+        //
+        // Split up multi-value string to individual objects
+        // 
         for (PCWSTR szIter = pHgGet->HardwareIds; *szIter; szIter += wcslen(szIter) + 1)
         {
             using convert_type = std::codecvt_utf8<wchar_t>;
             std::wstring_convert<convert_type, wchar_t> converter;
-            std::string id(converter.to_bytes(szIter));
+            const std::string id(converter.to_bytes(szIter));
 
             if (logger.is(Poco::Message::PRIO_DEBUG)) {
                 logger.debug("Hardware ID: %s", id);
@@ -181,6 +190,9 @@ void PermissionRequestWorker::runTask()
             logger.debug("Sending permission request %lu", pHgGet->RequestId);
         }
 
+        //
+        // Submit result to driver
+        // 
         DeviceIoControl(
             _deviceHandle,
             IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST,

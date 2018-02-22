@@ -13,6 +13,9 @@ GuardedDevice::GuardedDevice(const std::string & devicePath, const LayeredConfig
     DWORD bytesReturned = 0;
     OVERLAPPED lOverlapped = { 0 };
 
+    //
+    // Open device
+    // 
     _deviceHandle = CreateFileA(_devicePath.c_str(),
         GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -22,7 +25,7 @@ GuardedDevice::GuardedDevice(const std::string & devicePath, const LayeredConfig
         nullptr);
 
     //
-    // Log error state
+    // Check for errors
     // 
     if (_deviceHandle == INVALID_HANDLE_VALUE)
     {
@@ -37,6 +40,9 @@ GuardedDevice::GuardedDevice(const std::string & devicePath, const LayeredConfig
 
     lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
+    //
+    // Check if the device responds to a HidGuardian-provided IOCTL
+    // 
     DeviceIoControl(
         _deviceHandle,
         IOCTL_HIDGUARDIAN_IS_ACTIVE,
@@ -54,6 +60,9 @@ GuardedDevice::GuardedDevice(const std::string & devicePath, const LayeredConfig
         throw std::runtime_error("The device doesn't have HidGuardian attached.");
     }
 
+    //
+    // Announce your process as the Cerberus
+    // 
     DeviceIoControl(
         _deviceHandle,
         IOCTL_HIDGUARDIAN_REGISTER_CERBERUS,

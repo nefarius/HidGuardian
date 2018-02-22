@@ -13,7 +13,7 @@ using Poco::BasicEvent;
 class DeviceListener :
     public Poco::Task
 {
-    WNDCLASSEX _windowClass;
+    WNDCLASSEX _windowClass{};
     HWND _windowHandle;
     HDEVNOTIFY _deviceNotify;
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

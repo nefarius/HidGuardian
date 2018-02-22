@@ -30,7 +30,6 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     if (pThis)
     {
         PDEV_BROADCAST_HDR hdr;
-        PDEV_BROADCAST_DEVICEINTERFACE iface;
 
         switch (msg)
         {
@@ -44,7 +43,7 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
                 if (hdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
                 {
-                    iface = reinterpret_cast<PDEV_BROADCAST_DEVICEINTERFACE>(lParam);
+                    const auto iface = reinterpret_cast<PDEV_BROADCAST_DEVICEINTERFACE>(lParam);
 
                     using convert_type = std::codecvt_utf8<wchar_t>;
                     std::wstring_convert<convert_type, wchar_t> converter;
@@ -64,12 +63,10 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         }
     }
 
-    
-
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-DeviceListener::DeviceListener() : _windowHandle(nullptr), _deviceNotify(nullptr), Task("DeviceListener")
+DeviceListener::DeviceListener() : Task("DeviceListener"), _windowHandle(nullptr), _deviceNotify(nullptr)
 {
 }
 
@@ -139,6 +136,9 @@ void DeviceListener::runTask()
         throw std::runtime_error("Couldn't register for device notification");
     }
 
+    //
+    // Message loop
+    // 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {

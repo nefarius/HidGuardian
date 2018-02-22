@@ -52,7 +52,7 @@ bool DeviceEnumerator::classGuidFromName(const std::string& className, LPGUID cl
     DWORD requiredSize = 0;
 
     Buffer<char> machineName(1024);
-    requiredSize = (DWORD)machineName.size();
+    requiredSize = static_cast<DWORD>(machineName.size());
 
     GetComputerNameA(machineName.begin(), &requiredSize);
 
