@@ -18,9 +18,6 @@
     <ClCompile Include="Zerberus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PermissionRequestWorker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ZerberusService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -35,9 +32,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PermissionRequestWorker.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ZerberusService.h">
       <Filter>Header Files</Filter>
     </ClInclude>

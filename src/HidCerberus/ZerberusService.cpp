@@ -1,5 +1,4 @@
 #include "ZerberusService.h"
-#include "PermissionRequestWorker.h"
 #include "DeviceEnumerator.h"
 #include "GuardedDevice.h"
 #include "DeviceListener.h"
@@ -84,12 +83,10 @@ void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
     logger.information("New device arrived: %s", name);
-
-    AutoPtr<GuardedDevice> dev;
-
+        
     try
     {
-        dev = new GuardedDevice(name, *_session);
+        _taskManager.start(new GuardedDevice(name, *_session));
     }
     catch (const std::exception& ex)
     {
@@ -193,9 +190,15 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     AutoPtr<DeviceListener> dl(new DeviceListener);
 
+    //
+    // Listen for arriving devices
+    // 
     dl->deviceArrived += Poco::delegate(this, &ZerberusService::onDeviceArrived);
 
-    ThreadPool::defaultPool().start(*dl);
+    //
+    // Start listening
+    // 
+    _taskManager.start(dl);
 
     logger.information("Done, up and running");
 
@@ -204,9 +207,27 @@ int ZerberusService::main(const std::vector<std::string>& args)
         logger.information("Press CTRL+C to terminate");
     }
 
+    //
+    // Block until user or service manager requests a halt
+    // 
     waitForTerminationRequest();
 
     logger.information("Process terminating");
+
+    //
+    // Request graceful shutdown from all background tasks
+    // 
+    _taskManager.cancelAll();
+
+    //
+    // Close database session (frees threads too)
+    // 
+    _session->close();
+
+    //
+    // Wait for all background tasks to shut down
+    // 
+    _taskManager.joinAll();
 
     return Application::EXIT_OK;
 }

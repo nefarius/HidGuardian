@@ -5,6 +5,7 @@
 
 #include <locale>
 #include <codecvt>
+#include <Poco/Logger.h>
 
 
 LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -85,6 +86,10 @@ DeviceListener::~DeviceListener()
 
 void DeviceListener::runTask()
 {
+    auto& logger = Poco::Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
+
+    logger.debug("Listening for window messages");
+
     ZeroMemory(&_windowClass, sizeof(WNDCLASSEX));
 
     _windowClass.cbSize = sizeof(WNDCLASSEX);
@@ -140,9 +145,12 @@ void DeviceListener::runTask()
     // Message loop
     // 
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0))
+    while (!sleep(25))
     {
+        PeekMessage(&msg, _windowHandle, 0, 0, PM_REMOVE);
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    logger.debug("Listener terminating");
 }
