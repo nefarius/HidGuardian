@@ -272,13 +272,6 @@ void ZerberusService::defineOptions(OptionSet & options)
         .argument("GUID")
         .binding("core.oneShot")
         .callback(OptionCallback<ZerberusService>(this, &ZerberusService::enumerateDeviceInterface)));
-
-    options.addOption(
-        Option("devicePath", "d", "The path of the device to guard.")
-        .required(false)
-        .repeatable(false)
-        .argument("path")
-        .binding("args.devicePath"));
 }
 
 void ZerberusService::handleOption(const std::string & name, const std::string & value)
