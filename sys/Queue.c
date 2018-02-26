@@ -128,12 +128,12 @@ EvtWdfCreateRequestsQueueIoDefault(
     pDeviceCtx = DeviceGetContext(device);
     pControlCtx = ControlDeviceGetContext(ControlDevice);
     pid = CURRENT_PROCESS_ID();
-    
+
     //
     // If this is Cerberus, allow
     // 
-    if(pControlCtx->IsCerberusConnected == TRUE 
-        && pControlCtx->CerberusPid== pid)
+    if (pControlCtx->IsCerberusConnected == TRUE
+        && pControlCtx->CerberusPid == pid)
     {
         goto allowAccess;
     }
@@ -270,7 +270,7 @@ HidGuardianEvtIoDeviceControl(
     BOOLEAN                             ret;
     PCREATE_REQUEST_CONTEXT             pRequestCtx;
     ULONG                               hwidBufferLength;
-    
+
 
     UNREFERENCED_PARAMETER(OutputBufferLength);
     UNREFERENCED_PARAMETER(InputBufferLength);
@@ -435,7 +435,7 @@ HidGuardianEvtIoDeviceControl(
             status = STATUS_INVALID_PARAMETER;
 
             WdfRequestComplete(authRequest, status);
-            
+
             break;
         }
 
