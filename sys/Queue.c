@@ -487,19 +487,6 @@ HidGuardianEvtIoDeviceControl(
 
 #pragma endregion
 
-#pragma region IOCTL_HIDGUARDIAN_IS_ACTIVE
-
-    case IOCTL_HIDGUARDIAN_IS_ACTIVE:
-
-        TraceEvents(TRACE_LEVEL_INFORMATION,
-            TRACE_QUEUE, ">> IOCTL_HIDGUARDIAN_IS_ACTIVE");
-
-        status = STATUS_SUCCESS;
-
-        break;
-
-#pragma endregion
-
 #pragma region IOCTL_HIDGUARDIAN_REGISTER_CERBERUS
 
     case IOCTL_HIDGUARDIAN_REGISTER_CERBERUS:

@@ -70,30 +70,6 @@ GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
 
     lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-    logger.debug("Checking for presence of HidGuardian");
-    
-    //
-    // Check if the device responds to a HidGuardian-provided IOCTL
-    // 
-    DeviceIoControl(
-        _deviceHandle,
-        IOCTL_HIDGUARDIAN_IS_ACTIVE,
-        nullptr,
-        0,
-        nullptr,
-        0,
-        &bytesReturned,
-        &lOverlapped
-    );
-
-    if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
-    {
-        CloseHandle(lOverlapped.hEvent);
-        throw std::runtime_error("The device doesn't have HidGuardian attached.");
-    }
-
-    logger.debug("HidGuardian present");
-
     logger.debug("Registering ourselfs as Cerberus");
 
     //

@@ -235,6 +235,19 @@ HidGuardianCreateDevice(
 
 #pragma endregion
 
+#pragma region Expose FDO interface
+
+        status = WdfDeviceCreateDeviceInterface(device, &GUID_DEVINTERFACE_HIDGUARDIAN, NULL);
+
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfDeviceCreateDeviceInterface failed status %!STATUS!", status);
+            return status;
+        }
+
+#pragma endregion
+
         //
         // Add this device to the FilterDevice collection.
         //

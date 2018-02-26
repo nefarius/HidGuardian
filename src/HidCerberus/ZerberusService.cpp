@@ -4,8 +4,7 @@
 #include "DeviceListener.h"
 
 #include <initguid.h>
-#include <usbiodef.h>
-#include <hidclass.h>
+#include "HidGuardian.h"
 
 #define POCO_NO_UNWINDOWS
 #include <Poco/Util/Option.h>
@@ -87,7 +86,7 @@ void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
     logger.information("New device arrived: %s", name);
-        
+
     try
     {
         _taskManager.start(new GuardedDevice(name, *_session));
@@ -154,7 +153,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     }
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
-    
+
     Poco::Data::SQLite::Connector::registerConnector();
 
     //
@@ -189,10 +188,15 @@ int ZerberusService::main(const std::vector<std::string>& args)
     Poco::Data::SQLite::Utility::fileToMemory(*_session, dbFile.path());
 
     logger.information("Database loaded");
-        
+
+    for (auto device : DeviceEnumerator::enumerateDeviceInterface(const_cast<LPGUID>(&GUID_DEVINTERFACE_HIDGUARDIAN)))
+    {
+        onDeviceArrived(this, device);
+    }
+
     logger.information("Starting listening for new devices");
 
-    AutoPtr<DeviceListener> dl(new DeviceListener({ GUID_DEVINTERFACE_USB_DEVICE, GUID_DEVINTERFACE_HID }));
+    AutoPtr<DeviceListener> dl(new DeviceListener({ GUID_DEVINTERFACE_HIDGUARDIAN }));
 
     //
     // Listen for arriving devices
