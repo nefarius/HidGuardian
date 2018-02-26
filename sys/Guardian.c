@@ -47,12 +47,13 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
     BOOLEAN                 affected = FALSE;
     ULONG                   force = 0;
     PCWSTR                  szIter = NULL;
-    
+
     DECLARE_CONST_UNICODE_STRING(valueAffectedMultiSz, L"AffectedDevices");
     DECLARE_CONST_UNICODE_STRING(valueForceUl, L"Force");
     DECLARE_CONST_UNICODE_STRING(valueExemptedMultiSz, L"ExemptedDevices");
     DECLARE_UNICODE_STRING_SIZE(currentHardwareID, MAX_HARDWARE_ID_SIZE);
     DECLARE_UNICODE_STRING_SIZE(myHardwareID, MAX_HARDWARE_ID_SIZE);
+    DECLARE_CONST_UNICODE_STRING(ctrlHardwareId, L"Root\\HidGuardian");
 
 
     PAGED_CODE();
@@ -109,7 +110,7 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
                 TraceEvents(TRACE_LEVEL_ERROR,
                     TRACE_GUARDIAN,
                     "RtlUnicodeStringInit failed: %!STATUS!", status);
-                
+
                 return status;
             }
 
@@ -190,7 +191,11 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
                     TRACE_GUARDIAN,
                     "My ID %wZ vs current affected ID %wZ\n", &myHardwareID, &currentHardwareID);
 
-                affected = RtlEqualUnicodeString(&myHardwareID, &currentHardwareID, TRUE);
+                affected = (
+                    RtlEqualUnicodeString(&myHardwareID, &currentHardwareID, TRUE)
+                    || RtlEqualUnicodeString(&myHardwareID, &ctrlHardwareId, TRUE)
+                    );
+
                 TraceEvents(TRACE_LEVEL_INFORMATION,
                     TRACE_GUARDIAN,
                     "Are we affected: %d\n", affected);
@@ -243,7 +248,7 @@ VOID GetDefaultAction(PDEVICE_CONTEXT DeviceContext)
     if (NT_SUCCESS(status) && allowByDefault > 0) {
         DeviceContext->AllowByDefault = TRUE;
     }
-    
+
     WdfRegistryClose(keyParams);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_GUARDIAN, "%!FUNC! Exit");

@@ -29,6 +29,7 @@
 #include <Poco/ThreadPool.h>
 #include <Poco/BasicEvent.h>
 #include <Poco/Delegate.h>
+#include "ControlDevice.h"
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -188,6 +189,19 @@ int ZerberusService::main(const std::vector<std::string>& args)
     Poco::Data::SQLite::Utility::fileToMemory(*_session, dbFile.path());
 
     logger.information("Database loaded");
+
+    AutoPtr<ControlDevice> cd;
+
+    try
+    {
+        cd = new ControlDevice(CONTROL_DEVICE_PATH);
+    }
+    catch(std::exception ex)
+    {
+        logger.fatal("Couldn't create control device: %s", std::string(ex.what()));
+
+        return Application::EXIT_OSFILE;
+    }
 
     for (auto device : DeviceEnumerator::enumerateDeviceInterface(const_cast<LPGUID>(&GUID_DEVINTERFACE_HIDGUARDIAN)))
     {

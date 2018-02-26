@@ -5,7 +5,7 @@
 DEFINE_GUID(GUID_DEVINTERFACE_HIDGUARDIAN,
     0xc320ff7, 0xbd9b, 0x42b6, 0xbd, 0xaf, 0x49, 0xfe, 0xb9, 0xc9, 0x16, 0x49);
 
-#define CONTROL_DEVICE_PATH         L"\\\\.\\HidGuardian"
+#define CONTROL_DEVICE_PATH         "\\\\.\\HidGuardian"
 #define NTDEVICE_NAME_STRING        L"\\Device\\HidGuardian"
 #define SYMBOLIC_NAME_STRING        L"\\DosDevices\\HidGuardian"
 
@@ -27,11 +27,6 @@ DEFINE_GUID(GUID_DEVINTERFACE_HIDGUARDIAN,
                                                                     IOCTL_INDEX + 0x01, \
                                                                     METHOD_BUFFERED,    \
                                                                     FILE_WRITE_ACCESS)
-
-#define IOCTL_HIDGUARDIAN_REGISTER_CERBERUS         CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
-                                                                    IOCTL_INDEX + 0x02, \
-                                                                    METHOD_BUFFERED,    \
-                                                                    FILE_ANY_ACCESS)
 
 
 #include <pshpack1.h>

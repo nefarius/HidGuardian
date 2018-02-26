@@ -165,6 +165,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ControlDevice.cpp" />
     <ClCompile Include="DeviceEnumerator.cpp" />
     <ClCompile Include="DeviceListener.cpp" />
     <ClCompile Include="GuardedDevice.cpp" />
@@ -173,6 +174,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\HidGuardian.h" />
+    <ClInclude Include="ControlDevice.h" />
     <ClInclude Include="DeviceEnumerator.h" />
     <ClInclude Include="DeviceListener.h" />
     <ClInclude Include="GuardedDevice.h" />

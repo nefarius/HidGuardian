@@ -6,12 +6,10 @@
 #include <vector>
 
 #define POCO_NO_UNWINDOWS
-#include <Poco/RefCountedObject.h>
 #include <Poco/Data/Session.h>
 #include <Poco/Task.h>
 #include <Poco/Random.h>
 
-using Poco::RefCountedObject;
 using Poco::Data::Session;
 using Poco::Task;
 using Poco::Random;

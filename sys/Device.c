@@ -368,6 +368,7 @@ EvtFileCleanup(
 {
     WDFDEVICE                   device;
     PDEVICE_CONTEXT             pDeviceCtx;
+    PCONTROL_DEVICE_CONTEXT     pControlCtx;
     ULONG                       pid;
 
 
@@ -375,16 +376,23 @@ EvtFileCleanup(
 
     device = WdfFileObjectGetDevice(FileObject);
     pDeviceCtx = DeviceGetContext(device);
+    pControlCtx = ControlDeviceGetContext(ControlDevice);
     pid = CURRENT_PROCESS_ID();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", pid);
 
-    if (pDeviceCtx->CerberusPid == pid) {
+    if (!PID_LIST_REMOVE_BY_PID(&pDeviceCtx->StickyPidList, pid)) {
+        TraceEvents(TRACE_LEVEL_INFORMATION, 
+            TRACE_DEVICE, 
+            "PID %d not in sticky list", pid);
+    }
+
+    if (pControlCtx->CerberusPid == pid) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
             "Cerberus has left the realm");
 
-        pDeviceCtx->IsCerberusConnected = FALSE;
+        pControlCtx->IsCerberusConnected = FALSE;
 
         WdfIoQueuePurgeSynchronously(pDeviceCtx->PendingCreateRequestsQueue);
         WdfIoQueueStart(pDeviceCtx->PendingCreateRequestsQueue);

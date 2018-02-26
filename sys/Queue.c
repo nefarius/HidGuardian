@@ -115,6 +115,7 @@ EvtWdfCreateRequestsQueueIoDefault(
     WDF_REQUEST_SEND_OPTIONS    options;
     WDF_OBJECT_ATTRIBUTES       requestAttribs;
     PCREATE_REQUEST_CONTEXT     pRequestCtx;
+    PCONTROL_DEVICE_CONTEXT     pControlCtx;
 
 
     PAGED_CODE();
@@ -125,9 +126,15 @@ EvtWdfCreateRequestsQueueIoDefault(
 
     device = WdfIoQueueGetDevice(Queue);
     pDeviceCtx = DeviceGetContext(device);
+    pControlCtx = ControlDeviceGetContext(ControlDevice);
     pid = CURRENT_PROCESS_ID();
-
-    if (!pDeviceCtx->IsCerberusConnected) {
+    
+    //
+    // If this is Cerberus, allow
+    // 
+    if(pControlCtx->IsCerberusConnected == TRUE 
+        && pControlCtx->CerberusPid== pid)
+    {
         goto allowAccess;
     }
 
@@ -152,6 +159,13 @@ EvtWdfCreateRequestsQueueIoDefault(
             // 
             goto blockAccess;
         }
+    }
+
+    //
+    // No Cerberus, so default actions apply
+    // 
+    if (!pControlCtx->IsCerberusConnected) {
+        goto defaultAction;
     }
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);
@@ -482,22 +496,6 @@ HidGuardianEvtIoDeviceControl(
             // 
             WdfRequestComplete(authRequest, STATUS_ACCESS_DENIED);
         }
-
-        break;
-
-#pragma endregion
-
-#pragma region IOCTL_HIDGUARDIAN_REGISTER_CERBERUS
-
-    case IOCTL_HIDGUARDIAN_REGISTER_CERBERUS:
-
-        TraceEvents(TRACE_LEVEL_INFORMATION,
-            TRACE_QUEUE, ">> IOCTL_HIDGUARDIAN_REGISTER_CERBERUS");
-
-        status = STATUS_SUCCESS;
-
-        pDeviceCtx->CerberusPid = CURRENT_PROCESS_ID();
-        pDeviceCtx->IsCerberusConnected = TRUE;
 
         break;
 

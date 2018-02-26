@@ -97,7 +97,7 @@ HidGuardianCreateControlDevice(
     //
     pInit = WdfControlDeviceInitAllocate(
         WdfDeviceGetDriver(Device),
-        &SDDL_DEVOBJ_SYS_ALL_ADM_ALL    // admin only access
+        &SDDL_DEVOBJ_SYS_ALL_ADM_RWX_WORLD_RWX_RES_RWX
     );
 
     if (pInit == NULL) {
@@ -129,9 +129,9 @@ HidGuardianCreateControlDevice(
     // Clean-up actions once service disconnects
     // 
     WDF_FILEOBJECT_CONFIG_INIT(
-        &foCfg, 
+        &foCfg,
         HidGuardianSidebandDeviceFileCreate,
-        NULL, 
+        NULL,
         HidGuardianSidebandFileCleanup
     );
     WdfDeviceInitSetFileObjectConfig(pInit, &foCfg, WDF_NO_OBJECT_ATTRIBUTES);
@@ -193,24 +193,6 @@ HidGuardianCreateControlDevice(
     TraceEvents(TRACE_LEVEL_VERBOSE,
         TRACE_SIDEBAND,
         "ControlDeviceGetContext = 0x%p", pControlCtx);
-
-#pragma region Create InvertedCallQueue I/O Queue
-
-    WDF_IO_QUEUE_CONFIG_INIT(&ioQueueConfig, WdfIoQueueDispatchManual);
-
-    status = WdfIoQueueCreate(controlDevice,
-        &ioQueueConfig,
-        WDF_NO_OBJECT_ATTRIBUTES,
-        &pControlCtx->InvertedCallQueue
-    );
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_SIDEBAND,
-            "WdfIoQueueCreate (InvertedCallQueue) failed with %!STATUS!", status);
-        goto Error;
-    }
-
-#pragma endregion
 
     //
     // Control devices must notify WDF when they are done initializing.   I/O is
@@ -281,153 +263,14 @@ VOID HidGuardianSidebandIoDeviceControl(
     _In_ ULONG      IoControlCode
 )
 {
-    NTSTATUS                            status = STATUS_INVALID_PARAMETER;
-    size_t                              bufferLength;
-    PHIDGUARDIAN_SET_CREATE_REQUEST     pSetCreateRequest;
-    WDFDEVICE                           device;
-    WDFREQUEST                          authRequest;
-    PDEVICE_CONTEXT                     pDeviceCtx;
-    WDF_REQUEST_SEND_OPTIONS            options;
-    BOOLEAN                             ret;
-    PCREATE_REQUEST_CONTEXT             pRequestCtx;
+    NTSTATUS    status = STATUS_INVALID_PARAMETER;
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
 
-    device = WdfIoQueueGetDevice(Queue);
-    pDeviceCtx = DeviceGetContext(device);
-
+    UNREFERENCED_PARAMETER(Queue);
     UNREFERENCED_PARAMETER(OutputBufferLength);
-
-    switch (IoControlCode)
-    {
-
-#pragma region IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST
-
-        //
-        // Receives a decision made by the user-mode service.
-        // 
-    case IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST:
-
-        TraceEvents(TRACE_LEVEL_INFORMATION,
-            TRACE_SIDEBAND, "IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST");
-
-        status = WdfRequestRetrieveInputBuffer(
-            Request,
-            sizeof(HIDGUARDIAN_SET_CREATE_REQUEST),
-            (void*)&pSetCreateRequest,
-            &bufferLength);
-
-        //
-        // Validate buffer size of request
-        // 
-        if (NT_SUCCESS(status) && InputBufferLength == sizeof(HIDGUARDIAN_SET_CREATE_REQUEST))
-        {                        
-            //
-            // Pop auth request from device queue
-            // 
-            status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->PendingAuthQueue, &authRequest);
-            if (!NT_SUCCESS(status)) {
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_SIDEBAND,
-                    "WdfIoQueueRetrieveNextRequest (PendingAuthQueue) failed with status %!STATUS!", status);
-                break;
-            }
-
-            pRequestCtx = CreateRequestGetContext(authRequest);
-
-            //
-            // Validate that the response matches the request
-            // 
-            if (pSetCreateRequest->RequestId != pRequestCtx->RequestId) {
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_SIDEBAND,
-                    "Request ID mismatch: %X != %X",
-                    pSetCreateRequest->RequestId,
-                    pRequestCtx->RequestId);
-                
-                status = WdfRequestForwardToIoQueue(Request, pDeviceCtx->PendingAuthQueue);
-                if (!NT_SUCCESS(status)) {
-                    TraceEvents(TRACE_LEVEL_ERROR,
-                        TRACE_SIDEBAND,
-                        "Failed to re-enqueue request with ID %X", pRequestCtx->RequestId);
-                }
-
-                break;
-            }
-
-            //
-            // Cache result in driver to improve speed
-            // 
-            if (pSetCreateRequest->IsSticky) {
-                if (!PID_LIST_CONTAINS(&pDeviceCtx->StickyPidList, pRequestCtx->ProcessId, NULL)) {
-                    PID_LIST_PUSH(&pDeviceCtx->StickyPidList, pRequestCtx->ProcessId, pSetCreateRequest->IsAllowed);
-                }
-                else {
-                    TraceEvents(TRACE_LEVEL_WARNING,
-                        TRACE_SIDEBAND,
-                        "Sticky PID %d already present in cache", pRequestCtx->ProcessId);
-                }
-            }
-
-            //
-            // Request was permitted, pass it down the stack
-            // 
-            if (pSetCreateRequest->IsAllowed) {
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_SIDEBAND,
-                    "!! Request %d from PID %d is allowed", 
-                    pRequestCtx->RequestId,
-                    pRequestCtx->ProcessId);
-
-                WdfRequestFormatRequestUsingCurrentType(authRequest);
-
-                //
-                // PID is white-listed, pass request down the stack
-                // 
-                WDF_REQUEST_SEND_OPTIONS_INIT(&options,
-                    WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
-
-                ret = WdfRequestSend(authRequest, WdfDeviceGetIoTarget(device), &options);
-
-                //
-                // Complete the request on failure
-                // 
-                if (ret == FALSE) {
-                    status = WdfRequestGetStatus(authRequest);
-                    TraceEvents(TRACE_LEVEL_ERROR,
-                        TRACE_SIDEBAND,
-                        "WdfRequestSend failed: %!STATUS!", status);
-                    WdfRequestComplete(authRequest, status);
-                }
-            }
-            else {
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_SIDEBAND,
-                    "!! Request %d from PID %d is not allowed",
-                    pRequestCtx->RequestId,
-                    pRequestCtx->ProcessId);
-
-                //
-                // Request was denied, complete it with failure
-                // 
-                WdfRequestComplete(authRequest, STATUS_ACCESS_DENIED);
-            }
-        }
-        else {
-            TraceEvents(TRACE_LEVEL_WARNING,
-                TRACE_SIDEBAND,
-                "Buffer size mismatch: %d != %d",
-                (ULONG)bufferLength,
-                (ULONG)sizeof(HIDGUARDIAN_SET_CREATE_REQUEST));
-        }
-
-        break;
-
-#pragma endregion
-
-    default:
-        break;
-    }
+    UNREFERENCED_PARAMETER(InputBufferLength);
+    UNREFERENCED_PARAMETER(IoControlCode);
 
     WdfRequestComplete(Request, status);
 
@@ -435,6 +278,9 @@ VOID HidGuardianSidebandIoDeviceControl(
 }
 #pragma warning(pop) // enable 28118 again
 
+//
+// Gets called when somebody connects to the control device.
+// 
 _Use_decl_annotations_
 VOID
 HidGuardianSidebandDeviceFileCreate(
@@ -454,13 +300,17 @@ HidGuardianSidebandDeviceFileCreate(
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
 
-    pControlCtx->IsServicePresent = TRUE;
+    pControlCtx->IsCerberusConnected = TRUE;
+    pControlCtx->CerberusPid = CURRENT_PROCESS_ID();
 
     WdfRequestComplete(Request, STATUS_SUCCESS);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
 }
 
+//
+// Gets called when somebody disconnects from the control device.
+// 
 _Use_decl_annotations_
 VOID
 HidGuardianSidebandFileCleanup(
@@ -468,9 +318,6 @@ HidGuardianSidebandFileCleanup(
 )
 {
     PCONTROL_DEVICE_CONTEXT     pControlCtx;
-    ULONG                       index;
-    WDFDEVICE                   device;
-    PDEVICE_CONTEXT             pDeviceCtx;
 
     UNREFERENCED_PARAMETER(FileObject);
 
@@ -478,39 +325,7 @@ HidGuardianSidebandFileCleanup(
 
     pControlCtx = ControlDeviceGetContext(ControlDevice);
 
-    pControlCtx->IsServicePresent = FALSE;
-
-    //
-    // Purge & restart queue so no orphaned requests remain
-    // 
-    WdfIoQueuePurgeSynchronously(pControlCtx->InvertedCallQueue);
-    WdfIoQueueStart(pControlCtx->InvertedCallQueue);
-
-    WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);
-
-    //
-    // Search for our device in the collection to get index
-    // 
-    for (
-        index = 0;
-        index < WdfCollectionGetCount(FilterDeviceCollection);
-        index++
-        )
-    {
-        //
-        // Get device & context
-        // 
-        device = WdfCollectionGetItem(FilterDeviceCollection, index);
-        pDeviceCtx = DeviceGetContext(device);
-
-        //
-        // Purge & restart queue so no orphaned requests remain
-        // 
-        WdfIoQueuePurgeSynchronously(pDeviceCtx->PendingAuthQueue);
-        WdfIoQueueStart(pDeviceCtx->PendingAuthQueue);
-    }
-
-    WdfWaitLockRelease(FilterDeviceCollectionLock);
+    pControlCtx->IsCerberusConnected = FALSE;
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
 }

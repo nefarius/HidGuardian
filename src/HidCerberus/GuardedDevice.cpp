@@ -32,9 +32,6 @@ using Poco::icompare;
 GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
     : Task(devicePath), _devicePath(std::move(devicePath)), _session(session)
 {       
-    DWORD bytesReturned = 0;
-    OVERLAPPED lOverlapped = { 0 };
-
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
     logger.debug("Trying to open device %s", _devicePath);
@@ -67,34 +64,6 @@ GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
     }
 
     logger.debug("Device opened");
-
-    lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-
-    logger.debug("Registering ourselfs as Cerberus");
-
-    //
-    // Announce your process as the Cerberus
-    // 
-    DeviceIoControl(
-        _deviceHandle,
-        IOCTL_HIDGUARDIAN_REGISTER_CERBERUS,
-        nullptr,
-        0,
-        nullptr,
-        0,
-        &bytesReturned,
-        &lOverlapped
-    );
-
-    if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
-    {
-        CloseHandle(lOverlapped.hEvent);
-        throw std::runtime_error("Couldn't register Cerberus to driver.");
-    }
-
-    CloseHandle(lOverlapped.hEvent);
-
-    logger.debug("Done, ready to operate");
 }
 
 void GuardedDevice::runTask()

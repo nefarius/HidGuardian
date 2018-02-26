@@ -73,16 +73,6 @@ typedef struct _DEVICE_CONTEXT
     // 
     BOOLEAN         AllowByDefault;
 
-    //
-    // Process ID of Cerberus (if connected)
-    // 
-    ULONG           CerberusPid;
-
-    //
-    // State of Cerberus connection
-    // 
-    BOOLEAN         IsCerberusConnected;
-
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
 //
