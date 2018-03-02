@@ -29,7 +29,6 @@ SOFTWARE.
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, HidGuardianCreateDevice)
 #pragma alloc_text (PAGE, HidGuardianEvtDeviceContextCleanup)
-#pragma alloc_text (PAGE, EvtWdfCreateRequestsQueueIoDefault)
 #pragma alloc_text (PAGE, EvtFileCleanup)
 #endif
 
@@ -381,11 +380,11 @@ EvtFileCleanup(
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", pid);
 
-    if (!PID_LIST_REMOVE_BY_PID(&pDeviceCtx->StickyPidList, pid)) {
-        TraceEvents(TRACE_LEVEL_INFORMATION, 
-            TRACE_DEVICE, 
-            "PID %d not in sticky list", pid);
-    }
+    //if (!PID_LIST_REMOVE_BY_PID(&pDeviceCtx->StickyPidList, pid)) {
+    //    TraceEvents(TRACE_LEVEL_INFORMATION, 
+    //        TRACE_DEVICE, 
+    //        "PID %d not in sticky list", pid);
+    //}
 
     if (pControlCtx->CerberusPid == pid) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
