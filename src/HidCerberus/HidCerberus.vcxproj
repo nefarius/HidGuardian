@@ -183,8 +183,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Zerberus.ini">
+    <None Include="HidCerberus.ini">
       <DeploymentContent>false</DeploymentContent>
+      <FileType>Text</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -58,8 +58,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Zerberus.ini" />
     <None Include="packages.config" />
+    <None Include="HidCerberus.ini" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Zerberus.rc">
