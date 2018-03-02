@@ -51,6 +51,25 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     pThis->deviceArrived.notify(pThis, name);
                 }
 
+                break;
+
+            case DBT_DEVICEREMOVEPENDING:
+
+                hdr = reinterpret_cast<PDEV_BROADCAST_HDR>(lParam);
+
+                if (hdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
+                {
+                    const auto iface = reinterpret_cast<PDEV_BROADCAST_DEVICEINTERFACE>(lParam);
+
+                    using convert_type = std::codecvt_utf8<wchar_t>;
+                    std::wstring_convert<convert_type, wchar_t> converter;
+                    std::string name(converter.to_bytes(iface->dbcc_name));
+
+                    pThis->deviceRemoved.notify(pThis, name);
+                }
+
+                break;
+
             default:
                 break;
             }

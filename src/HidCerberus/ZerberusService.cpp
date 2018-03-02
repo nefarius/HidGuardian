@@ -98,6 +98,13 @@ void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
     }
 }
 
+void ZerberusService::onDeviceRemoved(const void * pSender, std::string & name)
+{
+    auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
+
+    logger.information("Device %s removed", name);
+}
+
 void ZerberusService::initialize(Application & self)
 {
     loadConfiguration(); // load default configuration files
@@ -216,6 +223,8 @@ int ZerberusService::main(const std::vector<std::string>& args)
     // Listen for arriving devices
     // 
     dl->deviceArrived += Poco::delegate(this, &ZerberusService::onDeviceArrived);
+
+    dl->deviceRemoved += Poco::delegate(this, &ZerberusService::onDeviceRemoved);
 
     //
     // Start listening

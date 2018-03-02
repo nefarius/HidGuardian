@@ -21,6 +21,7 @@ class ZerberusService :
     void help(const std::string& name, const std::string& value);
     void displayHelp() const;
     void onDeviceArrived(const void* pSender, std::string& name);
+    void onDeviceRemoved(const void* pSender, std::string& name);
 
 protected:
     void initialize(Application& self);

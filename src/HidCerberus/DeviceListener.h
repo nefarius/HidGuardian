@@ -23,6 +23,7 @@ class DeviceListener :
 
 public:
     BasicEvent<std::string> deviceArrived;
+    BasicEvent<std::string> deviceRemoved;
 
     DeviceListener(std::initializer_list<GUID> interfaceGuids);
     ~DeviceListener();
