@@ -23,6 +23,18 @@ DeviceEnumerator::~DeviceEnumerator()
 {
 }
 
+/**
+ * \fn  GUID DeviceEnumerator::stringToGuid(const std::string & str)
+ *
+ * \brief   String to unique identifier.
+ *
+ * \author  Benjamin "Nefarius" Höglinger
+ * \date    02.03.2018
+ *
+ * \param   str The string.
+ *
+ * \return  A GUID.
+ */
 GUID DeviceEnumerator::stringToGuid(const std::string & str)
 {
     GUID guid;
@@ -35,6 +47,18 @@ GUID DeviceEnumerator::stringToGuid(const std::string & str)
     return guid;
 }
 
+/**
+ * \fn  std::string DeviceEnumerator::guidToString(GUID guid)
+ *
+ * \brief   Unique identifier to string.
+ *
+ * \author  Benjamin "Nefarius" Höglinger
+ * \date    02.03.2018
+ *
+ * \param   guid    Unique identifier.
+ *
+ * \return  A std::string.
+ */
 std::string DeviceEnumerator::guidToString(GUID guid)
 {
     char guid_cstr[39];
@@ -47,6 +71,19 @@ std::string DeviceEnumerator::guidToString(GUID guid)
     return std::string(guid_cstr);
 }
 
+/**
+ * \fn  bool DeviceEnumerator::classGuidFromName(const std::string& className, LPGUID classGuid)
+ *
+ * \brief   Class unique identifier from name.
+ *
+ * \author  Benjamin "Nefarius" Höglinger
+ * \date    02.03.2018
+ *
+ * \param   className   Name of the class.
+ * \param   classGuid   Unique identifier for the class.
+ *
+ * \return  True if it succeeds, false if it fails.
+ */
 bool DeviceEnumerator::classGuidFromName(const std::string& className, LPGUID classGuid)
 {
     DWORD requiredSize = 0;
@@ -59,6 +96,18 @@ bool DeviceEnumerator::classGuidFromName(const std::string& className, LPGUID cl
     return SetupDiClassGuidsFromNameExA(className.c_str(), classGuid, 1, &requiredSize, machineName.begin(), nullptr);
 }
 
+/**
+ * \fn  std::vector<std::string> DeviceEnumerator::enumerateDeviceInterface(LPGUID interfaceGuid)
+ *
+ * \brief   Enumerate device interface.
+ *
+ * \author  Benjamin "Nefarius" Höglinger
+ * \date    02.03.2018
+ *
+ * \param   interfaceGuid   Unique identifier for the interface.
+ *
+ * \return  A std::vector&lt;std::string&gt;
+ */
 std::vector<std::string> DeviceEnumerator::enumerateDeviceInterface(LPGUID interfaceGuid)
 {
     SP_DEVICE_INTERFACE_DATA deviceInterfaceData = { 0 };
