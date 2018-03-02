@@ -135,6 +135,11 @@ EvtWdfCreateRequestsQueueIoDefault(
     if (pControlCtx->IsCerberusConnected == TRUE
         && pControlCtx->CerberusPid == pid)
     {
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_QUEUE,
+            "Cerberus (PID %d) connected, access granted",
+            pid);
+
         goto allowAccess;
     }
 
@@ -165,6 +170,10 @@ EvtWdfCreateRequestsQueueIoDefault(
     // No Cerberus, so default actions apply
     // 
     if (!pControlCtx->IsCerberusConnected) {
+        TraceEvents(TRACE_LEVEL_VERBOSE,
+            TRACE_QUEUE,
+            "Cerberus not present (PID %d), applying default action",
+            pid);
         goto defaultAction;
     }
 
