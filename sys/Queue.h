@@ -32,6 +32,21 @@ HidGuardianQueueInitialize(
     _In_ WDFDEVICE hDevice
     );
 
+NTSTATUS
+PendingAuthQueueInitialize(
+    _In_ WDFDEVICE hDevice
+);
+
+NTSTATUS
+PendingCreateRequestsQueueInitialize(
+    _In_ WDFDEVICE hDevice
+);
+
+NTSTATUS
+CreateRequestsQueueInitialize(
+    _In_ WDFDEVICE hDevice
+);
+
 //
 // Events from the IoQueue object
 //

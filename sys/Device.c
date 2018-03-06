@@ -44,7 +44,6 @@ HidGuardianCreateDevice(
     NTSTATUS                status;
     WDF_FILEOBJECT_CONFIG   deviceConfig;
     WDFMEMORY               memory;
-    WDF_IO_QUEUE_CONFIG     queueConfig;
     WDFMEMORY               classNameMemory;
     PCWSTR                  className;
 
@@ -176,7 +175,6 @@ HidGuardianCreateDevice(
         // Initialize the I/O Package and any Queues
         //
         status = HidGuardianQueueInitialize(device);
-
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
@@ -184,71 +182,38 @@ HidGuardianCreateDevice(
             return status;
         }
 
-#pragma region Create PendingAuthQueue I/O Queue
-
-        WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchManual);
-
-        status = WdfIoQueueCreate(device,
-            &queueConfig,
-            WDF_NO_OBJECT_ATTRIBUTES,
-            &pDeviceCtx->PendingAuthQueue
-        );
+        //
+        // Create PendingAuthQueue I/O Queue
+        // 
+        status = PendingAuthQueueInitialize(device);
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
-                "WdfIoQueueCreate (PendingAuthQueue) failed with %!STATUS!", status);
+                "PendingAuthQueueInitialize failed with %!STATUS!", status);
             return status;
         }
 
-#pragma endregion
-
-#pragma region Create PendingCreateRequestsQueue I/O Queue
-
-        WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchManual);
-
-        status = WdfIoQueueCreate(device,
-            &queueConfig,
-            WDF_NO_OBJECT_ATTRIBUTES,
-            &pDeviceCtx->PendingCreateRequestsQueue
-        );
+        //
+        // Create PendingAuthQueue I/O Queue
+        //  
+        status = PendingCreateRequestsQueueInitialize(device);
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
-                "WdfIoQueueCreate (PendingCreateRequestsQueue) failed with %!STATUS!", status);
+                "PendingCreateRequestsQueueInitialize failed with %!STATUS!", status);
             return status;
         }
 
-#pragma endregion
-
-#pragma region Create CreateRequestsQueue I/O Queue
-
-        WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchSequential);
-        queueConfig.EvtIoDefault = EvtWdfCreateRequestsQueueIoDefault;
-
-        status = WdfIoQueueCreate(device,
-            &queueConfig,
-            WDF_NO_OBJECT_ATTRIBUTES,
-            &pDeviceCtx->CreateRequestsQueue
-        );
+        //
+        // Create CreateRequestsQueue I/O Queue
+        // 
+        status = CreateRequestsQueueInitialize(device);
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
-                "WdfIoQueueCreate (CreateRequestsQueue) failed with %!STATUS!", status);
+                "CreateRequestsQueueInitialize failed with %!STATUS!", status);
             return status;
         }
-
-        status = WdfDeviceConfigureRequestDispatching(device,
-            pDeviceCtx->CreateRequestsQueue,
-            WdfRequestTypeCreate
-        );
-        if (!NT_SUCCESS(status)) {
-            TraceEvents(TRACE_LEVEL_ERROR,
-                TRACE_DEVICE,
-                "WdfDeviceConfigureRequestDispatching failed with %!STATUS!", status);
-            return status;
-        }
-
-#pragma endregion
 
 #pragma region Expose FDO interface
 

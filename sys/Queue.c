@@ -28,6 +28,9 @@ SOFTWARE.
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, HidGuardianQueueInitialize)
+#pragma alloc_text (PAGE, PendingAuthQueueInitialize)
+#pragma alloc_text (PAGE, PendingCreateRequestsQueueInitialize)
+#pragma alloc_text (PAGE, CreateRequestsQueueInitialize)
 #pragma alloc_text (PAGE, EvtWdfCreateRequestsQueueIoDefault)
 #endif
 
@@ -63,11 +66,90 @@ HidGuardianQueueInitialize(
     );
 
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_QUEUE, "WdfIoQueueCreate failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, 
+            TRACE_QUEUE, 
+            "WdfIoQueueCreate failed %!STATUS!", status);
         return status;
     }
 
     return status;
+}
+
+NTSTATUS
+PendingAuthQueueInitialize(
+    _In_ WDFDEVICE hDevice
+)
+{
+    WDF_IO_QUEUE_CONFIG     queueConfig;
+    PDEVICE_CONTEXT         pDeviceCtx;
+
+    PAGED_CODE();
+
+    pDeviceCtx = DeviceGetContext(hDevice);
+
+    WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchManual);
+
+    return WdfIoQueueCreate(hDevice,
+        &queueConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &pDeviceCtx->PendingAuthQueue
+    );   
+}
+
+NTSTATUS
+PendingCreateRequestsQueueInitialize(
+    _In_ WDFDEVICE hDevice
+)
+{
+    WDF_IO_QUEUE_CONFIG     queueConfig;
+    PDEVICE_CONTEXT         pDeviceCtx;
+
+    PAGED_CODE();
+
+    pDeviceCtx = DeviceGetContext(hDevice);
+
+    WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchManual);
+
+    return WdfIoQueueCreate(hDevice,
+        &queueConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &pDeviceCtx->PendingCreateRequestsQueue
+    );
+}
+
+NTSTATUS
+CreateRequestsQueueInitialize(
+    _In_ WDFDEVICE hDevice
+)
+{
+    NTSTATUS                status;
+    WDF_IO_QUEUE_CONFIG     queueConfig;
+    PDEVICE_CONTEXT         pDeviceCtx;
+
+    PAGED_CODE();
+
+    pDeviceCtx = DeviceGetContext(hDevice);
+
+    WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchSequential);
+    queueConfig.EvtIoDefault = EvtWdfCreateRequestsQueueIoDefault;
+
+    status = WdfIoQueueCreate(hDevice,
+        &queueConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &pDeviceCtx->CreateRequestsQueue
+    );
+
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_QUEUE,
+            "WdfIoQueueCreate (CreateRequestsQueue) failed with %!STATUS!", status);
+        return status;
+    }
+
+    return WdfDeviceConfigureRequestDispatching(hDevice,
+        pDeviceCtx->CreateRequestsQueue,
+        WdfRequestTypeCreate
+    );
 }
 
 VOID HidGuardianEvtIoDefault(
