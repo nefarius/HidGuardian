@@ -215,19 +215,6 @@ HidGuardianCreateDevice(
             return status;
         }
 
-#pragma region Expose FDO interface
-
-        status = WdfDeviceCreateDeviceInterface(device, &GUID_DEVINTERFACE_HIDGUARDIAN, NULL);
-
-        if (!NT_SUCCESS(status)) {
-            TraceEvents(TRACE_LEVEL_ERROR,
-                TRACE_DEVICE,
-                "WdfDeviceCreateDeviceInterface failed status %!STATUS!", status);
-            return status;
-        }
-
-#pragma endregion
-
         //
         // Add this device to the FilterDevice collection.
         //
@@ -256,6 +243,35 @@ HidGuardianCreateDevice(
             return status;
         }
 
+        if (AmIMaster(pDeviceCtx))
+        {
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_DEVICE,
+                "I am the master, skipping further initialization");
+
+            status = STATUS_SUCCESS;
+            pDeviceCtx->AllowByDefault = FALSE;
+
+            goto creationDone;
+        }
+
+        //
+        // Expose FDO interface GUID
+        // 
+        status = WdfDeviceCreateDeviceInterface(device, &GUID_DEVINTERFACE_HIDGUARDIAN, NULL);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "WdfDeviceCreateDeviceInterface failed status %!STATUS!", status);
+            return status;
+        }
+
+        //
+        // Fetch default action to take what to do if service isn't available
+        // from registry key.
+        // 
+        GetDefaultAction(pDeviceCtx);
+
         //
         // Check if this device should get intercepted
         // 
@@ -264,13 +280,9 @@ HidGuardianCreateDevice(
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
             "AmIAffected status %!STATUS!", status);
-
-        //
-        // Fetch default action to take what to do if service isn't available
-        // from registry key.
-        // 
-        GetDefaultAction(pDeviceCtx);
     }
+
+creationDone:
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 

@@ -48,12 +48,11 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
     ULONG                   force = 0;
     PCWSTR                  szIter = NULL;
 
-    DECLARE_CONST_UNICODE_STRING(valueAffectedMultiSz, L"AffectedDevices");
-    DECLARE_CONST_UNICODE_STRING(valueForceUl, L"Force");
-    DECLARE_CONST_UNICODE_STRING(valueExemptedMultiSz, L"ExemptedDevices");
+    DECLARE_CONST_UNICODE_STRING(valueAffectedMultiSz, REG_MULTI_SZ_AFFECTED_DEVICES);
+    DECLARE_CONST_UNICODE_STRING(valueForceUl, REG_DWORD_FORCE);
+    DECLARE_CONST_UNICODE_STRING(valueExemptedMultiSz, REG_MULTI_SZ_EXCEMPTED_DEVICES);
     DECLARE_UNICODE_STRING_SIZE(currentHardwareID, MAX_HARDWARE_ID_SIZE);
     DECLARE_UNICODE_STRING_SIZE(myHardwareID, MAX_HARDWARE_ID_SIZE);
-    DECLARE_CONST_UNICODE_STRING(ctrlHardwareId, L"Root\\HidGuardian");
 
 
     PAGED_CODE();
@@ -191,10 +190,7 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
                     TRACE_GUARDIAN,
                     "My ID %wZ vs current affected ID %wZ\n", &myHardwareID, &currentHardwareID);
 
-                affected = (
-                    RtlEqualUnicodeString(&myHardwareID, &currentHardwareID, TRUE)
-                    || RtlEqualUnicodeString(&myHardwareID, &ctrlHardwareId, TRUE)
-                    );
+                affected = RtlEqualUnicodeString(&myHardwareID, &currentHardwareID, TRUE);
 
                 TraceEvents(TRACE_LEVEL_INFORMATION,
                     TRACE_GUARDIAN,
@@ -214,6 +210,41 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
     // If Hardware ID wasn't found (or Force is disabled), report failure so the filter gets unloaded
     // 
     return (affected) ? STATUS_SUCCESS : STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
+}
+
+BOOLEAN AmIMaster(PDEVICE_CONTEXT DeviceContext)
+{
+    PCWSTR      szIter = NULL;
+    NTSTATUS    status;
+
+    DECLARE_CONST_UNICODE_STRING(masterHardwareId, HIDGUARDIAN_HARDWARE_ID);
+    DECLARE_UNICODE_STRING_SIZE(myHardwareID, MAX_HARDWARE_ID_SIZE);
+
+    //
+    // Walk through devices Hardware IDs
+    // 
+    for (szIter = DeviceContext->HardwareIDs; *szIter; szIter += wcslen(szIter) + 1)
+    {
+        //
+        // Convert wide into Unicode string
+        // 
+        status = RtlUnicodeStringInit(&myHardwareID, szIter);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_GUARDIAN,
+                "RtlUnicodeStringInit failed: %!STATUS!", status);
+            return FALSE;
+        }
+
+        //
+        // Compare to hardware ID of master device
+        // 
+        if (RtlEqualUnicodeString(&myHardwareID, &masterHardwareId, TRUE)) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 //

@@ -25,5 +25,11 @@ SOFTWARE.
 
 #pragma once
 
+#define REG_MULTI_SZ_AFFECTED_DEVICES       L"AffectedDevices"
+#define REG_DWORD_FORCE                     L"Force"
+#define REG_MULTI_SZ_EXCEMPTED_DEVICES      L"ExemptedDevices"
+#define HIDGUARDIAN_HARDWARE_ID             L"Root\\HidGuardian"
+
 NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext);
+BOOLEAN AmIMaster(PDEVICE_CONTEXT DeviceContext);
 VOID GetDefaultAction(PDEVICE_CONTEXT DeviceContext);
