@@ -38,8 +38,8 @@ HidGuardianCreateDevice(
     _Inout_ PWDFDEVICE_INIT DeviceInit
 )
 {
-    WDF_OBJECT_ATTRIBUTES   deviceAttributes;
-    PDEVICE_CONTEXT         deviceContext;
+    WDF_OBJECT_ATTRIBUTES   attribs;
+    PDEVICE_CONTEXT         pDeviceCtx;
     WDFDEVICE               device;
     NTSTATUS                status;
     WDF_FILEOBJECT_CONFIG   deviceConfig;
@@ -48,27 +48,40 @@ HidGuardianCreateDevice(
     WDFMEMORY               classNameMemory;
     PCWSTR                  className;
 
+
     PAGED_CODE();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
+    //
+    // We are a filter driver
+    // 
     WdfFdoInitSetFilter(DeviceInit);
 
-    WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
-    deviceAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
+    //
+    // Prepare registration of EvtFileCleanup
+    // 
+    WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+    attribs.SynchronizationScope = WdfSynchronizationScopeNone;
     WDF_FILEOBJECT_CONFIG_INIT(&deviceConfig,
         WDF_NO_EVENT_CALLBACK,
         WDF_NO_EVENT_CALLBACK,
         EvtFileCleanup
     );
 
+    //
+    // Register EvtFileCleanup
+    // 
     WdfDeviceInitSetFileObjectConfig(
         DeviceInit,
         &deviceConfig,
-        &deviceAttributes
+        &attribs
     );
 
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
+    //
+    // Initialize device context
+    // 
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&attribs, DEVICE_CONTEXT);
 
     //
     // We will just register for cleanup notification because we have to
@@ -76,9 +89,9 @@ HidGuardianCreateDevice(
     // away. If we don't delete, the driver wouldn't get unloaded automatically
     // by the PNP subsystem.
     //
-    deviceAttributes.EvtCleanupCallback = HidGuardianEvtDeviceContextCleanup;
+    attribs.EvtCleanupCallback = HidGuardianEvtDeviceContextCleanup;
 
-    status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
+    status = WdfDeviceCreate(&DeviceInit, &attribs, &device);
 
     if (NT_SUCCESS(status)) {
         TraceEvents(TRACE_LEVEL_VERBOSE,
@@ -94,13 +107,13 @@ HidGuardianCreateDevice(
         // If you pass a wrong object handle it will return NULL and assert if
         // run under framework verifier mode.
         //
-        deviceContext = DeviceGetContext(device);
+        pDeviceCtx = DeviceGetContext(device);
 
         //
         // Linked list for sticky PIDs
         // 
-        deviceContext->StickyPidList = PID_LIST_CREATE();
-        if (deviceContext->StickyPidList == NULL) {
+        pDeviceCtx->StickyPidList = PID_LIST_CREATE();
+        if (pDeviceCtx->StickyPidList == NULL) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
                 "PID_LIST_CREATE failed");
@@ -110,10 +123,10 @@ HidGuardianCreateDevice(
         //
         // Always allow SYSTEM PID 4
         // 
-        PID_LIST_PUSH(&deviceContext->StickyPidList, SYSTEM_PID, TRUE);
+        PID_LIST_PUSH(&pDeviceCtx->StickyPidList, SYSTEM_PID, TRUE);
 
-        WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
-        deviceAttributes.ParentObject = device;
+        WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+        attribs.ParentObject = device;
 
         //
         // Query for current device's Hardware ID
@@ -121,7 +134,7 @@ HidGuardianCreateDevice(
         status = WdfDeviceAllocAndQueryProperty(device,
             DevicePropertyHardwareID,
             NonPagedPool,
-            &deviceAttributes,
+            &attribs,
             &memory
         );
 
@@ -135,8 +148,11 @@ HidGuardianCreateDevice(
         //
         // Get Hardware ID string
         // 
-        deviceContext->HardwareIDsMemory = memory;
-        deviceContext->HardwareIDs = WdfMemoryGetBuffer(memory, &deviceContext->HardwareIDsLength);
+        pDeviceCtx->HardwareIDsMemory = memory;
+        pDeviceCtx->HardwareIDs = WdfMemoryGetBuffer(memory, &pDeviceCtx->HardwareIDsLength);
+
+        WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+        attribs.ParentObject = device;
 
         //
         // Query for current device's ClassName
@@ -144,7 +160,7 @@ HidGuardianCreateDevice(
         status = WdfDeviceAllocAndQueryProperty(device,
             DevicePropertyClassName,
             NonPagedPool,
-            &deviceAttributes,
+            &attribs,
             &classNameMemory
         );
 
@@ -175,7 +191,7 @@ HidGuardianCreateDevice(
         status = WdfIoQueueCreate(device,
             &queueConfig,
             WDF_NO_OBJECT_ATTRIBUTES,
-            &deviceContext->PendingAuthQueue
+            &pDeviceCtx->PendingAuthQueue
         );
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
@@ -193,7 +209,7 @@ HidGuardianCreateDevice(
         status = WdfIoQueueCreate(device,
             &queueConfig,
             WDF_NO_OBJECT_ATTRIBUTES,
-            &deviceContext->PendingCreateRequestsQueue
+            &pDeviceCtx->PendingCreateRequestsQueue
         );
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
@@ -212,7 +228,7 @@ HidGuardianCreateDevice(
         status = WdfIoQueueCreate(device,
             &queueConfig,
             WDF_NO_OBJECT_ATTRIBUTES,
-            &deviceContext->CreateRequestsQueue
+            &pDeviceCtx->CreateRequestsQueue
         );
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
@@ -222,7 +238,7 @@ HidGuardianCreateDevice(
         }
 
         status = WdfDeviceConfigureRequestDispatching(device,
-            deviceContext->CreateRequestsQueue,
+            pDeviceCtx->CreateRequestsQueue,
             WdfRequestTypeCreate
         );
         if (!NT_SUCCESS(status)) {
@@ -278,7 +294,7 @@ HidGuardianCreateDevice(
         //
         // Check if this device should get intercepted
         // 
-        status = AmIAffected(deviceContext);
+        status = AmIAffected(pDeviceCtx);
 
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
@@ -288,7 +304,7 @@ HidGuardianCreateDevice(
         // Fetch default action to take what to do if service isn't available
         // from registry key.
         // 
-        GetDefaultAction(deviceContext);
+        GetDefaultAction(pDeviceCtx);
     }
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
@@ -296,6 +312,11 @@ HidGuardianCreateDevice(
     return status;
 }
 
+//
+// Gets called when the device gts removed.
+// 
+// Happens once in the devices lifetime.
+// 
 #pragma warning(push)
 #pragma warning(disable:28118) // this callback will run at IRQL=PASSIVE_LEVEL
 _Use_decl_annotations_
@@ -303,31 +324,13 @@ VOID
 HidGuardianEvtDeviceContextCleanup(
     WDFOBJECT Device
 )
-/*++
-
-Routine Description:
-
-EvtDeviceRemove event callback must perform any operations that are
-necessary before the specified device is removed. The framework calls
-the driver's EvtDeviceRemove callback when the PnP manager sends
-an IRP_MN_REMOVE_DEVICE request to the driver stack.
-
-Arguments:
-
-Device - Handle to a framework device object.
-
-Return Value:
-
-WDF status code
-
---*/
 {
     ULONG               count;
     PDEVICE_CONTEXT     pDeviceCtx;
 
     PAGED_CODE();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", CURRENT_PROCESS_ID());
 
     pDeviceCtx = DeviceGetContext(Device);
 
@@ -359,6 +362,11 @@ WDF status code
 }
 #pragma warning(pop) // enable 28118 again
 
+//
+// Gets called when a device handle gets closed.
+// 
+// May happen multiple times in the devices lifetime.
+// 
 _Use_decl_annotations_
 VOID
 EvtFileCleanup(
@@ -389,7 +397,7 @@ EvtFileCleanup(
     if (pControlCtx->CerberusPid == pid) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
-            "Cerberus has left the realm");
+            "Cerberus has left the realm, performing clean-up");
 
         pControlCtx->IsCerberusConnected = FALSE;
 
