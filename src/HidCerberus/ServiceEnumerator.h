@@ -6,10 +6,9 @@
 
 class ServiceEnumerator
 {
-public:
-    ServiceEnumerator();
-    ~ServiceEnumerator();
+    ServiceEnumerator() {}
 
+public:
     static DWORD processIdFromServiceName(std::string serviceName);
     static DWORD processIdFromProcessName(std::string processname);
 };

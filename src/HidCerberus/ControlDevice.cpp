@@ -13,15 +13,21 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
 
     logger.debug("Trying to open control device %s", devicePath);
 
+    //
+    // Open sideband control device
+    // 
     _deviceHandle = CreateFileA(_devicePath.c_str(),
-                                GENERIC_READ | GENERIC_WRITE,
-                                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                nullptr,
-                                OPEN_EXISTING,
-                                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH |
-                                FILE_FLAG_OVERLAPPED,
-                                nullptr);
+        GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH |
+        FILE_FLAG_OVERLAPPED,
+        nullptr);
 
+    //
+    // Validate handle
+    // 
     if (_deviceHandle == INVALID_HANDLE_VALUE)
     {
         if (GetLastError() == ERROR_FILE_NOT_FOUND)
@@ -40,9 +46,14 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     logger.debug("Device opened");
 
     DWORD bytesReturned = 0;
-    OVERLAPPED lOverlapped = {0};
+    OVERLAPPED lOverlapped = { 0 };
     lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
+#pragma region Whitelist processes
+
+    //
+    // Processes to always whitelist to ensure system stability
+    // 
     std::vector<std::string> processNames = {
         "dwm.exe"
     };
@@ -70,10 +81,17 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     );
 
     if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
-    {
-        logger.error("Failed to submit process IDs");
-    }
+        throw std::runtime_error("Failed to submit process IDs");
 
+#pragma endregion
+
+#pragma region Whitelist services
+
+    //
+    // Windows services to always whitelist to ensure system stability
+    // 
+    // TODO: can probably be shortened, do more testing
+    // 
     std::vector<std::string> serviceNames = {
         "BrokerInfrastructure",
         "DcomLaunch",
@@ -125,9 +143,9 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     );
 
     if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
-    {
-        logger.error("Failed to submit service IDs");
-    }
+        throw std::runtime_error("Failed to submit service IDs");
+
+#pragma endregion
 
     CloseHandle(lOverlapped.hEvent);
 }

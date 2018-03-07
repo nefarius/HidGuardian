@@ -7,16 +7,20 @@
 
 using Poco::icompare;
 
-
-ServiceEnumerator::ServiceEnumerator()
-{
-}
-
-
-ServiceEnumerator::~ServiceEnumerator()
-{
-}
-
+/**
+ * \fn  DWORD ServiceEnumerator::processIdFromServiceName(std::string serviceName)
+ *
+ * \brief   Returns the process identifier of a Windows Service identified by provided name.
+ *
+ * \author  Benjamin "Nefarius" Höglinger
+ * \date    07.03.2018
+ *
+ * \exception   std::runtime_error  Raised when a runtime error condition occurs.
+ *
+ * \param   serviceName Name of the service.
+ *
+ * \return  The process identifier.
+ */
 DWORD ServiceEnumerator::processIdFromServiceName(std::string serviceName)
 {
     const auto control = OpenSCManagerA(nullptr, nullptr, GENERIC_READ);
@@ -32,11 +36,10 @@ DWORD ServiceEnumerator::processIdFromServiceName(std::string serviceName)
         throw std::runtime_error(std::string("Service handle invalid: ") + serviceName);
     }
 
+    DWORD bytesRequired;
     SERVICE_STATUS_PROCESS svcProc;
     RtlZeroMemory(&svcProc, sizeof(SERVICE_STATUS_PROCESS));
-
-    DWORD bytesRequired;
-
+    
     const auto ret = QueryServiceStatusEx(
         service,
         SC_STATUS_PROCESS_INFO,
@@ -56,6 +59,18 @@ DWORD ServiceEnumerator::processIdFromServiceName(std::string serviceName)
     return svcProc.dwProcessId;
 }
 
+/**
+ * \fn  DWORD ServiceEnumerator::processIdFromProcessName(std::string processName)
+ *
+ * \brief   Returns the process identifier of a process identified by provided name.
+ *
+ * \author  Benjamin "Nefarius" Höglinger
+ * \date    07.03.2018
+ *
+ * \param   processName Name of the process.
+ *
+ * \return  The process identifier.
+ */
 DWORD ServiceEnumerator::processIdFromProcessName(std::string processName)
 {
     DWORD pid = 0;
