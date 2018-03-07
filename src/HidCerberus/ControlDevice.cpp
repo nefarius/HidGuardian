@@ -2,7 +2,9 @@
 #include <utility>
 
 #include <Poco/Logger.h>
+#include <devioctl.h>
 #include <HidGuardian.h>
+#include "ServiceEnumerator.h"
 
 
 ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(devicePath))
@@ -12,20 +14,23 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     logger.debug("Trying to open control device %s", devicePath);
 
     _deviceHandle = CreateFileA(_devicePath.c_str(),
-        GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH | FILE_FLAG_OVERLAPPED,
-        nullptr);
+                                GENERIC_READ | GENERIC_WRITE,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                nullptr,
+                                OPEN_EXISTING,
+                                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH |
+                                FILE_FLAG_OVERLAPPED,
+                                nullptr);
 
     if (_deviceHandle == INVALID_HANDLE_VALUE)
     {
-        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND)
+        {
             throw std::runtime_error("Couldn't open the desired device, make sure the provided path is correct.");
         }
 
-        if (GetLastError() == ERROR_ACCESS_DENIED) {
+        if (GetLastError() == ERROR_ACCESS_DENIED)
+        {
             throw std::runtime_error("Couldn't access device, please make sure the device isn't already guarded.");
         }
 
@@ -35,11 +40,94 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     logger.debug("Device opened");
 
     DWORD bytesReturned = 0;
-    OVERLAPPED lOverlapped = { 0 };
+    OVERLAPPED lOverlapped = {0};
     lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-    
-    
+    std::vector<std::string> processNames = {
+        "dwm.exe"
+    };
+
+    const auto submitProcessesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS) + (sizeof(ULONG) * processNames.size());
+    const auto pSubmitProcesses = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS>(malloc(submitProcessesSize));
+    pSubmitProcesses->Size = submitProcessesSize;
+
+    for (unsigned int i = 0; i < processNames.size(); i++)
+    {
+        const auto name = processNames[i];
+        pSubmitProcesses->ProcessIds[i] = ServiceEnumerator::processIdFromProcessName(name);
+        logger.debug("Process %s has PID: %lu", name, pSubmitProcesses->ProcessIds[i]);
+    }
+
+    DeviceIoControl(
+        _deviceHandle,
+        IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS,
+        pSubmitProcesses,
+        submitProcessesSize,
+        nullptr,
+        0,
+        &bytesReturned,
+        &lOverlapped
+    );
+
+    if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
+    {
+        logger.error("Failed to submit process IDs");
+    }
+
+    std::vector<std::string> serviceNames = {
+        "BrokerInfrastructure",
+        "DcomLaunch",
+        "DeviceInstall",
+        "LSM",
+        "PlugPlay",
+        "Power",
+        "SystemEventsBroker",
+        "Appinfo",
+        "BITS",
+        "Browser",
+        "DoSvc",
+        "iphlpsvc",
+        "LanmanServer",
+        "lfsvc",
+        "ProfSvc",
+        "Schedule",
+        "SENS",
+        "ShellHWDetection",
+        "Themes",
+        "TokenBroker",
+        "UserManager",
+        "Winmgmt",
+        "wlidsvc",
+        "WpnService",
+        "wuauserv"
+    };
+
+    const auto submitServicesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS) + (sizeof(ULONG) * serviceNames.size());
+    const auto pSubmitServices = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS>(malloc(submitServicesSize));
+    pSubmitServices->Size = submitServicesSize;
+
+    for (unsigned int i = 0; i < serviceNames.size(); i++)
+    {
+        const auto name = serviceNames[i];
+        pSubmitServices->ProcessIds[i] = ServiceEnumerator::processIdFromServiceName(name);
+        logger.debug("Service %s has PID: %lu", name, pSubmitServices->ProcessIds[i]);
+    }
+
+    DeviceIoControl(
+        _deviceHandle,
+        IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS,
+        pSubmitServices,
+        submitServicesSize,
+        nullptr,
+        0,
+        &bytesReturned,
+        &lOverlapped
+    );
+
+    if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
+    {
+        logger.error("Failed to submit service IDs");
+    }
 
     CloseHandle(lOverlapped.hEvent);
 }
@@ -47,7 +135,8 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
 
 ControlDevice::~ControlDevice()
 {
-    if (_deviceHandle != INVALID_HANDLE_VALUE) {
+    if (_deviceHandle != INVALID_HANDLE_VALUE)
+    {
         CloseHandle(_deviceHandle);
     }
 }

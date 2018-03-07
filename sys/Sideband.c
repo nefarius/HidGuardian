@@ -295,7 +295,7 @@ VOID HidGuardianSidebandIoDeviceControl(
         //
         // Get buffer of request
         // 
-        status = WdfRequestRetrieveOutputBuffer(
+        status = WdfRequestRetrieveInputBuffer(
             Request,
             sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS),
             (void*)&pSubmitPids,

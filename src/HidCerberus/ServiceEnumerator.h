@@ -11,5 +11,6 @@ public:
     ~ServiceEnumerator();
 
     static DWORD processIdFromServiceName(std::string serviceName);
+    static DWORD processIdFromProcessName(std::string processname);
 };
 
