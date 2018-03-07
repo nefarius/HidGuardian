@@ -2,6 +2,7 @@
 #include <utility>
 
 #include <Poco/Logger.h>
+#include <HidGuardian.h>
 
 
 ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(devicePath))
@@ -32,6 +33,15 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     }
 
     logger.debug("Device opened");
+
+    DWORD bytesReturned = 0;
+    OVERLAPPED lOverlapped = { 0 };
+    lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
+    
+    
+
+    CloseHandle(lOverlapped.hEvent);
 }
 
 

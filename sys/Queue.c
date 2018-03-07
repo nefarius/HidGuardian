@@ -66,8 +66,8 @@ HidGuardianQueueInitialize(
     );
 
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, 
-            TRACE_QUEUE, 
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_QUEUE,
             "WdfIoQueueCreate failed %!STATUS!", status);
         return status;
     }
@@ -93,7 +93,7 @@ PendingAuthQueueInitialize(
         &queueConfig,
         WDF_NO_OBJECT_ATTRIBUTES,
         &pDeviceCtx->PendingAuthQueue
-    );   
+    );
 }
 
 NTSTATUS
@@ -210,6 +210,16 @@ EvtWdfCreateRequestsQueueIoDefault(
     pDeviceCtx = DeviceGetContext(device);
     pControlCtx = ControlDeviceGetContext(ControlDevice);
     pid = CURRENT_PROCESS_ID();
+
+    if (PID_LIST_CONTAINS(&pControlCtx->SystemPidList, pid, NULL))
+    {
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_QUEUE,
+            "Request belongs to system PID %d, allowing access",
+            pid);
+
+        goto allowAccess;
+    }
 
     //
     // If this is Cerberus, allow

@@ -194,6 +194,15 @@ HidGuardianCreateControlDevice(
         TRACE_SIDEBAND,
         "ControlDeviceGetContext = 0x%p", pControlCtx);
 
+    pControlCtx->SystemPidList = PID_LIST_CREATE();
+    if (pControlCtx->SystemPidList == NULL) {
+        status = STATUS_INSUFFICIENT_RESOURCES;
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "PID_LIST_CREATE failed with %!STATUS!", status);
+        goto Error;
+    }
+
     //
     // Control devices must notify WDF when they are done initializing.   I/O is
     // rejected until this call is made.
@@ -263,14 +272,59 @@ VOID HidGuardianSidebandIoDeviceControl(
     _In_ ULONG      IoControlCode
 )
 {
-    NTSTATUS    status = STATUS_INVALID_PARAMETER;
+    NTSTATUS                            status = STATUS_INVALID_PARAMETER;
+    PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS     pSubmitPids;
+    size_t                              bufferLength;
+    PCONTROL_DEVICE_CONTEXT             pControlCtx;
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
 
     UNREFERENCED_PARAMETER(Queue);
     UNREFERENCED_PARAMETER(OutputBufferLength);
     UNREFERENCED_PARAMETER(InputBufferLength);
-    UNREFERENCED_PARAMETER(IoControlCode);
+
+    pControlCtx = ControlDeviceGetContext(ControlDevice);
+
+    switch (IoControlCode)
+    {
+    case IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS:
+
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_SIDEBAND, ">> IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS");
+
+        //
+        // Get buffer of request
+        // 
+        status = WdfRequestRetrieveOutputBuffer(
+            Request,
+            sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS),
+            (void*)&pSubmitPids,
+            &bufferLength);
+
+        //
+        // Validate output buffer
+        // 
+        if (!NT_SUCCESS(status) || bufferLength != pSubmitPids->Size)
+        {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_QUEUE,
+                "Packet size mismatch: %d != %d",
+                (ULONG)bufferLength, pSubmitPids->Size);
+
+            break;
+        }
+
+        for (ULONG i = 0; i < ((pSubmitPids->Size - sizeof(ULONG)) / sizeof(ULONG)); i++)
+        {
+            PID_LIST_PUSH(&pControlCtx->SystemPidList, pSubmitPids->ProcessIds[i], TRUE);
+
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_SIDEBAND, 
+                "Whitelisted system PID: %d", pSubmitPids->ProcessIds[i]);
+        }
+
+        break;
+    }
 
     WdfRequestComplete(Request, status);
 

@@ -169,6 +169,7 @@
     <ClCompile Include="DeviceEnumerator.cpp" />
     <ClCompile Include="DeviceListener.cpp" />
     <ClCompile Include="GuardedDevice.cpp" />
+    <ClCompile Include="ServiceEnumerator.cpp" />
     <ClCompile Include="Zerberus.cpp" />
     <ClCompile Include="ZerberusService.cpp" />
   </ItemGroup>
@@ -179,6 +180,7 @@
     <ClInclude Include="DeviceListener.h" />
     <ClInclude Include="GuardedDevice.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="ServiceEnumerator.h" />
     <ClInclude Include="ZerberusService.h" />
   </ItemGroup>
   <ItemGroup>
