@@ -39,9 +39,10 @@ HidGuardianQueueInitialize(
     _In_ WDFDEVICE Device
 )
 {
-    WDFQUEUE queue;
-    NTSTATUS status;
-    WDF_IO_QUEUE_CONFIG    queueConfig;
+    WDFQUEUE                queue;
+    NTSTATUS                status;
+    WDF_IO_QUEUE_CONFIG     queueConfig;
+
 
     PAGED_CODE();
 
@@ -360,7 +361,7 @@ HidGuardianEvtIoDeviceControl(
     ULONG  IoControlCode
 )
 {
-    NTSTATUS                            status = STATUS_INVALID_PARAMETER;
+    NTSTATUS                            status;
     size_t                              bufferLength;
     PHIDGUARDIAN_GET_CREATE_REQUEST     pGetCreateRequest;
     PHIDGUARDIAN_SET_CREATE_REQUEST     pSetCreateRequest;
@@ -628,3 +629,4 @@ HidGuardianEvtIoDeviceControl(
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Exit (default)");
 }
+

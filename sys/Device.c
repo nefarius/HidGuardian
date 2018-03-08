@@ -406,10 +406,18 @@ EvtWdfDeviceReleaseHardware(
     WDFCMRESLIST  ResourcesTranslated
 )
 {
-    UNREFERENCED_PARAMETER(Device);
+    PDEVICE_CONTEXT     pDeviceCtx;
+    
     UNREFERENCED_PARAMETER(ResourcesTranslated);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+    pDeviceCtx = DeviceGetContext(Device);
+
+    WdfIoQueuePurge(pDeviceCtx->CreateRequestsQueue, NULL, NULL);
+    WdfIoQueuePurge(pDeviceCtx->PendingCreateRequestsQueue, NULL, NULL);
+    WdfIoQueuePurge(pDeviceCtx->PendingAuthQueue, NULL, NULL);
+    WdfIoQueuePurge(WdfDeviceGetDefaultQueue(Device), NULL, NULL);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 
