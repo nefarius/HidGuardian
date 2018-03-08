@@ -38,14 +38,15 @@ HidGuardianCreateDevice(
     _Inout_ PWDFDEVICE_INIT DeviceInit
 )
 {
-    WDF_OBJECT_ATTRIBUTES   attribs;
-    PDEVICE_CONTEXT         pDeviceCtx;
-    WDFDEVICE               device;
-    NTSTATUS                status;
-    WDF_FILEOBJECT_CONFIG   deviceConfig;
-    WDFMEMORY               memory;
-    WDFMEMORY               classNameMemory;
-    PCWSTR                  className;
+    WDF_OBJECT_ATTRIBUTES           attribs;
+    PDEVICE_CONTEXT                 pDeviceCtx;
+    WDFDEVICE                       device;
+    NTSTATUS                        status;
+    WDF_FILEOBJECT_CONFIG           deviceConfig;
+    WDFMEMORY                       memory;
+    WDFMEMORY                       classNameMemory;
+    PCWSTR                          className;
+    WDF_PNPPOWER_EVENT_CALLBACKS    pnpPowerCallbacks;
 
 
     PAGED_CODE();
@@ -75,6 +76,16 @@ HidGuardianCreateDevice(
         DeviceInit,
         &deviceConfig,
         &attribs
+    );
+
+    //
+    // Register Power/PNP callbacks
+    // 
+    WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
+    pnpPowerCallbacks.EvtDeviceReleaseHardware = EvtWdfDeviceReleaseHardware;
+    WdfDeviceInitSetPnpPowerEventCallbacks(
+        DeviceInit,
+        &pnpPowerCallbacks
     );
 
     //
@@ -386,4 +397,21 @@ EvtFileCleanup(
     }
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+}
+
+_Use_decl_annotations_
+NTSTATUS
+EvtWdfDeviceReleaseHardware(
+    WDFDEVICE  Device,
+    WDFCMRESLIST  ResourcesTranslated
+)
+{
+    UNREFERENCED_PARAMETER(Device);
+    UNREFERENCED_PARAMETER(ResourcesTranslated);
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+
+    return STATUS_SUCCESS;
 }
