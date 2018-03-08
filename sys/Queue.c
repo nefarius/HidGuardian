@@ -211,7 +211,8 @@ EvtWdfCreateRequestsQueueIoDefault(
     pControlCtx = ControlDeviceGetContext(ControlDevice);
     pid = CURRENT_PROCESS_ID();
 
-    if (PID_LIST_CONTAINS(&pControlCtx->SystemPidList, pid, NULL))
+    if (pControlCtx->IsCerberusConnected == TRUE
+        && PID_LIST_CONTAINS(&pControlCtx->SystemPidList, pid, NULL))
     {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_QUEUE,
@@ -420,7 +421,7 @@ HidGuardianEvtIoDeviceControl(
         // 
         status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->PendingCreateRequestsQueue, &createRequest);
         if (!NT_SUCCESS(status)) {
-            TraceEvents(TRACE_LEVEL_ERROR,
+            TraceEvents(TRACE_LEVEL_WARNING,
                 TRACE_QUEUE,
                 "WdfIoQueueRetrieveNextRequest (PendingCreateRequestsQueue) failed with status %!STATUS!", status);
             break;

@@ -276,6 +276,7 @@ VOID HidGuardianSidebandIoDeviceControl(
     PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS     pSubmitPids;
     size_t                              bufferLength;
     PCONTROL_DEVICE_CONTEXT             pControlCtx;
+    ULONG                               pid;
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Entry");
 
@@ -316,11 +317,32 @@ VOID HidGuardianSidebandIoDeviceControl(
 
         for (ULONG i = 0; i < ((pSubmitPids->Size - sizeof(ULONG)) / sizeof(ULONG)); i++)
         {
-            PID_LIST_PUSH(&pControlCtx->SystemPidList, pSubmitPids->ProcessIds[i], TRUE);
+            pid = pSubmitPids->ProcessIds[i];
 
-            TraceEvents(TRACE_LEVEL_INFORMATION,
-                TRACE_SIDEBAND, 
-                "Whitelisted system PID: %d", pSubmitPids->ProcessIds[i]);
+            if (pid <= 0)
+                continue;;
+
+            if (!PID_LIST_CONTAINS(&pControlCtx->SystemPidList, pid, NULL))
+            {
+                if (PID_LIST_PUSH(&pControlCtx->SystemPidList, pid, TRUE))
+                {
+                    TraceEvents(TRACE_LEVEL_INFORMATION,
+                        TRACE_SIDEBAND,
+                        "Whitelisted system PID: %d", pid);
+                }
+                else
+                {
+                    TraceEvents(TRACE_LEVEL_ERROR,
+                        TRACE_SIDEBAND,
+                        "Failed to whitelist system PID: %d", pid);
+                }
+            }
+            else
+            {
+                TraceEvents(TRACE_LEVEL_VERBOSE,
+                    TRACE_SIDEBAND,
+                    "System PID %d already in list", pid);
+            }
         }
 
         break;
@@ -380,6 +402,8 @@ HidGuardianSidebandFileCleanup(
     pControlCtx = ControlDeviceGetContext(ControlDevice);
 
     pControlCtx->IsCerberusConnected = FALSE;
+    PID_LIST_DESTROY(&pControlCtx->SystemPidList);
+    pControlCtx->SystemPidList = PID_LIST_CREATE();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
 }

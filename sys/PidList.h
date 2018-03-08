@@ -4,6 +4,10 @@
 #define PID_LIST_TAG    'LPGH'
 #define SYSTEM_PID      0x04
 
+#ifndef _KERNEL_MODE
+#include <stdlib.h>
+#endif
+
 typedef struct _PID_LIST_NODE
 {
     ULONG Pid;
@@ -16,7 +20,13 @@ typedef struct _PID_LIST_NODE
 
 PPID_LIST_NODE FORCEINLINE PID_LIST_CREATE()
 {
-    PPID_LIST_NODE head = ExAllocatePoolWithTag(NonPagedPool, sizeof(PID_LIST_NODE), PID_LIST_TAG);
+    PPID_LIST_NODE head;
+
+#ifdef _KERNEL_MODE
+    head = ExAllocatePoolWithTag(NonPagedPool, sizeof(PID_LIST_NODE), PID_LIST_TAG);
+#else
+    head = (PPID_LIST_NODE)malloc(sizeof(PID_LIST_NODE));
+#endif
 
     if (head == NULL) {
         return head;
@@ -32,10 +42,17 @@ VOID FORCEINLINE PID_LIST_DESTROY(PID_LIST_NODE ** head)
     PPID_LIST_NODE current = *head;
     PPID_LIST_NODE temp_node = NULL;
 
+    if (current == NULL)
+        return;
+
     while (current->next != NULL) {
         temp_node = current;
         current = current->next;
+#ifdef _KERNEL_MODE
         ExFreePoolWithTag(temp_node, PID_LIST_TAG);
+#else
+        free(temp_node);
+#endif
     }
 }
 
@@ -43,7 +60,14 @@ BOOLEAN FORCEINLINE PID_LIST_PUSH(PID_LIST_NODE ** head, ULONG pid, BOOLEAN allo
 {
     PPID_LIST_NODE new_node;
 
+    if (*head == NULL)
+        return FALSE;
+
+#ifdef _KERNEL_MODE
     new_node = ExAllocatePoolWithTag(NonPagedPool, sizeof(PID_LIST_NODE), PID_LIST_TAG);
+#else
+    new_node = (PPID_LIST_NODE)malloc(sizeof(PID_LIST_NODE));
+#endif
 
     if (new_node == NULL) {
         return FALSE;
@@ -62,7 +86,11 @@ BOOLEAN FORCEINLINE PID_LIST_REMOVE_BY_PID(PID_LIST_NODE ** head, ULONG pid)
     PPID_LIST_NODE current = *head;
     PPID_LIST_NODE temp_node = NULL;
 
-    if (pid == SYSTEM_PID) return FALSE;
+    if (current == NULL)
+        return FALSE;
+
+    if (pid == SYSTEM_PID)
+        return FALSE;
 
     //
     // Search for PID
@@ -86,7 +114,11 @@ BOOLEAN FORCEINLINE PID_LIST_REMOVE_BY_PID(PID_LIST_NODE ** head, ULONG pid)
     // 
     temp_node = current->next;
     current->next = temp_node->next;
+#ifdef _KERNEL_MODE
     ExFreePoolWithTag(temp_node, PID_LIST_TAG);
+#else
+    free(temp_node);
+#endif
 
     return TRUE;
 }
@@ -94,6 +126,9 @@ BOOLEAN FORCEINLINE PID_LIST_REMOVE_BY_PID(PID_LIST_NODE ** head, ULONG pid)
 BOOLEAN FORCEINLINE PID_LIST_CONTAINS(PID_LIST_NODE ** head, ULONG pid, BOOLEAN* allowed)
 {
     PPID_LIST_NODE current = *head;
+
+    if (current == NULL)
+        return FALSE;
 
     //
     // Search for PID
