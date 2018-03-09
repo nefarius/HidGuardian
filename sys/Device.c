@@ -399,6 +399,9 @@ EvtFileCleanup(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }
 
+//
+// Gets called when the device gets powered down.
+// 
 _Use_decl_annotations_
 NTSTATUS
 EvtWdfDeviceReleaseHardware(
