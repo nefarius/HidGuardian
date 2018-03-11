@@ -73,6 +73,8 @@ typedef struct _DEVICE_CONTEXT
     // 
     BOOLEAN         AllowByDefault;
 
+    BOOLEAN         IsShuttingDown;
+
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
 //

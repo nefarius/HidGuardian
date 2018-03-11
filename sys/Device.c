@@ -417,10 +417,11 @@ EvtWdfDeviceReleaseHardware(
 
     pDeviceCtx = DeviceGetContext(Device);
 
+    pDeviceCtx->IsShuttingDown = TRUE;
+
     WdfIoQueuePurge(pDeviceCtx->CreateRequestsQueue, NULL, NULL);
     WdfIoQueuePurge(pDeviceCtx->PendingCreateRequestsQueue, NULL, NULL);
     WdfIoQueuePurge(pDeviceCtx->PendingAuthQueue, NULL, NULL);
-    WdfIoQueuePurge(WdfDeviceGetDefaultQueue(Device), NULL, NULL);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 

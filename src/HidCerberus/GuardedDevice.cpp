@@ -31,7 +31,7 @@ using Poco::icompare;
 
 GuardedDevice::GuardedDevice(std::string devicePath, const Session& session)
     : Task(devicePath), _devicePath(std::move(devicePath)), _session(session)
-{       
+{
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
     logger.debug("Trying to open device %s", _devicePath);
@@ -115,15 +115,22 @@ void GuardedDevice::runTask()
 
         if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
+            const auto error = GetLastError();
+
             //
             // This condition is met if the drivers queue is empty
             // 
-            if (GetLastError() == ERROR_NO_MORE_ITEMS) {
+            if (error == ERROR_NO_MORE_ITEMS) {
                 sleep(200);
                 continue;
             }
 
-            logger.error("Request (ID: %lu) failed: %lu", pHgGet->RequestId, (ULONG)GetLastError());
+            if (error == ERROR_DEV_NOT_EXIST) {
+                logger.debug("Device got removed/powered down, terminating thread");
+                break;
+            }
+
+            logger.error("Request (ID: %lu) failed: %lu", pHgGet->RequestId, (ULONG)error);
             break;
         }
 
@@ -242,6 +249,13 @@ void GuardedDevice::runTask()
 
         if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
         {
+            const auto error = GetLastError();
+
+            if (error == ERROR_DEV_NOT_EXIST) {
+                logger.debug("Device got removed/powered down, terminating thread");
+                break;
+            }
+
             logger.error("Permission request %lu failed", pHgGet->RequestId);
             break;
         }

@@ -396,6 +396,11 @@ HidGuardianEvtIoDeviceControl(
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_QUEUE, ">> IOCTL_HIDGUARDIAN_GET_CREATE_REQUEST");
 
+        if (pDeviceCtx->IsShuttingDown) {
+            status = STATUS_DEVICE_DOES_NOT_EXIST;
+            break;
+        }
+
         //
         // Get buffer of request
         // 
@@ -491,6 +496,11 @@ HidGuardianEvtIoDeviceControl(
 
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_QUEUE, ">> IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST");
+
+        if (pDeviceCtx->IsShuttingDown) {
+            status = STATUS_DEVICE_DOES_NOT_EXIST;
+            break;
+        }
 
         status = WdfRequestRetrieveInputBuffer(
             Request,
