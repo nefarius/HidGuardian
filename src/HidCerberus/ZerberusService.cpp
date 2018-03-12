@@ -113,6 +113,9 @@ void ZerberusService::initialize(Application & self)
 
 int ZerberusService::main(const std::vector<std::string>& args)
 {
+    //
+    // TODO: maybe there's a better way, consult POCO docs
+    // 
     if (config().has("core.oneShot")) {
         return Application::EXIT_OK;
     }
@@ -126,6 +129,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
     AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
 
+    //
+    // TODO: also check for path validity
+    // 
     if (!logFilePath.empty())
     {
         AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(logFilePath)));
@@ -162,7 +168,10 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
-    Poco::Data::SQLite::Connector::registerConnector();
+    //
+    // Register SQLite connector
+    // 
+    Connector::registerConnector();
 
     //
     // Get database path
@@ -203,13 +212,16 @@ int ZerberusService::main(const std::vector<std::string>& args)
     {
         cd = new ControlDevice(CONTROL_DEVICE_PATH);
     }
-    catch(std::exception ex)
+    catch(std::exception& ex)
     {
         logger.fatal("Couldn't create control device: %s", std::string(ex.what()));
 
         return Application::EXIT_OSFILE;
     }
 
+    //
+    // Enumerate existing devices and start guarding them
+    // 
     for (auto device : DeviceEnumerator::enumerateDeviceInterface(const_cast<LPGUID>(&GUID_DEVINTERFACE_HIDGUARDIAN)))
     {
         onDeviceArrived(this, device);
@@ -217,6 +229,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     logger.information("Starting listening for new devices");
 
+    //
+    // DeviceListener will raise events on device arrival or removal
+    // 
     AutoPtr<DeviceListener> dl(new DeviceListener({ GUID_DEVINTERFACE_HIDGUARDIAN }));
 
     //
@@ -224,6 +239,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
     // 
     dl->deviceArrived += Poco::delegate(this, &ZerberusService::onDeviceArrived);
 
+    //
+    // Listen fordevice removal (currently just loggs the occurance)
+    // 
     dl->deviceRemoved += Poco::delegate(this, &ZerberusService::onDeviceRemoved);
 
     //
