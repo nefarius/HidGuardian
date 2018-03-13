@@ -17,7 +17,7 @@ class DeviceListener :
 {
     WNDCLASSEX _windowClass{};
     HWND _windowHandle;
-    HDEVNOTIFY _deviceNotify;
+    std::vector<HDEVNOTIFY> _deviceNotifiers;
     std::vector<GUID> _interfaceGuids;
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

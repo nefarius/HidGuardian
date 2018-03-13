@@ -46,9 +46,9 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
                     using convert_type = std::codecvt_utf8<wchar_t>;
                     std::wstring_convert<convert_type, wchar_t> converter;
-                    std::string name(converter.to_bytes(iface->dbcc_name));
+                    const std::string name(converter.to_bytes(iface->dbcc_name));
 
-                    pThis->deviceArrived.notify(pThis, name);
+                    pThis->deviceArrived.notifyAsync(pThis, name);
                 }
 
                 break;
@@ -63,9 +63,9 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
                     using convert_type = std::codecvt_utf8<wchar_t>;
                     std::wstring_convert<convert_type, wchar_t> converter;
-                    std::string name(converter.to_bytes(iface->dbcc_name));
+                    const std::string name(converter.to_bytes(iface->dbcc_name));
 
-                    pThis->deviceRemoved.notify(pThis, name);
+                    pThis->deviceRemoved.notifyAsync(pThis, name);
                 }
 
                 break;
@@ -86,17 +86,16 @@ LRESULT DeviceListener::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 }
 
 DeviceListener::DeviceListener(std::initializer_list<GUID> interfaceGuids) : Task("DeviceListener"),
-                                                                             _windowHandle(nullptr),
-                                                                             _deviceNotify(nullptr),
-                                                                             _interfaceGuids(interfaceGuids)
+_windowHandle(nullptr),
+_interfaceGuids(interfaceGuids)
 {
 }
 
 DeviceListener::~DeviceListener()
 {
-    if (_deviceNotify != nullptr)
+    for (auto& notify : _deviceNotifiers)
     {
-        UnregisterDeviceNotification(_deviceNotify);
+        UnregisterDeviceNotification(notify);
     }
 
     if (_windowHandle != nullptr)
@@ -112,6 +111,13 @@ void DeviceListener::runTask()
     auto& logger = Poco::Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
     logger.debug("Listening for window messages");
+
+    /*
+     * Create temporary message-only window to receive device broadcast messages.
+     *
+     * Do keep in mind that the message loop has to run within the same thread
+     * the window was created in or else the loop will never pick up messages.
+     */
 
     ZeroMemory(&_windowClass, sizeof(WNDCLASSEX));
 
@@ -149,7 +155,7 @@ void DeviceListener::runTask()
         throw std::runtime_error("Could not get create the temporary window");
     }
 
-    for(auto iface : _interfaceGuids)
+    for (auto iface : _interfaceGuids)
     {
         DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
         ZeroMemory(&NotificationFilter, sizeof(NotificationFilter));
@@ -160,12 +166,14 @@ void DeviceListener::runTask()
 
         NotificationFilter.dbcc_classguid = iface;
 
-        _deviceNotify = RegisterDeviceNotification(_windowHandle, &NotificationFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
+        auto deviceNotify = RegisterDeviceNotification(_windowHandle, &NotificationFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
 
-        if (_deviceNotify == nullptr)
+        if (deviceNotify == nullptr)
         {
             throw std::runtime_error("Couldn't register for device notification");
         }
+
+        _deviceNotifiers.push_back(deviceNotify);
     }
 
     //
