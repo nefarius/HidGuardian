@@ -376,18 +376,10 @@ EvtFileCleanup(
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", pid);
 
-    //if (!PID_LIST_REMOVE_BY_PID(&pDeviceCtx->StickyPidList, pid)) {
-    //    TraceEvents(TRACE_LEVEL_INFORMATION, 
-    //        TRACE_DEVICE, 
-    //        "PID %d not in sticky list", pid);
-    //}
-
     if (pControlCtx->CerberusPid == pid) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
             "Cerberus has left the realm, performing clean-up");
-
-        pControlCtx->IsCerberusConnected = FALSE;
 
         WdfIoQueuePurgeSynchronously(pDeviceCtx->PendingCreateRequestsQueue);
         WdfIoQueueStart(pDeviceCtx->PendingCreateRequestsQueue);
