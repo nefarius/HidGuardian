@@ -30,6 +30,7 @@
 #include <Poco/BasicEvent.h>
 #include <Poco/Delegate.h>
 #include "ControlDevice.h"
+#include "CoreClrHost.h"
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -119,6 +120,8 @@ int ZerberusService::main(const std::vector<std::string>& args)
     if (config().has("core.oneShot")) {
         return Application::EXIT_OK;
     }
+
+    CoreClrHost host(config());
 
     //
     // Prepare to log to file and optionally console window
@@ -281,24 +284,24 @@ int ZerberusService::main(const std::vector<std::string>& args)
     return Application::EXIT_OK;
 }
 
-void ZerberusService::defineOptions(OptionSet & options)
+void ZerberusService::defineOptions(Poco::Util::OptionSet & options)
 {
     ServerApplication::defineOptions(options);
 
     options.addOption(
-        Option("help", "h", "Display this help.")
+        Poco::Util::Option("help", "h", "Display this help.")
         .required(false)
         .repeatable(false)
         .binding("core.oneShot")
-        .callback(OptionCallback<ZerberusService>(this, &ZerberusService::help)));
+        .callback(Poco::Util::OptionCallback<ZerberusService>(this, &ZerberusService::help)));
 
     options.addOption(
-        Option("enumerateDeviceInterface", "e", "Returns a list of instance paths of devices with the specified interface GUID.")
+        Poco::Util::Option("enumerateDeviceInterface", "e", "Returns a list of instance paths of devices with the specified interface GUID.")
         .required(false)
         .repeatable(true)
         .argument("GUID")
         .binding("core.oneShot")
-        .callback(OptionCallback<ZerberusService>(this, &ZerberusService::enumerateDeviceInterface)));
+        .callback(Poco::Util::OptionCallback<ZerberusService>(this, &ZerberusService::enumerateDeviceInterface)));
 }
 
 void ZerberusService::handleOption(const std::string & name, const std::string & value)

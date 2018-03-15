@@ -8,7 +8,6 @@
 
 using Poco::SharedPtr;
 using Poco::Data::Session;
-using namespace Poco::Util;
 using Poco::TaskManager;
 
 class ZerberusService :
@@ -26,7 +25,7 @@ class ZerberusService :
 protected:
     void initialize(Application& self);
     int main(const std::vector<std::string>& args);
-    void defineOptions(OptionSet& options);
+    void defineOptions(Poco::Util::OptionSet& options);
     void handleOption(const std::string& name, const std::string& value);
 public:
     ZerberusService() {};

@@ -166,6 +166,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ControlDevice.cpp" />
+    <ClCompile Include="CoreClrHost.cpp" />
     <ClCompile Include="DeviceEnumerator.cpp" />
     <ClCompile Include="DeviceListener.cpp" />
     <ClCompile Include="GuardedDevice.cpp" />
@@ -176,9 +177,11 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\HidGuardian.h" />
     <ClInclude Include="ControlDevice.h" />
+    <ClInclude Include="CoreClrHost.h" />
     <ClInclude Include="DeviceEnumerator.h" />
     <ClInclude Include="DeviceListener.h" />
     <ClInclude Include="GuardedDevice.h" />
+    <ClInclude Include="mscoree.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ServiceEnumerator.h" />
     <ClInclude Include="ZerberusService.h" />

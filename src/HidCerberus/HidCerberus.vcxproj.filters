@@ -36,6 +36,9 @@
     <ClCompile Include="ServiceEnumerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CoreClrHost.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ZerberusService.h">
@@ -60,6 +63,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ServiceEnumerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreClrHost.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mscoree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
