@@ -131,20 +131,6 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _config(config), 
     {
         throw std::runtime_error("Failed to create AppDomain");
     }
-
-    void *pfnDelegate = nullptr;
-
-    hr = _runtimeHost->CreateDelegate(
-        _domainId,
-        L"Test, Version=1.0.0.0, Culture=neutral",
-        L"Test.Demo",
-        L"Decide",
-        (INT_PTR*)&pfnDelegate);
-
-    bool gnah = true;
-    typedef bool(*tDecide)(bool *what);
-
-    auto ret = ((tDecide)(pfnDelegate))(&gnah);
 }
 
 
@@ -161,4 +147,27 @@ CoreClrHost::~CoreClrHost()
     {
         FreeLibrary(_coreCLRModule);
     }
+}
+
+void CoreClrHost::loadVigil(std::string assemblyName, std::string className, std::string methodName)
+{
+    auto assembly = toWide(assemblyName);
+    auto classnam = toWide(className);
+    auto methodnm = toWide(methodName);
+
+    fpnClrVigilProcessAccessRequest fpnVPAR;
+
+    const auto hr = _runtimeHost->CreateDelegate(
+        _domainId,
+        assembly.c_str(),
+        classnam.c_str(),
+        methodnm.c_str(),
+        reinterpret_cast<INT_PTR*>(&fpnVPAR));
+
+    if (FAILED(hr))
+    {
+        throw std::runtime_error("Delegate creation failed");
+    }
+
+    _accessRequestVigils.push_back(fpnVPAR);
 }
