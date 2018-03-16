@@ -26,11 +26,17 @@ SOFTWARE.
 #ifndef HidCerberus_h__
 #define HidCerberus_h__
 
+#include <Windows.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
+    typedef BOOLEAN(STDMETHODCALLTYPE *fpnClrVigilProcessAccessRequest)(
+        SAFEARRAY** arHwIDs,
+        PBOOLEAN bIsAllowed,
+        PBOOLEAN bIsPermanent
+        );
 
 #ifdef __cplusplus
 }
