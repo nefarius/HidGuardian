@@ -38,7 +38,7 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _config(config), 
     std::copy(tpaFiles.begin(), tpaFiles.end(), std::ostream_iterator<std::string>(tpaStream, ";"));
 
     std::wstring trustedPlatformAssemblies(toWide(_config.getString("dotnet.TRUSTED_PLATFORM_ASSEMBLIES", tpaStream.str())));
-    std::wstring appPaths(toWide(_config.getString("dotnet.APP_PATHS", "")));
+    std::wstring appPaths(toWide(_config.getString("dotnet.APP_PATHS", R"(D:\Development\C\HidGuardian\x64\Debug)")));
     std::wstring appNiPaths(toWide(_config.getString("dotnet.APP_NI_PATHS", "")));
     std::wstring nativeDllSearchDirectories(toWide(_config.getString("dotnet.NATIVE_DLL_SEARCH_DIRECTORIES", "")));
     std::wstring platformResourceRoots(toWide(_config.getString("dotnet.PLATFORM_RESOURCE_ROOTS", "")));
@@ -131,6 +131,20 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _config(config), 
     {
         throw std::runtime_error("Failed to create AppDomain");
     }
+
+    void *pfnDelegate = nullptr;
+
+    hr = _runtimeHost->CreateDelegate(
+        _domainId,
+        L"Test, Version=1.0.0.0, Culture=neutral",
+        L"Test.Demo",
+        L"Decide",
+        (INT_PTR*)&pfnDelegate);
+
+    bool gnah = true;
+    typedef bool(*tDecide)(bool *what);
+
+    auto ret = ((tDecide)(pfnDelegate))(&gnah);
 }
 
 
