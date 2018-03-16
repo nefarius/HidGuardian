@@ -32,10 +32,10 @@ SOFTWARE.
 extern "C" {
 #endif
 
-    typedef BOOLEAN(STDMETHODCALLTYPE *fpnClrVigilProcessAccessRequest)(
+    typedef BOOL(STDMETHODCALLTYPE *fpnClrVigilProcessAccessRequest)(
         SAFEARRAY** arHwIDs,
-        PBOOLEAN bIsAllowed,
-        PBOOLEAN bIsPermanent
+        const BOOL *bIsAllowed,
+        const BOOL *bIsPermanent
         );
 
 #ifdef __cplusplus

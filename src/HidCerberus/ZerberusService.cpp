@@ -122,6 +122,12 @@ int ZerberusService::main(const std::vector<std::string>& args)
     }
 
     CoreClrHost host(config());
+    host.loadVigil(
+        "Test, Version=1.0.0.0, Culture=neutral",
+        "Test.Demo", 
+        "ProcessAccessRequest");
+    host.processVigil(L"HID\\VID_054C&PID_05C4\0USB\\VID_045E&PID_028E\0HID\\VID_045E&UP:0001_U:0005\0HID\\VID_03F0&PID_0024\0USB\\VID_046D&PID_C29A\0\0",
+        1337);
 
     //
     // Prepare to log to file and optionally console window
