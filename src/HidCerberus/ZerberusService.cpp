@@ -130,8 +130,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     // 
 
     auto logFilePath = config().getString("logging.path", "");
-
-    AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
+    
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
 
     //
@@ -148,6 +147,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     // 
     if (!config().getBool("application.runAsService", false))
     {
+        AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
         pSplitter->addChannel(pCons);
     }
 
@@ -174,11 +174,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
 
-    AutoPtr<ControlDevice> cd;
-
     try
     {
-        cd = new ControlDevice(CONTROL_DEVICE_PATH);
+        AutoPtr<ControlDevice> cd(new ControlDevice(CONTROL_DEVICE_PATH));
     }
     catch(std::exception& ex)
     {
