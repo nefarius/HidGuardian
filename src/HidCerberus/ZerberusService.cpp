@@ -20,9 +20,7 @@
 #include <Poco/WindowsConsoleChannel.h>
 #include <Poco/SplitterChannel.h>
 #include <Poco/SharedPtr.h>
-#include <Poco/Data/SQLite/Connector.h>
 #include <Poco/Data/SQLite/Utility.h>
-#include <Poco/File.h>
 #include <Poco/Buffer.h>
 #include <Poco/Util/RegExpValidator.h>
 #include <Poco/Util/HelpFormatter.h>
@@ -43,8 +41,6 @@ using Poco::Path;
 using Poco::WindowsConsoleChannel;
 using Poco::SplitterChannel;
 using Poco::SharedPtr;
-using Poco::Data::SQLite::Connector;
-using namespace Poco::Data::Keywords;
 using Poco::Buffer;
 using Poco::Util::RegExpValidator;
 using Poco::Util::HelpFormatter;
@@ -91,7 +87,7 @@ void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
 
     try
     {
-        _taskManager.start(new GuardedDevice(name, *_session));
+        _taskManager.start(new GuardedDevice(name, _clrHost));
     }
     catch (const std::exception& ex)
     {
@@ -121,13 +117,13 @@ int ZerberusService::main(const std::vector<std::string>& args)
         return Application::EXIT_OK;
     }
 
-    CoreClrHost host(config());
-    host.loadVigil(
-        "Test, Version=1.0.0.0, Culture=neutral",
+    _clrHost = new CoreClrHost(config());
+
+    _clrHost->loadVigil(
+        "Test",
         "Test.Demo", 
-        "ProcessAccessRequest");
-    host.processVigil(L"HID\\VID_054C&PID_05C4\0USB\\VID_045E&PID_028E\0HID\\VID_045E&UP:0001_U:0005\0HID\\VID_03F0&PID_0024\0USB\\VID_046D&PID_C29A\0\0",
-        1337);
+        "ProcessAccessRequest"
+    );
 
     //
     // Prepare to log to file and optionally console window
@@ -177,43 +173,6 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
-    //
-    // Register SQLite connector
-    // 
-    Connector::registerConnector();
-
-    //
-    // Get database path
-    // 
-    Poco::File dbFile(config().getString("database.path", "HidCerberus.db"));
-    logger.information("Loading database [%s]", dbFile.path());
-
-    //
-    // Create database if not found at the provided path
-    // 
-    if (!dbFile.exists())
-    {
-        logger.information("Database doesn't exist, creating empty one");
-
-        Session freshDb("SQLite", ":memory:");
-
-        freshDb << R"(CREATE TABLE `AccessRules` (
-	                    `HardwareId`    TEXT NOT NULL,
-	                    `IsAllowed`     INTEGER NOT NULL,
-	                    `IsPermanent`   INTEGER NOT NULL,
-	                    `ModuleName`    TEXT,
-	                    `ImagePath`     TEXT);)", now;
-
-        Poco::Data::SQLite::Utility::memoryToFile(dbFile.path(), freshDb);
-    }
-
-    //
-    // Create in-memory database, initialize from file
-    // 
-    _session = new Session("SQLite", ":memory:");
-    Poco::Data::SQLite::Utility::fileToMemory(*_session, dbFile.path());
-
-    logger.information("Database loaded");
 
     AutoPtr<ControlDevice> cd;
 
@@ -276,11 +235,6 @@ int ZerberusService::main(const std::vector<std::string>& args)
     // Request graceful shutdown from all background tasks
     // 
     _taskManager.cancelAll();
-
-    //
-    // Close database session (frees threads too)
-    // 
-    _session->close();
 
     //
     // Wait for all background tasks to shut down

@@ -2,18 +2,21 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+
 #include "mscoree.h"
 #include "HidCerberus.h"
 
 #include <string>
 #include <vector>
 
+#define POCO_NO_UNWINDOWS
 #include <Poco/Util/LayeredConfiguration.h>
+#include <Poco/RefCountedObject.h>
 
 
 using Poco::Util::LayeredConfiguration;
 
-class CoreClrHost
+class CoreClrHost : public Poco::RefCountedObject
 {
     HMODULE _coreCLRModule;
     ICLRRuntimeHost2* _runtimeHost{};
@@ -22,11 +25,12 @@ class CoreClrHost
     std::vector<fpnClrVigilProcessAccessRequest> _accessRequestVigils;
 
     static std::wstring toWide(std::string source);
-public:
-    CoreClrHost(const LayeredConfiguration& config);
+protected:
     ~CoreClrHost();
 
-    void loadVigil(std::string assemblyName, std::string className, std::string methodName);
-    bool processVigil(PCWSTR szHwIDs, ULONG processId);
-};
+public:
+    CoreClrHost(const LayeredConfiguration& config);
 
+    void loadVigil(std::string assemblyName, std::string className, std::string methodName);
+    void processVigil(PCWSTR szHwIDs, ULONG processId, PBOOL pIsAllowed, PBOOL pIsPermanent);
+};

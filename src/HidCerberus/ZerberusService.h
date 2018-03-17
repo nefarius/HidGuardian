@@ -1,20 +1,20 @@
 #pragma once
 
+#include "CoreClrHost.h"
+
 #define POCO_NO_UNWINDOWS
 #include <Poco/Util/ServerApplication.h>
-#include <Poco/SharedPtr.h>
-#include <Poco/Data/Session.h>
 #include <Poco/TaskManager.h>
+#include <Poco/AutoPtr.h>
 
-using Poco::SharedPtr;
-using Poco::Data::Session;
 using Poco::TaskManager;
+using Poco::AutoPtr;
 
 class ZerberusService :
     public Poco::Util::ServerApplication
 {
-    SharedPtr<Session> _session;
     TaskManager _taskManager;
+    AutoPtr<CoreClrHost> _clrHost;
 
     void enumerateDeviceInterface(const std::string& name, const std::string& value);
     void help(const std::string& name, const std::string& value);
