@@ -33,7 +33,7 @@ extern "C" {
 #endif
 
     typedef BOOL(STDMETHODCALLTYPE *fpnClrVigilProcessAccessRequest)(
-        SAFEARRAY** arHwIDs,
+        PCSTR hwId,
         const BOOL *bIsAllowed,
         const BOOL *bIsPermanent
         );

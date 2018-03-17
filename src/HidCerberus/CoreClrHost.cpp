@@ -26,110 +26,6 @@ std::wstring CoreClrHost::toWide(std::string source)
     return converter.from_bytes(source);
 }
 
-long CoreClrHost::CreateSafeArrayFromBSTRArray(
-    BSTR* pBSTRArray,
-    ULONG ulArraySize,
-    SAFEARRAY** ppSafeArrayReceiver
-)
-{
-    HRESULT hrRetTemp = S_OK;
-    SAFEARRAY* pSAFEARRAYRet = nullptr;
-    SAFEARRAYBOUND rgsabound[1];
-    ULONG ulIndex = 0;
-    const long lRet = 0;
-
-    // Initialise receiver.
-    if (ppSafeArrayReceiver)
-    {
-        *ppSafeArrayReceiver = nullptr;
-    }
-
-    if (pBSTRArray)
-    {
-        rgsabound[0].lLbound = 0;
-        rgsabound[0].cElements = ulArraySize;
-
-        pSAFEARRAYRet = static_cast<SAFEARRAY*>(SafeArrayCreate
-        (
-            static_cast<VARTYPE>(VT_BSTR),
-            static_cast<unsigned int>(1),
-            static_cast<SAFEARRAYBOUND*>(rgsabound)
-        ));
-    }
-
-    for (ulIndex = 0; ulIndex < ulArraySize; ulIndex++)
-    {
-        long lIndexVector[1];
-
-        lIndexVector[0] = ulIndex;
-
-        // Since pSAFEARRAYRet is created as a SafeArray of VT_BSTR,
-        // SafeArrayPutElement() will create a copy of each BSTR
-        // inserted into the SafeArray.
-        SafeArrayPutElement
-        (
-            static_cast<SAFEARRAY*>(pSAFEARRAYRet),
-            static_cast<long*>(lIndexVector),
-            static_cast<void*>(pBSTRArray[ulIndex])
-        );
-    }
-
-    if (pSAFEARRAYRet)
-    {
-        *ppSafeArrayReceiver = pSAFEARRAYRet;
-    }
-
-    return lRet;
-}
-
-void CoreClrHost::safeArrayFromBSTRVector(SAFEARRAY ** ppSafeArrayReceiver, const std::vector<BSTR>& pBSTRArray)
-{
-    SAFEARRAY* pSAFEARRAYRet = nullptr;
-    SAFEARRAYBOUND rgsabound[1];
-    ULONG ulIndex = 0;
-
-    // Initialise receiver.
-    if (ppSafeArrayReceiver)
-    {
-        *ppSafeArrayReceiver = nullptr;
-    }
-
-    if (pBSTRArray.empty())
-        return;
-
-    rgsabound[0].lLbound = 0;
-    rgsabound[0].cElements = pBSTRArray.size();
-
-    pSAFEARRAYRet = static_cast<SAFEARRAY*>(SafeArrayCreate
-    (
-        static_cast<VARTYPE>(VT_BSTR),
-        static_cast<unsigned int>(1),
-        static_cast<SAFEARRAYBOUND*>(rgsabound)
-    ));
-
-    for (ulIndex = 0; ulIndex < pBSTRArray.size(); ulIndex++)
-    {
-        long lIndexVector[1];
-
-        lIndexVector[0] = ulIndex;
-
-        // Since pSAFEARRAYRet is created as a SafeArray of VT_BSTR,
-        // SafeArrayPutElement() will create a copy of each BSTR
-        // inserted into the SafeArray.
-        SafeArrayPutElement
-        (
-            static_cast<SAFEARRAY*>(pSAFEARRAYRet),
-            static_cast<long*>(lIndexVector),
-            static_cast<void*>(pBSTRArray[ulIndex])
-        );
-    }
-
-    if (pSAFEARRAYRet)
-    {
-        *ppSafeArrayReceiver = pSAFEARRAYRet;
-    }
-}
-
 CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _config(config), _domainId(0)
 {
     const Path coreRoot(_config.getString("dotnet.CORE_ROOT", R"(C:\Program Files\dotnet\shared\Microsoft.NETCore.App\2.0.6)"));
@@ -237,7 +133,6 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _config(config), 
     }
 }
 
-
 CoreClrHost::~CoreClrHost()
 {
     if (_runtimeHost)
@@ -278,29 +173,24 @@ void CoreClrHost::loadVigil(std::string assemblyName, std::string className, std
 
 bool CoreClrHost::processVigil(PCWSTR szHwIDs, ULONG processId)
 {
-    SAFEARRAY* pSafeArrayOfBSTR = nullptr;
-    std::vector<BSTR> hardwareIds;
     BOOL isAllowed = FALSE;
     BOOL isPermanent = FALSE;
 
     //
-    // Split up multi-value string and convert to BSTR
+    // Split up multi-value string and call processing method
     // 
     for (PCWSTR szIter = szHwIDs; *szIter; szIter += wcslen(szIter) + 1)
     {
-        hardwareIds.push_back(SysAllocString(szIter));
-    }
+        for (auto& vigil : _accessRequestVigils)
+        {
+            using convert_type = std::codecvt_utf8<wchar_t>;
+            std::wstring_convert<convert_type, wchar_t> converter;
+            const std::string id(converter.to_bytes(szIter));
 
-    safeArrayFromBSTRVector(&pSafeArrayOfBSTR, hardwareIds);
+            const auto ret = vigil(id.c_str(), &isAllowed, &isPermanent);
 
-    for (auto& vigil : _accessRequestVigils)
-    {
-        auto ret = vigil(&pSafeArrayOfBSTR, &isAllowed, &isPermanent);
-    }
-
-    for (auto& id : hardwareIds)
-    {
-        SysFreeString(id);
+            if (ret) return ret;
+        }
     }
 
     return false;

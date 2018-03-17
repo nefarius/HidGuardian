@@ -22,12 +22,6 @@ class CoreClrHost
     std::vector<fpnClrVigilProcessAccessRequest> _accessRequestVigils;
 
     static std::wstring toWide(std::string source);
-    static long CreateSafeArrayFromBSTRArray(
-        BSTR* pBSTRArray,
-        ULONG ulArraySize,
-        SAFEARRAY** ppSafeArrayReceiver
-    );
-    static void safeArrayFromBSTRVector(SAFEARRAY** ppSafeArrayReceiver, const std::vector<BSTR>& pBSTRArray);
 public:
     CoreClrHost(const LayeredConfiguration& config);
     ~CoreClrHost();
