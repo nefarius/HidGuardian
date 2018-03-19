@@ -189,16 +189,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="HidCerberus.ini">
-      <DeploymentContent>false</DeploymentContent>
-      <FileType>Text</FileType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Zerberus.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="devil.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="HidCerberus.xml" />
+    <Xml Include="Vigils.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

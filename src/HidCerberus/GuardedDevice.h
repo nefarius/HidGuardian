@@ -24,7 +24,7 @@ class GuardedDevice : public Task
     const int _bufferSize = 1024;
     AutoPtr<CoreClrHost> _clrHost;
 public:
-    GuardedDevice(std::string devicePath, AutoPtr<CoreClrHost> clrHost);
+    GuardedDevice(std::string devicePath, const AutoPtr<CoreClrHost>& clrHost);
 
     void runTask() override;
 

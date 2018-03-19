@@ -19,7 +19,7 @@ using Poco::Util::LayeredConfiguration;
 class CoreClrHost : public Poco::RefCountedObject
 {
     HMODULE _coreCLRModule;
-    ICLRRuntimeHost2* _runtimeHost{};
+    ICLRRuntimeHost2* _runtimeHost;
     const LayeredConfiguration& _config;
     DWORD _domainId;
     std::vector<fpnClrVigilProcessAccessRequest> _accessRequestVigils;
@@ -33,4 +33,14 @@ public:
 
     void loadVigil(std::string assemblyName, std::string className, std::string methodName);
     void processVigil(PCWSTR szHwIDs, ULONG processId, PBOOL pIsAllowed, PBOOL pIsPermanent);
+};
+
+struct CoreClrVigil
+{
+    std::string name;
+    std::string description;
+    std::string assemblyPath;
+    std::string assemblyName;
+    std::string className;
+    std::string methodName;
 };

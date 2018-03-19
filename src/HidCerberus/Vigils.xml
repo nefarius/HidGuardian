@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vigils>
+  <coreclr>
+    <vigil name="Test #1">
+      <path></path>
+      <assembly>Test</assembly>
+      <class></class>
+      <method></method>
+    </vigil>
+  </coreclr>
+</vigils>

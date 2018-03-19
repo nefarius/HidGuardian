@@ -2,6 +2,9 @@
 #include "DeviceEnumerator.h"
 #include "GuardedDevice.h"
 #include "DeviceListener.h"
+#include "CoreClrHost.h"
+
+#include <fstream>
 
 #include <initguid.h>
 #include "HidGuardian.h"
@@ -27,8 +30,14 @@
 #include <Poco/ThreadPool.h>
 #include <Poco/BasicEvent.h>
 #include <Poco/Delegate.h>
-#include "ControlDevice.h"
-#include "CoreClrHost.h"
+#include <Poco/DOM/DOMParser.h>
+#include <Poco/DOM/Document.h>
+#include <Poco/DOM/NodeIterator.h>
+#include <Poco/DOM/NodeFilter.h>
+#include <Poco/DOM/AutoPtr.h>
+#include <Poco/SAX/InputSource.h>
+#include <Poco/DOM/NodeList.h>
+#include <Poco/DOM/NamedNodeMap.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -48,6 +57,7 @@ using Poco::ThreadPool;
 using Poco::BasicEvent;
 using Poco::Delegate;
 using Poco::AutoPtr;
+
 
 
 void ZerberusService::enumerateDeviceInterface(const std::string& name, const std::string& value)
@@ -117,26 +127,18 @@ int ZerberusService::main(const std::vector<std::string>& args)
         return Application::EXIT_OK;
     }
 
-    _clrHost = new CoreClrHost(config());
-
-    _clrHost->loadVigil(
-        "Test",
-        "Test.Demo", 
-        "ProcessAccessRequest"
-    );
-
     //
     // Prepare to log to file and optionally console window
     // 
 
-    auto logFilePath = config().getString("logging.path", "");
-    
+    auto logFilePath = config().getString("core.logging.path", "");
+
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
 
     //
     // TODO: also check for path validity
     // 
-    if (!logFilePath.empty())
+    if (config().getBool("core.logging[@toFile]", false) && !logFilePath.empty())
     {
         AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(logFilePath)));
         pSplitter->addChannel(pFileChannel);
@@ -154,18 +156,18 @@ int ZerberusService::main(const std::vector<std::string>& args)
     //
     // Prepare logging formatting
     // 
-    AutoPtr<PatternFormatter> pPF(new PatternFormatter(config().getString("logging.pattern", "%Y-%m-%d %H:%M:%S.%i %s [%p]: %t")));
+    AutoPtr<PatternFormatter> pPF(new PatternFormatter(config().getString("core.logging.pattern", "%Y-%m-%d %H:%M:%S.%i %s [%p]: %t")));
     AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
     AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
 
     //
     // Do we even log?
     // 
-    if (config().getBool("logging.enabled", true))
+    if (config().getBool("core.logging[@enabled]", true))
     {
         Logger::root().setChannel(pAsync);
 
-        if (config().getBool("logging.debug", false))
+        if (config().getBool("core.logging[@debug]", false))
         {
             Logger::root().setLevel(Message::PRIO_DEBUG);
         }
@@ -173,12 +175,73 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
+    std::vector<CoreClrVigil> vigilsMeta;
 
     try
     {
-        AutoPtr<ControlDevice> cd(new ControlDevice(CONTROL_DEVICE_PATH));
+        _clrHost = new CoreClrHost(config());
     }
-    catch(std::exception& ex)
+    catch (const std::exception& ex)
+    {
+        logger.fatal("Couldn't load Core CLR: %s", std::string(ex.what()));
+
+        return Application::EXIT_OSFILE;
+    }
+
+    std::ifstream in("Vigils.xml");
+    Poco::XML::InputSource src(in);
+    Poco::XML::DOMParser parser;
+    AutoPtr<Poco::XML::Document> pDoc = parser.parse(&src);
+    Poco::XML::NodeIterator root(pDoc, Poco::XML::NodeFilter::SHOW_ELEMENT);
+    Poco::XML::Node* coreclr = root.root()->getNodeByPath("//vigils/coreclr");
+
+    const auto vigils = coreclr->childNodes();
+    for (ULONG i = 0; i < vigils->length(); i++)
+    {
+        const auto item = vigils->item(i);
+        const auto type = item->nodeType();
+        if (type == Poco::XML::Node::ELEMENT_NODE)
+        {
+            const auto attr = item->attributes();
+            const auto name = attr->getNamedItem("name")->getNodeValue();
+
+            logger.information("Discovered Vigil %s", name);
+
+            CoreClrVigil vigil;
+            vigil.name = name;
+            vigil.description = item->getNodeByPath("//description")->innerText();
+            vigil.assemblyPath = item->getNodeByPath("//path")->innerText();
+            vigil.assemblyName = item->getNodeByPath("//assembly")->innerText();
+            vigil.className = item->getNodeByPath("//class")->innerText();
+            vigil.methodName = item->getNodeByPath("//method")->innerText();
+
+            vigilsMeta.push_back(vigil);
+        }
+
+    }
+    vigils->release();
+    coreclr->release();
+
+    //try
+    //{
+    //    _clrHost->loadVigil(
+    //        assemblyName,
+    //        className,
+    //        methodName
+    //    );
+    //}
+    //catch (const std::exception& ex)
+    //{
+    //    logger.fatal("Couldn't load Vigil: %s", std::string(ex.what()));
+    //
+    //    return Application::EXIT_OSFILE;
+    //}
+
+    try
+    {
+        _controlDevice = new ControlDevice(CONTROL_DEVICE_PATH);
+    }
+    catch (std::exception& ex)
     {
         logger.fatal("Couldn't create control device: %s", std::string(ex.what()));
 
@@ -233,11 +296,16 @@ int ZerberusService::main(const std::vector<std::string>& args)
     // Request graceful shutdown from all background tasks
     // 
     _taskManager.cancelAll();
+    logger.debug("Requested all tasks to cancel");
 
     //
     // Wait for all background tasks to shut down
     // 
+    logger.debug("Waiting for tasks to stop");
     _taskManager.joinAll();
+    logger.debug("Tasks stopped");
+
+    _clrHost->release();
 
     return Application::EXIT_OK;
 }

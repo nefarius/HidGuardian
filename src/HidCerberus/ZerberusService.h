@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreClrHost.h"
+#include "ControlDevice.h"
 
 #define POCO_NO_UNWINDOWS
 #include <Poco/Util/ServerApplication.h>
@@ -15,6 +16,7 @@ class ZerberusService :
 {
     TaskManager _taskManager;
     AutoPtr<CoreClrHost> _clrHost;
+    AutoPtr<ControlDevice> _controlDevice;
 
     void enumerateDeviceInterface(const std::string& name, const std::string& value);
     void help(const std::string& name, const std::string& value);

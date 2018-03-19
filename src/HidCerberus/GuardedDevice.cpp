@@ -26,7 +26,7 @@ using Poco::Buffer;
 using Poco::icompare;
 
 
-GuardedDevice::GuardedDevice(std::string devicePath, AutoPtr<CoreClrHost> clrHost)
+GuardedDevice::GuardedDevice(std::string devicePath, const AutoPtr<CoreClrHost>& clrHost)
     : Task(devicePath), _devicePath(std::move(devicePath)), _clrHost(clrHost)
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
@@ -144,12 +144,18 @@ void GuardedDevice::runTask()
 
         hgSet.RequestId = pHgGet->RequestId;
 
+        if (logger.is(Poco::Message::PRIO_DEBUG)) {
+            logger.debug("Start processing Vigil (ID: %lu)", pHgGet->RequestId);
+        }
         _clrHost->processVigil(
             pHgGet->HardwareIds,
             pHgGet->ProcessId,
             reinterpret_cast<PBOOL>(&hgSet.IsAllowed),
             reinterpret_cast<PBOOL>(&hgSet.IsSticky)
         );
+        if (logger.is(Poco::Message::PRIO_DEBUG)) {
+            logger.debug("End processing Vigil (ID: %lu)", pHgGet->RequestId);
+        }
 
         if (logger.is(Poco::Message::PRIO_DEBUG))
         {

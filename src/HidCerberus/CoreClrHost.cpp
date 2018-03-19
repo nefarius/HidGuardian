@@ -14,9 +14,14 @@
 // 
 #include <Poco/Glob.h>
 #include <Poco/Path.h>
+#include <Poco/Logger.h>
+#include <Poco/Util/WinRegistryKey.h>
+#include <Poco/Environment.h>
 
 using Poco::Glob;
 using Poco::Path;
+using Poco::Util::WinRegistryKey;
+using Poco::Environment;
 
 
 std::wstring CoreClrHost::toWide(std::string source)
@@ -26,43 +31,63 @@ std::wstring CoreClrHost::toWide(std::string source)
     return converter.from_bytes(source);
 }
 
-CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _config(config), _domainId(0)
+CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _runtimeHost(nullptr), _config(config), _domainId(0)
 {
-    const Path coreRoot(_config.getString("dotnet.CORE_ROOT", R"(C:\Program Files\dotnet\shared\Microsoft.NETCore.App\2.0.6)"));
+    //
+    // Build registry key to detect installed host version
+    // 
+    std::ostringstream dotnetCoreVersionKey;
+    dotnetCoreVersionKey << R"(HKEY_LOCAL_MACHINE\SOFTWARE\dotnet\Setup\InstalledVersions\)";
+    if (Environment::arch() == POCO_ARCH_AMD64)
+        dotnetCoreVersionKey << R"(x64\)";
+    if (Environment::arch() == POCO_ARCH_IA32)
+        dotnetCoreVersionKey << R"(x86\)";
+    dotnetCoreVersionKey << "sharedhost";
+
+    WinRegistryKey dotnetCoreVersion(dotnetCoreVersionKey.str(), true);
+    const auto hostVersion = dotnetCoreVersion.getString("Version");
+
+    Path coreRootDetected(Path::expand(R"(%programfiles%\dotnet\shared\Microsoft.NETCore.App)"), hostVersion);
+
+    const Path coreRoot(_config.getString("dotnet.CORE_ROOT", coreRootDetected.toString()));
+
+    //
+    // CoreCLR bootstrapper library
+    // 
     Path coreClrDll(coreRoot, "coreclr.dll");
 
+    //
+    // Add all DLLs from the host directory to TPA path if not overridden by config
+    // 
     const Path coreAssemblies(coreRoot, "*.dll");
     std::set<std::string> tpaFiles;
     std::stringstream tpaStream;
     Glob::glob(coreAssemblies, tpaFiles);
     std::copy(tpaFiles.begin(), tpaFiles.end(), std::ostream_iterator<std::string>(tpaStream, ";"));
 
+    //
+    // Grab CoreCLR flags from configuration or use default/auto values
+    // 
     std::wstring trustedPlatformAssemblies(toWide(_config.getString("dotnet.TRUSTED_PLATFORM_ASSEMBLIES", tpaStream.str())));
-    std::wstring appPaths(toWide(_config.getString("dotnet.APP_PATHS", R"(D:\Development\C\HidGuardian\x64\Debug)")));
+    std::wstring appPaths(toWide(_config.getString("dotnet.APP_PATHS", "")));
     std::wstring appNiPaths(toWide(_config.getString("dotnet.APP_NI_PATHS", "")));
     std::wstring nativeDllSearchDirectories(toWide(_config.getString("dotnet.NATIVE_DLL_SEARCH_DIRECTORIES", "")));
     std::wstring platformResourceRoots(toWide(_config.getString("dotnet.PLATFORM_RESOURCE_ROOTS", "")));
     std::wstring appDomainCompatSwitch(L"UseLatestBehaviorWhenTFMNotSpecified");
 
     _coreCLRModule = LoadLibraryExA(coreClrDll.toString().c_str(), nullptr, 0);
-
-    if (!_coreCLRModule)
-    {
+    if (!_coreCLRModule) {
         throw std::runtime_error("CoreCLR.dll could not be found");
     }
 
     const auto pfnGetCLRRuntimeHost = reinterpret_cast<FnGetCLRRuntimeHost>(GetProcAddress(
         _coreCLRModule, "GetCLRRuntimeHost"));
-
-    if (!pfnGetCLRRuntimeHost)
-    {
+    if (!pfnGetCLRRuntimeHost) {
         throw std::runtime_error("GetCLRRuntimeHost not found");
     }
 
     auto hr = pfnGetCLRRuntimeHost(IID_ICLRRuntimeHost2, reinterpret_cast<IUnknown**>(&_runtimeHost));
-
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         throw std::runtime_error("Failed to get ICLRRuntimeHost2 instance");
     }
 
@@ -77,16 +102,12 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _config(config), 
             STARTUP_FLAGS::STARTUP_LOADER_OPTIMIZATION_SINGLE_DOMAIN	// Prevents domain-neutral loading
             )
     );
-
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         throw std::runtime_error("Failed to set startup flags");
     }
 
     hr = _runtimeHost->Start();
-
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         throw std::runtime_error("Failed to start the runtime");
     }
 
@@ -135,6 +156,12 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _config(config), 
 
 CoreClrHost::~CoreClrHost()
 {
+    auto& logger = Poco::Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
+
+    logger.debug("Shutting down Core CLS host");
+
+    _accessRequestVigils.clear();
+
     if (_runtimeHost)
     {
         _runtimeHost->UnloadAppDomain(_domainId, true);

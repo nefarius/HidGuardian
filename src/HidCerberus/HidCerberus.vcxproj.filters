@@ -77,7 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="HidCerberus.ini" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Zerberus.rc">
@@ -88,5 +87,9 @@
     <Image Include="devil.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="HidCerberus.xml" />
+    <Xml Include="Vigils.xml" />
   </ItemGroup>
 </Project>

@@ -153,6 +153,10 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
 
 ControlDevice::~ControlDevice()
 {
+    auto& logger = Poco::Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
+
+    logger.debug("Shutting down control device");
+
     if (_deviceHandle != INVALID_HANDLE_VALUE)
     {
         CloseHandle(_deviceHandle);
