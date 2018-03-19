@@ -40,6 +40,7 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _runtimeHost(null
     dotnetCoreVersionKey << R"(HKEY_LOCAL_MACHINE\SOFTWARE\dotnet\Setup\InstalledVersions\)";
     if (Environment::arch() == POCO_ARCH_AMD64)
         dotnetCoreVersionKey << R"(x64\)";
+    //  TODO: does this work in 32-Bit?
     if (Environment::arch() == POCO_ARCH_IA32)
         dotnetCoreVersionKey << R"(x86\)";
     dotnetCoreVersionKey << "sharedhost";
@@ -47,8 +48,10 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _runtimeHost(null
     WinRegistryKey dotnetCoreVersion(dotnetCoreVersionKey.str(), true);
     const auto hostVersion = dotnetCoreVersion.getString("Version");
 
+    //
+    // Build path to CoreCLR host path
+    // 
     Path coreRootDetected(Path::expand(R"(%programfiles%\dotnet\shared\Microsoft.NETCore.App)"), hostVersion);
-
     const Path coreRoot(_config.getString("dotnet.CORE_ROOT", coreRootDetected.toString()));
 
     //
