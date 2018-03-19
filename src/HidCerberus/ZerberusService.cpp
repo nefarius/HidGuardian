@@ -175,18 +175,8 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
-    std::vector<CoreClrVigil> vigilsMeta;
-
-    try
-    {
-        _clrHost = new CoreClrHost(config());
-    }
-    catch (const std::exception& ex)
-    {
-        logger.fatal("Couldn't load Core CLR: %s", std::string(ex.what()));
-
-        return Application::EXIT_OSFILE;
-    }
+    std::vector<CoreClrVigil> vigils;
+    std::vector<std::string> assemblyPaths;
 
     std::ifstream in("Vigils.xml");
     Poco::XML::InputSource src(in);
@@ -195,10 +185,11 @@ int ZerberusService::main(const std::vector<std::string>& args)
     Poco::XML::NodeIterator root(pDoc, Poco::XML::NodeFilter::SHOW_ELEMENT);
     Poco::XML::Node* coreclr = root.root()->getNodeByPath("//vigils/coreclr");
 
-    const auto vigils = coreclr->childNodes();
-    for (ULONG i = 0; i < vigils->length(); i++)
+    logger.information("Enumerating .NET Core Vigils");
+    const auto vigilNodes = coreclr->childNodes();
+    for (ULONG i = 0; i < vigilNodes->length(); i++)
     {
-        const auto item = vigils->item(i);
+        const auto item = vigilNodes->item(i);
         const auto type = item->nodeType();
         if (type == Poco::XML::Node::ELEMENT_NODE)
         {
@@ -215,27 +206,55 @@ int ZerberusService::main(const std::vector<std::string>& args)
             vigil.className = item->getNodeByPath("//class")->innerText();
             vigil.methodName = item->getNodeByPath("//method")->innerText();
 
-            vigilsMeta.push_back(vigil);
+            vigils.push_back(vigil);
+            assemblyPaths.push_back(vigil.assemblyPath);
         }
 
     }
-    vigils->release();
+    vigilNodes->release();
     coreclr->release();
+    logger.information("Found %lu .NET Core Vigils", static_cast<ULONG>(vigils.size()));
 
-    //try
-    //{
-    //    _clrHost->loadVigil(
-    //        assemblyName,
-    //        className,
-    //        methodName
-    //    );
-    //}
-    //catch (const std::exception& ex)
-    //{
-    //    logger.fatal("Couldn't load Vigil: %s", std::string(ex.what()));
+    if (config().has("dotnet.APP_PATHS"))
+        assemblyPaths.push_back(config().getString("dotnet.APP_PATHS"));
+    std::stringstream assemblyPathStream;
+    std::copy(assemblyPaths.begin(), assemblyPaths.end(), std::ostream_iterator<std::string>(assemblyPathStream, ";"));
+    config().setString("dotnet.APP_PATHS", assemblyPathStream.str());
+
+    try
+    {
+        //
+        // Initialize CoreCLR host
+        // 
+        _clrHost = new CoreClrHost(config());
+    }
+    catch (const std::exception& ex)
+    {
+        logger.fatal("Couldn't load Core CLR: %s", std::string(ex.what()));
+
+        return Application::EXIT_OSFILE;
+    }
+
     //
-    //    return Application::EXIT_OSFILE;
-    //}
+    // Load discovered Vigils
+    // 
+    for (auto& vigil : vigils)
+    {
+        logger.information("Loading .NET Core Vigil %s", vigil.name);
+
+        try
+        {
+            _clrHost->loadVigil(
+                vigil.assemblyName,
+                vigil.className,
+                vigil.methodName
+            );
+        }
+        catch (const std::exception& ex)
+        {
+            logger.fatal("Couldn't load .NET Core Vigil: %s", std::string(ex.what()));
+        }
+    }
 
     try
     {

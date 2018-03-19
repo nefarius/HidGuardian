@@ -161,7 +161,7 @@ CoreClrHost::~CoreClrHost()
 {
     auto& logger = Poco::Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
-    logger.debug("Shutting down Core CLS host");
+    logger.debug("Shutting down CoreCLR host");
 
     _accessRequestVigils.clear();
 

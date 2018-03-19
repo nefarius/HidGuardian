@@ -2,10 +2,11 @@
 <vigils>
   <coreclr>
     <vigil name="Test #1">
-      <path></path>
+      <description>Test</description>
+      <path>D:\Development\C\HidGuardian\x64\Debug</path>
       <assembly>Test</assembly>
-      <class></class>
-      <method></method>
+      <class>Test.Demo</class>
+      <method>ProcessAccessRequest</method>
     </vigil>
   </coreclr>
 </vigils>
