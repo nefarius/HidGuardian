@@ -34,3 +34,6 @@
 /src/HidCerberus/HidCerberus.db
 /sys
 /src/HidCerberus/Zerberus.aps
+/.vs/Vigils.NET/v15
+/src/Vigils.NET/HidCerberus.Vigils.Core.YAML/obj
+/src/Vigils.NET/HidCerberus.Vigils.Core.YAML/bin/Debug/netcoreapp2.0
