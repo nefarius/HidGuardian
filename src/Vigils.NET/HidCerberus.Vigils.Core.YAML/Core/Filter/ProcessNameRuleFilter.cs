@@ -1,4 +1,7 @@
-﻿namespace HidCerberus.Vigils.Core.YAML.Core.Filter
+﻿using System;
+using System.Diagnostics;
+
+namespace HidCerberus.Vigils.Core.YAML.Core.Filter
 {
     public class ProcessNameRuleFilter : RuleFilter
     {
@@ -8,7 +11,8 @@
 
         public override bool Validate(int processId)
         {
-            throw new System.NotImplementedException();
+            return Value.Equals(Process.GetProcessById(processId).ProcessName,
+                StringComparison.InvariantCultureIgnoreCase);
         }
     }
 }
