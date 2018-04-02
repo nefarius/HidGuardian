@@ -10,7 +10,7 @@ namespace HidCerberus.Vigils.Core.YAML.Public
 {
     public class EntryPoint
     {
-        private static Document Config { get; set; }
+        private static Document Config { get; }
 
         static EntryPoint()
         {
