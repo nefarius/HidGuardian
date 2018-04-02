@@ -37,3 +37,5 @@
 /.vs/Vigils.NET/v15
 /src/Vigils.NET/HidCerberus.Vigils.Core.YAML/obj
 /src/Vigils.NET/HidCerberus.Vigils.Core.YAML/bin/Debug/netcoreapp2.0
+/src/Vigils.NET/CoreVigilTestHost/bin/Debug/netcoreapp2.0
+/src/Vigils.NET/CoreVigilTestHost/obj

@@ -32,6 +32,8 @@ namespace HidCerberus.Vigils.Core.YAML.Public
 
             if (match != null)
             {
+                match.Filter.Validate(processId);
+
                 isAllowed = match.IsAllowed;
                 isPermanent = match.IsPermanent;
 
