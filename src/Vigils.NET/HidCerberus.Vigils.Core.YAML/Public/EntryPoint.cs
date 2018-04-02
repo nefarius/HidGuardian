@@ -30,10 +30,8 @@ namespace HidCerberus.Vigils.Core.YAML.Public
             var match = Config.Rules.FirstOrDefault(r =>
                 r.HardwareId.Equals(hardwareId, StringComparison.InvariantCultureIgnoreCase));
 
-            if (match != null)
+            if (match != null && match.Filter.Validate(processId))
             {
-                match.Filter.Validate(processId);
-
                 isAllowed = match.IsAllowed;
                 isPermanent = match.IsPermanent;
 
