@@ -7,7 +7,7 @@
     </logging>
   </core>
   <dotnet>
-    <CORE_ROOT>C:\Program Files\dotnet\shared\Microsoft.NETCore.App\2.0.6</CORE_ROOT>
+    <CORE_ROOT></CORE_ROOT>
     <TRUSTED_PLATFORM_ASSEMBLIES></TRUSTED_PLATFORM_ASSEMBLIES>
     <APP_PATHS></APP_PATHS>
     <APP_NI_PATHS></APP_NI_PATHS>

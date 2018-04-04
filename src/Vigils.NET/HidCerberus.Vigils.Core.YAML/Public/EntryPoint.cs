@@ -25,6 +25,14 @@ namespace HidCerberus.Vigils.Core.YAML.Public
             }
         }
 
+        /// <summary>
+        ///     Gets called by HidCerberus when an access decision has to be made.
+        /// </summary>
+        /// <param name="hardwareId">The Hardware ID identifying </param>
+        /// <param name="processId"></param>
+        /// <param name="isAllowed"></param>
+        /// <param name="isPermanent"></param>
+        /// <returns></returns>
         public static bool ProcessAccessRequest(string hardwareId, int processId, out bool isAllowed, out bool isPermanent)
         {
             var match = Config.Rules.FirstOrDefault(r =>
