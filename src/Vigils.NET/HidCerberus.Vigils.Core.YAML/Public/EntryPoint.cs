@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using HidCerberus.Vigils.Core.YAML.Core;
 using HidCerberus.Vigils.Core.YAML.Core.YAML;
 using YamlDotNet.Serialization;
@@ -14,7 +15,10 @@ namespace HidCerberus.Vigils.Core.YAML.Public
 
         static EntryPoint()
         {
-            using (TextReader reader = File.OpenText(@"rules.yaml"))
+            var assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var rulesFile = Path.Combine(assemblyFolder, @"rules.yaml");
+
+            using (TextReader reader = File.OpenText(rulesFile))
             {
                 var deserializer = new DeserializerBuilder()
                     .WithNamingConvention(new CamelCaseNamingConvention())
