@@ -53,12 +53,12 @@ namespace HidCerberus.Vigils.Core.YAML.Public
         /// <param name="isAllowed"></param>
         /// <param name="isPermanent"></param>
         /// <returns></returns>
-        public static bool ProcessAccessRequest(string hardwareId, int processId, out bool isAllowed, out bool isPermanent)
+        public static bool ProcessAccessRequest(string hardwareId, uint processId, out bool isAllowed, out bool isPermanent)
         {
             var match = Config.Rules.FirstOrDefault(r =>
                 r.HardwareId.Equals(hardwareId, StringComparison.InvariantCultureIgnoreCase));
 
-            if (match != null && match.Filter.Validate(processId))
+            if (match != null && match.Filter.Validate((int)processId))
             {
                 isAllowed = match.IsAllowed;
                 isPermanent = match.IsPermanent;

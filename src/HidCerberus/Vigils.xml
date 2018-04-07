@@ -2,8 +2,8 @@
 <vigils>
   <coreclr>
     <vigil name="YAML-based rule processor">
-      <description>Test</description>
-      <path>D:\Development\C\HidGuardian\x64\Debug</path>
+      <description>YAML-based rule processor</description>
+      <path>D:\Development\C\HidGuardian\src\Vigils.NET\HidCerberus.Vigils.Core.YAML\bin\Release\netcoreapp2.0</path>
       <assembly>HidCerberus.Vigils.Core.YAML</assembly>
       <class>HidCerberus.Vigils.Core.YAML.Public.EntryPoint</class>
       <method>ProcessAccessRequest</method>
