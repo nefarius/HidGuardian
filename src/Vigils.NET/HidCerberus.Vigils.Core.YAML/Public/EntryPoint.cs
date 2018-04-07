@@ -6,6 +6,7 @@ using HidCerberus.Vigils.Core.YAML.Core;
 using HidCerberus.Vigils.Core.YAML.Core.YAML;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using Serilog;
 
 namespace HidCerberus.Vigils.Core.YAML.Public
 {
@@ -16,7 +17,20 @@ namespace HidCerberus.Vigils.Core.YAML.Public
         static EntryPoint()
         {
             var assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.RollingFile(Path.Combine(assemblyFolder, "HidCerberus.Vigils.Core.YAML-{Date}.log"))
+                .CreateLogger();
+
             var rulesFile = Path.Combine(assemblyFolder, @"rules.yaml");
+            Log.Information("Looking for rules definition file {Rules}", rulesFile);
+
+            if (!File.Exists(rulesFile))
+            {
+                Log.Fatal("File {Rules} not found, can't continue", rulesFile);
+                throw new FileNotFoundException($"{rulesFile} is missing");
+            }
 
             using (TextReader reader = File.OpenText(rulesFile))
             {
@@ -27,6 +41,8 @@ namespace HidCerberus.Vigils.Core.YAML.Public
 
                 Config = deserializer.Deserialize<Document>(reader);
             }
+
+            Log.Information($"Loaded {Config.Rules.Count} rules");
         }
 
         /// <summary>
