@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vigils>
   <coreclr>
-    <vigil name="Test #1">
+    <vigil name="YAML-based rule processor">
       <description>Test</description>
       <path>D:\Development\C\HidGuardian\x64\Debug</path>
-      <assembly>Test</assembly>
-      <class>Test.Demo</class>
+      <assembly>HidCerberus.Vigils.Core.YAML</assembly>
+      <class>HidCerberus.Vigils.Core.YAML.Public.EntryPoint</class>
       <method>ProcessAccessRequest</method>
     </vigil>
   </coreclr>
