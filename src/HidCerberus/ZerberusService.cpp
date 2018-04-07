@@ -34,7 +34,6 @@
 #include <Poco/DOM/Document.h>
 #include <Poco/DOM/NodeIterator.h>
 #include <Poco/DOM/NodeFilter.h>
-#include <Poco/DOM/AutoPtr.h>
 #include <Poco/SAX/InputSource.h>
 #include <Poco/DOM/NodeList.h>
 #include <Poco/DOM/NamedNodeMap.h>
@@ -178,6 +177,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
     std::vector<CoreClrVigil> vigils;
     std::vector<std::string> assemblyPaths;
 
+    //
+    // Begin parsing Vigils.xml
+    // 
     std::ifstream in("Vigils.xml");
     Poco::XML::InputSource src(in);
     Poco::XML::DOMParser parser;
@@ -185,6 +187,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
     Poco::XML::NodeIterator root(pDoc, Poco::XML::NodeFilter::SHOW_ELEMENT);
     Poco::XML::Node* coreclr = root.root()->getNodeByPath("//vigils/coreclr");
 
+    //
+    // Loop through Vigil definitions
+    // 
     logger.information("Enumerating .NET Core Vigils");
     const auto vigilNodes = coreclr->childNodes();
     for (ULONG i = 0; i < vigilNodes->length(); i++)
@@ -213,6 +218,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
     vigilNodes->release();
     logger.information("Found %lu .NET Core Vigils", static_cast<ULONG>(vigils.size()));
 
+    //
+    // Concat & implode assembly directories
+    // 
     if (config().has("dotnet.APP_PATHS"))
         assemblyPaths.push_back(config().getString("dotnet.APP_PATHS"));
     std::stringstream assemblyPathStream;
@@ -254,6 +262,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
         }
     }
 
+    //
+    // Access control device (establish connection to driver)
+    // 
     try
     {
         _controlDevice = new ControlDevice(CONTROL_DEVICE_PATH);
@@ -286,7 +297,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     dl->deviceArrived += Poco::delegate(this, &ZerberusService::onDeviceArrived);
 
     //
-    // Listen fordevice removal (currently just loggs the occurance)
+    // Listen for device removal (currently just logs the appearance)
     // 
     dl->deviceRemoved += Poco::delegate(this, &ZerberusService::onDeviceRemoved);
 
@@ -297,6 +308,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     logger.information("Done, up and running");
 
+    //
+    // Print additional information if run interactively
+    // 
     if (!config().getBool("application.runAsService", false))
     {
         logger.information("Press CTRL+C to terminate");
