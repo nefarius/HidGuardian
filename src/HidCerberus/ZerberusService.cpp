@@ -209,10 +209,8 @@ int ZerberusService::main(const std::vector<std::string>& args)
             vigils.push_back(vigil);
             assemblyPaths.push_back(vigil.assemblyPath);
         }
-
     }
     vigilNodes->release();
-    coreclr->release();
     logger.information("Found %lu .NET Core Vigils", static_cast<ULONG>(vigils.size()));
 
     if (config().has("dotnet.APP_PATHS"))
