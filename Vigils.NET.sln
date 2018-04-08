@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HidCerberus.Vigils.Core.YAML", "src\Vigils.NET\HidCerberus.Vigils.Core.YAML\HidCerberus.Vigils.Core.YAML.csproj", "{03B2CFB8-1F92-4BFD-8430-1192E9BC3848}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HidCerberus.Vigils.Core.YAML", "src\Vigils.NET\HidCerberus.Vigils.Core.YAML\HidCerberus.Vigils.Core.YAML.csproj", "{03B2CFB8-1F92-4BFD-8430-1192E9BC3848}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreVigilTestHost", "src\Vigils.NET\CoreVigilTestHost\CoreVigilTestHost.csproj", "{5745D7FB-F53C-471D-A63A-A9DA4A73F3AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreVigilTestHost", "src\Vigils.NET\CoreVigilTestHost\CoreVigilTestHost.csproj", "{5745D7FB-F53C-471D-A63A-A9DA4A73F3AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HidCerberus.Vigils.Core.Webhooks", "src\Vigils.NET\HidCerberus.Vigils.Core.Webhooks\HidCerberus.Vigils.Core.Webhooks.csproj", "{EED3D577-80F7-4E41-A31B-5E3BC250D4B6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{5745D7FB-F53C-471D-A63A-A9DA4A73F3AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5745D7FB-F53C-471D-A63A-A9DA4A73F3AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5745D7FB-F53C-471D-A63A-A9DA4A73F3AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EED3D577-80F7-4E41-A31B-5E3BC250D4B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EED3D577-80F7-4E41-A31B-5E3BC250D4B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EED3D577-80F7-4E41-A31B-5E3BC250D4B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EED3D577-80F7-4E41-A31B-5E3BC250D4B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

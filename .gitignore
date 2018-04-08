@@ -43,3 +43,4 @@
 /src/HidCerberus/Release
 /src/Vigils.NET/HidCerberus.Vigils.Core.YAML/bin/Release/netcoreapp2.0
 /.vs/config
+/src/Vigils.NET/HidCerberus.Vigils.Core.Webhooks/obj
