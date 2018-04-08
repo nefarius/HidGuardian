@@ -60,7 +60,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
 
     const auto submitProcessesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS) + (sizeof(ULONG) * processNames.size());
     const auto pSubmitProcesses = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS>(malloc(submitProcessesSize));
-    pSubmitProcesses->Size = submitProcessesSize;
+    pSubmitProcesses->Size = static_cast<ULONG>(submitProcessesSize);
 
     for (unsigned int i = 0; i < processNames.size(); i++)
     {
@@ -73,7 +73,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
         _deviceHandle,
         IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS,
         pSubmitProcesses,
-        submitProcessesSize,
+        static_cast<DWORD>(submitProcessesSize),
         nullptr,
         0,
         &bytesReturned,
@@ -122,7 +122,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
 
     const auto submitServicesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS) + (sizeof(ULONG) * serviceNames.size());
     const auto pSubmitServices = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS>(malloc(submitServicesSize));
-    pSubmitServices->Size = submitServicesSize;
+    pSubmitServices->Size = static_cast<ULONG>(submitServicesSize);
 
     for (unsigned int i = 0; i < serviceNames.size(); i++)
     {
@@ -135,7 +135,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
         _deviceHandle,
         IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS,
         pSubmitServices,
-        submitServicesSize,
+        static_cast<DWORD>(submitServicesSize),
         nullptr,
         0,
         &bytesReturned,

@@ -21,7 +21,7 @@ using Poco::icompare;
  *
  * \return  The process identifier.
  */
-DWORD ServiceEnumerator::processIdFromServiceName(std::string serviceName)
+DWORD ServiceEnumerator::processIdFromServiceName(const std::string& serviceName)
 {
     const auto control = OpenSCManagerA(nullptr, nullptr, GENERIC_READ);
 
@@ -71,7 +71,7 @@ DWORD ServiceEnumerator::processIdFromServiceName(std::string serviceName)
  *
  * \return  The process identifier.
  */
-DWORD ServiceEnumerator::processIdFromProcessName(std::string processName)
+DWORD ServiceEnumerator::processIdFromProcessName(const std::string& processName)
 {
     DWORD pid = 0;
     PROCESSENTRY32 entry;
