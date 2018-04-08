@@ -7,7 +7,17 @@
     </logging>
   </core>
   <dotnet>
+    <!-- 
+        Path where coreclr.dll can be found. Default behaviour is to auto-detect via registry.
+        Uncomment to override with provided path.
+    -->
     <!-- <CORE_ROOT>C:\Program Files\dotnet\shared\Microsoft.NETCore.App\2.0.6</CORE_ROOT> -->
+    <!-- 
+        This is a list of assembly paths (delimited by ';' on Windows and ':' on Unix) 
+        which the AppDomain should prioritize loading and give full trust to (even in 
+        partially-trusted domains). This list is meant to contain 'Framework' assemblies 
+        and other trusted modules, similar to the GAC in .NET Framework scenarios.
+    -->
     <!-- <TRUSTED_PLATFORM_ASSEMBLIES></TRUSTED_PLATFORM_ASSEMBLIES> -->
     <!-- <APP_PATHS></APP_PATHS> -->
     <!-- <APP_NI_PATHS></APP_NI_PATHS> -->
