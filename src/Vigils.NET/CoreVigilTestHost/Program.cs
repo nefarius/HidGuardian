@@ -1,5 +1,5 @@
 ﻿using System;
-using HidCerberus.Vigils.Core.YAML.Public;
+using HidCerberus.Vigils.Core.Webhooks.Public;
 
 namespace CoreVigilTestHost
 {
