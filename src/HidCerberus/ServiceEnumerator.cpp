@@ -4,6 +4,7 @@
 #include <codecvt>
 
 #include <Poco/String.h>
+#include <Poco/Exception.h>
 
 using Poco::icompare;
 
@@ -26,14 +27,14 @@ DWORD ServiceEnumerator::processIdFromServiceName(const std::string& serviceName
     const auto control = OpenSCManagerA(nullptr, nullptr, GENERIC_READ);
 
     if (control == nullptr)
-        throw std::runtime_error("Service manager handle invalid");
+        throw Poco::RuntimeException("Service manager handle invalid", GetLastError());
 
     const auto service = OpenServiceA(control, serviceName.c_str(), SERVICE_QUERY_STATUS);
 
     if (service == nullptr)
     {
         CloseServiceHandle(control);
-        throw std::runtime_error(std::string("Service handle invalid: ") + serviceName);
+        throw Poco::RuntimeException(std::string("Service handle invalid: ") + serviceName, GetLastError());
     }
 
     DWORD bytesRequired;
@@ -50,7 +51,7 @@ DWORD ServiceEnumerator::processIdFromServiceName(const std::string& serviceName
     if (!ret) {
         CloseServiceHandle(control);
         CloseServiceHandle(service);
-        throw std::runtime_error("Failed to query service status");
+        throw Poco::RuntimeException("Failed to query service status", GetLastError());
     }
 
     CloseServiceHandle(control);

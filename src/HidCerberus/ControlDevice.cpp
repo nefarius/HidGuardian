@@ -127,8 +127,15 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     for (unsigned int i = 0; i < serviceNames.size(); i++)
     {
         const auto name = serviceNames[i];
-        pSubmitServices->ProcessIds[i] = ServiceEnumerator::processIdFromServiceName(name);
-        logger.debug("Service %s has PID: %lu", name, pSubmitServices->ProcessIds[i]);
+        try
+        {
+            pSubmitServices->ProcessIds[i] = ServiceEnumerator::processIdFromServiceName(name);
+            logger.debug("Service %s has PID: %lu", name, pSubmitServices->ProcessIds[i]);
+        }
+        catch (Poco::Exception& pex)
+        {
+            logger.error(pex.displayText());
+        }
     }
 
     DeviceIoControl(
