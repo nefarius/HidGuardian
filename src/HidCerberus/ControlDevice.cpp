@@ -81,7 +81,10 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     );
 
     if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
+    {
+        CloseHandle(lOverlapped.hEvent);
         throw std::runtime_error("Failed to submit process IDs");
+    }
 
 #pragma endregion
 
@@ -150,7 +153,10 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     );
 
     if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
+    {
+        CloseHandle(lOverlapped.hEvent);
         throw std::runtime_error("Failed to submit service IDs");
+    }
 
 #pragma endregion
 
