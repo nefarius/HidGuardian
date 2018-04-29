@@ -174,6 +174,46 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
+    //
+    // Get path to ourself
+    // 
+    Buffer<char> myPathBuf(MAX_PATH + 1);
+    GetModuleFileNameA(reinterpret_cast<HINSTANCE>(&__ImageBase), myPathBuf.begin(), myPathBuf.size());
+    Path myPath(myPathBuf.begin());
+    Path myDir(myPath.parent());
+
+    DWORD   verBufferSize;
+    char    verBuffer[2048];
+
+    //  Get the size of the version info block in the file
+    verBufferSize = GetFileVersionInfoSizeA(myPathBuf.begin(), NULL);
+    if (verBufferSize > 0 && verBufferSize <= sizeof(verBuffer))
+    {
+        //  get the version block from the file
+        if (TRUE == GetFileVersionInfoA(myPathBuf.begin(), NULL, verBufferSize, verBuffer))
+        {
+            UINT length;
+            VS_FIXEDFILEINFO *verInfo = NULL;
+
+            //  Query the version information for neutral language
+            if (TRUE == VerQueryValueA(
+                verBuffer,
+                "\\",
+                reinterpret_cast<LPVOID*>(&verInfo),
+                &length))
+            {
+                //  Pull the version values.
+                logger.information("Starting up (version %lu.%lu.%lu.%lu)",
+                (ULONG)HIWORD(verInfo->dwProductVersionMS),
+                (ULONG)LOWORD(verInfo->dwProductVersionMS),
+                (ULONG)HIWORD(verInfo->dwProductVersionLS),
+                (ULONG)LOWORD(verInfo->dwProductVersionLS));
+            }
+        }
+    }
+
+    logger.information("Current directory: %s", myDir.toString());
+    
     std::vector<CoreClrVigil> vigils;
     std::vector<std::string> assemblyPaths;
 
@@ -206,7 +246,19 @@ int ZerberusService::main(const std::vector<std::string>& args)
             CoreClrVigil vigil;
             vigil.name = name;
             vigil.description = item->getNodeByPath("//description")->innerText();
-            vigil.assemblyPath = item->getNodeByPath("//path")->innerText();
+
+            Path assemblyPath(item->getNodeByPath("//path")->innerText());
+            if (assemblyPath.isRelative())
+            {                
+                Path assemblyPathAbsolute(myDir, assemblyPath);
+                vigil.assemblyPath = assemblyPathAbsolute.toString();
+                logger.warning("Relative paths not tolerated by CoreCLR, expanding to: %s", vigil.assemblyPath);
+            }
+            else
+            {
+                vigil.assemblyPath = assemblyPath.toString();
+            }
+
             vigil.assemblyName = item->getNodeByPath("//assembly")->innerText();
             vigil.className = item->getNodeByPath("//class")->innerText();
             vigil.methodName = item->getNodeByPath("//method")->innerText();

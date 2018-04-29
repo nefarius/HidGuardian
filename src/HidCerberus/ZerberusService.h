@@ -11,6 +11,8 @@
 using Poco::TaskManager;
 using Poco::AutoPtr;
 
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+
 class ZerberusService :
     public Poco::Util::ServerApplication
 {
