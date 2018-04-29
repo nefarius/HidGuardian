@@ -182,38 +182,43 @@ int ZerberusService::main(const std::vector<std::string>& args)
     Path myPath(myPathBuf.begin());
     Path myDir(myPath.parent());
 
-    DWORD   verBufferSize;
-    char    verBuffer[2048];
-
-    //  Get the size of the version info block in the file
-    verBufferSize = GetFileVersionInfoSizeA(myPathBuf.begin(), NULL);
-    if (verBufferSize > 0 && verBufferSize <= sizeof(verBuffer))
+    //
+    // Log build version of ourself
+    // 
+    Buffer<char> versionValueBuffer(2048);
+    const DWORD verBufferSize = GetFileVersionInfoSizeA(myPathBuf.begin(), nullptr);
+    if (verBufferSize > 0 && verBufferSize <= versionValueBuffer.size())
     {
         //  get the version block from the file
-        if (TRUE == GetFileVersionInfoA(myPathBuf.begin(), NULL, verBufferSize, verBuffer))
+        if (TRUE == GetFileVersionInfoA(
+            myPathBuf.begin(),
+            NULL,
+            verBufferSize,
+            versionValueBuffer.begin()
+        ))
         {
             UINT length;
-            VS_FIXEDFILEINFO *verInfo = NULL;
+            VS_FIXEDFILEINFO *verInfo = nullptr;
 
             //  Query the version information for neutral language
             if (TRUE == VerQueryValueA(
-                verBuffer,
+                versionValueBuffer.begin(),
                 "\\",
                 reinterpret_cast<LPVOID*>(&verInfo),
                 &length))
             {
                 //  Pull the version values.
                 logger.information("Starting up (version %lu.%lu.%lu.%lu)",
-                (ULONG)HIWORD(verInfo->dwProductVersionMS),
-                (ULONG)LOWORD(verInfo->dwProductVersionMS),
-                (ULONG)HIWORD(verInfo->dwProductVersionLS),
-                (ULONG)LOWORD(verInfo->dwProductVersionLS));
+                    static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)),
+                    static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)),
+                    static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS)),
+                    static_cast<ULONG>(LOWORD(verInfo->dwProductVersionLS)));
             }
         }
     }
 
     logger.information("Current directory: %s", myDir.toString());
-    
+
     std::vector<CoreClrVigil> vigils;
     std::vector<std::string> assemblyPaths;
 
@@ -249,7 +254,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
 
             Path assemblyPath(item->getNodeByPath("//path")->innerText());
             if (assemblyPath.isRelative())
-            {                
+            {
                 Path assemblyPathAbsolute(myDir, assemblyPath);
                 vigil.assemblyPath = assemblyPathAbsolute.toString();
                 logger.warning("Relative paths not tolerated by CoreCLR, expanding to: %s", vigil.assemblyPath);
