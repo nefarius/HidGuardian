@@ -1,6 +1,8 @@
 # YAML-based rule processor
-TBD
+## About
+This .NET Core Vigil parses rules provided by a `rules.yaml` file. 
 
+## Example
 ```yaml
 rules:
     - name: Test Rule matching a process by name
