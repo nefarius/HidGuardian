@@ -28,6 +28,7 @@ Sony DualShock 4 and generic USB Gamepad connected:
 ![](https://lh3.googleusercontent.com/-6_EXN7RwMcM/WnB7NaxorHI/AAAAAAAAAzg/FDKOJVyn39cp3zcqY-B7kWmOEeAfherVQCHMYCw/s0/11.19.2016-19.28.png)
 
 ## Manual Installation
+Get [`devcon`](https://downloads.vigem.org/other/microsoft/devcon.zip) and execute:
 ```
 devcon.exe install HidGuardian.inf Root\HidGuardian
 devcon.exe classfilter HIDClass upper -HidGuardian
@@ -36,6 +37,7 @@ devcon.exe classfilter XboxComposite upper -HidGuardian
 ```
 
 ## Manual Removal
+Get [`devcon`](https://downloads.vigem.org/other/microsoft/devcon.zip) and execute:
 ```
 devcon.exe remove Root\HidGuardian
 devcon.exe classfilter HIDClass upper !HidGuardian
