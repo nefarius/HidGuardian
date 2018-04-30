@@ -1,9 +1,9 @@
 # The hound of Hades
-> For Hell and the foul fiend that rules
-God's everlasting fiery jails
-(Devised by rogues, dreaded by fools),
-With his grim, grisly dog that keeps the door,
-Are senseless stories, idle tales,
+> For Hell and the foul fiend that rules<br/>
+God's everlasting fiery jails<br/>
+(Devised by rogues, dreaded by fools),<br/>
+With his grim, grisly dog that keeps the door,<br/>
+Are senseless stories, idle tales,<br/>
 Dreams, whimseys, and no more. 
 
 \- John Wilmot, The Complete Poems
