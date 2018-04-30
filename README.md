@@ -16,7 +16,7 @@ Games and other user-mode applications enumerate Joysticks, Gamepads and similar
 A common way for intercepting the Game's communication with the input devices would be hooking the mentioned input APIs within the target process. While a stable and user-friendly implementation for the end-user might be achievable for some processes, targeting the wide variety of Games available on the market is a difficult task. Hooking APIs involves manipulating the target processes memory which also might falsely trigger Anti-Cheat systems and ban innocent users.
 
 ## The Real Solution
-`HidGuardian` is an upper filter driver for device classes like `HIDClass`, `XnaComposite` or `XboxComposite` therefore targeting and attaching itself to every input device connected to the system. On startup it queries the `AffectedDevices` value in the service's `Parameters` key to check if the current device in the driver stack is "blacklisted". If a matching Hardware ID is found, every call of the `CreateFile(...)` API will be queued until [the user-mode service](../../../HidCerberus) has decided if the request is allowed or shall be blocked. If the result of the decision denies access, the original open request will be answered with the status `ERROR_ACCESS_DENIED` thus failing the attempt to open a file handle and communicate with the affected device. If allowed the open request will simply get forwarded in the stack untouched. If the guardian is attached to a device which shouldn't get blocked it will unload itself from the driver stack.
+`HidGuardian` is an upper filter driver for device classes like `HIDClass`, `XnaComposite` or `XboxComposite` therefore targeting and attaching itself to every input device connected to the system. On startup it queries the `AffectedDevices` value in the service's `Parameters` key to check if the current device in the driver stack is "blacklisted". If a matching Hardware ID is found, every call of the `CreateFile(...)` API will be queued until [the user-mode service](src/HidCerberus) has decided if the request is allowed or shall be blocked. If the result of the decision denies access, the original open request will be answered with the status `ERROR_ACCESS_DENIED` thus failing the attempt to open a file handle and communicate with the affected device. If allowed the open request will simply get forwarded in the stack untouched. If the guardian is attached to a device which shouldn't get blocked it will unload itself from the driver stack.
 
 ## Demo
 Sony DualShock 4 and generic USB Gamepad connected:
@@ -31,11 +31,15 @@ Sony DualShock 4 and generic USB Gamepad connected:
 ```
 devcon.exe install HidGuardian.inf Root\HidGuardian
 devcon.exe classfilter HIDClass upper -HidGuardian
+devcon.exe classfilter XnaComposite upper -HidGuardian
+devcon.exe classfilter XboxComposite upper -HidGuardian
 ```
 
 ## Manual Removal
 ```
 devcon.exe remove Root\HidGuardian
 devcon.exe classfilter HIDClass upper !HidGuardian
+devcon.exe classfilter XnaComposite upper !HidGuardian
+devcon.exe classfilter XboxComposite upper !HidGuardian
 ```
 Re-plug your devices or reboot the system for the driver to get unloaded and removed.
