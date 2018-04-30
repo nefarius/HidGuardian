@@ -34,6 +34,8 @@ extern "C" {
 
     typedef BOOL(STDMETHODCALLTYPE *fpnClrVigilProcessAccessRequest)(
         PCSTR hwId,
+        PCSTR deviceId,
+        PCSTR instanceId,
         DWORD processId,
         const BOOL *bIsAllowed,
         const BOOL *bIsPermanent

@@ -28,6 +28,7 @@ SOFTWARE.
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, HidGuardianCreateDevice)
+#pragma alloc_text (PAGE, BusQueryId)
 #pragma alloc_text (PAGE, HidGuardianEvtDeviceContextCleanup)
 #pragma alloc_text (PAGE, EvtFileCleanup)
 #endif
@@ -118,6 +119,46 @@ HidGuardianCreateDevice(
         // run under framework verifier mode.
         //
         pDeviceCtx = DeviceGetContext(device);
+
+        //
+        // Query Device ID
+        // 
+        status = BusQueryId(device,
+            BusQueryDeviceID,
+            pDeviceCtx->DeviceID,
+            MAX_DEVICE_ID_SIZE
+        );
+        if (!NT_SUCCESS(status))
+        {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "BusQueryDeviceID failed with status %!STATUS!", status);
+            return status;
+        }
+
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_DEVICE,
+            "BusQueryDeviceID = %ws\n", pDeviceCtx->DeviceID);
+
+        //
+        // Query Instance ID
+        // 
+        BusQueryId(device, 
+            BusQueryInstanceID, 
+            pDeviceCtx->InstanceID,
+            MAX_INSTANCE_ID_SIZE
+        );
+        if (!NT_SUCCESS(status))
+        {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "BusQueryInstanceID failed with status %!STATUS!", status);
+            return status;
+        }
+
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_DEVICE,
+            "BusQueryInstanceID = %ws\n", pDeviceCtx->InstanceID);
 
         //
         // Linked list for sticky PIDs
@@ -300,8 +341,62 @@ creationDone:
     return status;
 }
 
+NTSTATUS BusQueryId(
+    WDFDEVICE Device,
+    BUS_QUERY_ID_TYPE IdType,
+    PWCHAR Buffer,
+    ULONG BufferLength
+)
+{
+    NTSTATUS            status;
+    PDEVICE_OBJECT      pdo;
+    KEVENT              ke;
+    IO_STATUS_BLOCK     iosb;
+    PIRP                irp;
+    PIO_STACK_LOCATION  stack;
+
+    pdo = WdfDeviceWdmGetPhysicalDevice(Device);
+    KeInitializeEvent(&ke, NotificationEvent, FALSE);
+
+    RtlZeroMemory(&iosb, sizeof(IO_STATUS_BLOCK));
+    irp = IoBuildSynchronousFsdRequest(IRP_MJ_PNP, pdo,
+        NULL, 0, NULL,
+        &ke, &iosb
+    );
+    irp->IoStatus.Status = STATUS_NOT_SUPPORTED; // required initialize
+    stack = IoGetNextIrpStackLocation(irp);
+    stack->MinorFunction = IRP_MN_QUERY_ID;
+    stack->Parameters.QueryId.IdType = IdType;
+
+    status = IoCallDriver(pdo, irp);
+
+    if (status == STATUS_PENDING)
+    {
+        // 
+        // Normally, we will not hit this, because QueryId should not be an expensive operation
+        // 
+        KeWaitForSingleObject(&ke, Executive, KernelMode, FALSE, NULL);
+    }
+
+    if (NT_SUCCESS(status))
+    {
+        WCHAR *retval = (WCHAR*)iosb.Information;
+
+        if (wcslen(retval) > BufferLength)
+        {
+            ExFreePool(retval); // IRP_MN_QUERY_ID requires this
+            return STATUS_BUFFER_TOO_SMALL;
+        }
+
+        wcscpy(Buffer, retval);
+        ExFreePool(retval); // IRP_MN_QUERY_ID requires this
+    }
+
+    return status;
+}
+
 //
-// Gets called when the device gts removed.
+// Gets called when the device gets removed.
 // 
 // Happens once in the devices lifetime.
 // 
@@ -402,7 +497,7 @@ EvtWdfDeviceReleaseHardware(
 )
 {
     PDEVICE_CONTEXT     pDeviceCtx;
-    
+
     UNREFERENCED_PARAMETER(ResourcesTranslated);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");

@@ -447,6 +447,9 @@ HidGuardianEvtIoDeviceControl(
             "PID associated to this request: %d",
             pGetCreateRequest->ProcessId);
 
+        wcscpy_s(pGetCreateRequest->DeviceId, MAX_DEVICE_ID_SIZE, pDeviceCtx->DeviceID);
+        wcscpy_s(pGetCreateRequest->InstanceId, MAX_INSTANCE_ID_SIZE, pDeviceCtx->InstanceID);
+
         hwidBufferLength = pGetCreateRequest->Size - sizeof(HIDGUARDIAN_GET_CREATE_REQUEST);
 
         TraceEvents(TRACE_LEVEL_VERBOSE,

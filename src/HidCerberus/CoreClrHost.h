@@ -32,7 +32,14 @@ public:
     CoreClrHost(const LayeredConfiguration& config);
 
     void loadVigil(std::string assemblyName, std::string className, std::string methodName);
-    void processVigil(PCWSTR szHwIDs, ULONG processId, PBOOL pIsAllowed, PBOOL pIsPermanent);
+    void processVigil(
+        PCWSTR szHwIDs,
+        PCSTR deviceId,
+        PCSTR instanceId,
+        ULONG processId,
+        PBOOL pIsAllowed,
+        PBOOL pIsPermanent
+    );
 };
 
 struct CoreClrVigil

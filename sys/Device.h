@@ -75,6 +75,10 @@ typedef struct _DEVICE_CONTEXT
 
     BOOLEAN         IsShuttingDown;
 
+    WCHAR           DeviceID[MAX_DEVICE_ID_SIZE];
+
+    WCHAR           InstanceID[MAX_INSTANCE_ID_SIZE];
+
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
 //
@@ -105,5 +109,12 @@ HidGuardianCreateDevice(
 EVT_WDF_DEVICE_CONTEXT_CLEANUP HidGuardianEvtDeviceContextCleanup;
 EVT_WDF_FILE_CLEANUP EvtFileCleanup;
 EVT_WDF_DEVICE_RELEASE_HARDWARE EvtWdfDeviceReleaseHardware;
+
+NTSTATUS BusQueryId(
+    WDFDEVICE Device, 
+    BUS_QUERY_ID_TYPE IdType, 
+    PWCHAR Buffer, 
+    ULONG BufferLength
+);
 
 EXTERN_C_END

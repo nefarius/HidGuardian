@@ -6,7 +6,7 @@
 
         public string Description { get; set; }
 
-        public string HardwareId { get; set; }
+        public Target Target { get; set; }
 
         public bool IsAllowed { get; set; }
 

@@ -1,19 +1,16 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Reflection;
 using HidCerberus.Vigils.Core.YAML.Core;
 using HidCerberus.Vigils.Core.YAML.Core.YAML;
+using Serilog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using Serilog;
 
 namespace HidCerberus.Vigils.Core.YAML.Public
 {
     public class EntryPoint
     {
-        private static Document Config { get; }
-
         static EntryPoint()
         {
             var assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -45,20 +42,37 @@ namespace HidCerberus.Vigils.Core.YAML.Public
             Log.Information($"Loaded {Config.Rules.Count} rules");
         }
 
+        private static Document Config { get; }
+
         /// <summary>
         ///     Gets called by HidCerberus when an access decision has to be made.
         /// </summary>
         /// <param name="hardwareId">The Hardware ID identifying </param>
+        /// <param name="instanceId"></param>
         /// <param name="processId"></param>
         /// <param name="isAllowed"></param>
         /// <param name="isPermanent"></param>
+        /// <param name="deviceId"></param>
         /// <returns></returns>
-        public static bool ProcessAccessRequest(string hardwareId, uint processId, out bool isAllowed, out bool isPermanent)
+        public static bool ProcessAccessRequest(
+            string hardwareId,
+            string deviceId,
+            string instanceId,
+            uint processId,
+            out bool isAllowed,
+            out bool isPermanent
+        )
         {
-            var match = Config.Rules.FirstOrDefault(r =>
-                r.HardwareId.Equals(hardwareId, StringComparison.InvariantCultureIgnoreCase));
+            var target = new Target
+            {
+                HardwareId = hardwareId,
+                DeviceId = deviceId,
+                InstanceId = instanceId
+            };
 
-            if (match != null && match.Filter.Validate((int)processId))
+            var match = Config.Rules.FirstOrDefault(r => target.Equals(r.Target));
+
+            if (match != null && match.Filter.Validate((int) processId))
             {
                 isAllowed = match.IsAllowed;
                 isPermanent = match.IsPermanent;

@@ -202,7 +202,14 @@ void CoreClrHost::loadVigil(std::string assemblyName, std::string className, std
     _accessRequestVigils.push_back(fpnVPAR);
 }
 
-void CoreClrHost::processVigil(PCWSTR szHwIDs, ULONG processId, PBOOL pIsAllowed, PBOOL pIsPermanent)
+void CoreClrHost::processVigil(
+    PCWSTR szHwIDs, 
+    PCSTR deviceId,
+    PCSTR instanceId,
+    ULONG processId, 
+    PBOOL pIsAllowed, 
+    PBOOL pIsPermanent
+)
 {
     BOOL isAllowed = FALSE;
     BOOL isPermanent = FALSE;
@@ -218,7 +225,14 @@ void CoreClrHost::processVigil(PCWSTR szHwIDs, ULONG processId, PBOOL pIsAllowed
             std::wstring_convert<convert_type, wchar_t> converter;
             const std::string id(converter.to_bytes(szIter));
 
-            const auto ret = vigil(id.c_str(), processId, &isAllowed, &isPermanent);
+            const auto ret = vigil(
+                id.c_str(), 
+                deviceId, 
+                instanceId,
+                processId, 
+                &isAllowed, 
+                &isPermanent
+            );
 
             if (ret)
             {

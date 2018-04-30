@@ -36,6 +36,8 @@ DEFINE_GUID(GUID_DEVINTERFACE_HIDGUARDIAN,
 
 #define IOCTL_INDEX                 0x901
 #define FILE_DEVICE_HIDGUARDIAN     32768U
+#define MAX_DEVICE_ID_SIZE          0x400
+#define MAX_INSTANCE_ID_SIZE        0xFF
 
 //
 // Used for inverted calls to get request information
@@ -79,6 +81,10 @@ typedef struct _HIDGUARDIAN_GET_CREATE_REQUEST
     // ID of the process this request is related to
     // 
     OUT ULONG ProcessId;
+
+    OUT WCHAR DeviceId[MAX_DEVICE_ID_SIZE];
+
+    OUT WCHAR InstanceId[MAX_INSTANCE_ID_SIZE];
 
     //
     // Buffer containing Hardware ID string

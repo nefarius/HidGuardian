@@ -20,6 +20,7 @@
 #include <Poco/Logger.h>
 #include <Poco/Buffer.h>
 #include <Poco/String.h>
+#include <Poco/UnicodeConverter.h>
 
 using Poco::Logger;
 using Poco::Buffer;
@@ -136,8 +137,16 @@ void GuardedDevice::runTask()
             break;
         }
 
+        std::string deviceId;
+        Poco::UnicodeConverter::convert(pHgGet->DeviceId, deviceId);
+
+        std::string instanceId;
+        Poco::UnicodeConverter::convert(pHgGet->InstanceId, instanceId);
+        
         if (logger.is(Poco::Message::PRIO_DEBUG))
         {
+            logger.debug("DeviceId = %s", deviceId);
+            logger.debug("InstanceId = %s", instanceId);
             logger.debug("Request (ID: %lu) completed", pHgGet->RequestId);
             logger.debug("PID: %lu", pHgGet->ProcessId);
         }
@@ -149,6 +158,8 @@ void GuardedDevice::runTask()
         }
         _clrHost->processVigil(
             pHgGet->HardwareIds,
+            deviceId.c_str(),
+            instanceId.c_str(),
             pHgGet->ProcessId,
             reinterpret_cast<PBOOL>(&hgSet.IsAllowed),
             reinterpret_cast<PBOOL>(&hgSet.IsSticky)
