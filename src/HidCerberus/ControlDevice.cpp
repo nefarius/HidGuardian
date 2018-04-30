@@ -2,6 +2,8 @@
 #include <utility>
 
 #include <Poco/Logger.h>
+#include <Poco/Exception.h>
+
 #include <devioctl.h>
 #include <HidGuardian.h>
 #include "ServiceEnumerator.h"
@@ -32,15 +34,15 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     {
         if (GetLastError() == ERROR_FILE_NOT_FOUND)
         {
-            throw std::runtime_error("Couldn't open the desired device, make sure the provided path is correct.");
+            throw Poco::RuntimeException("Couldn't open the desired device, make sure the provided path is correct", GetLastError());
         }
 
         if (GetLastError() == ERROR_ACCESS_DENIED)
         {
-            throw std::runtime_error("Couldn't access device, please make sure the device isn't already guarded.");
+            throw Poco::RuntimeException("Couldn't access device, please make sure the device isn't already guarded", GetLastError());
         }
 
-        throw std::runtime_error("Couldn't access device, unknown error.");
+        throw Poco::RuntimeException("Couldn't access device, unknown error", GetLastError());
     }
 
     logger.debug("Device opened");
@@ -83,7 +85,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
     {
         CloseHandle(lOverlapped.hEvent);
-        throw std::runtime_error("Failed to submit process IDs");
+        throw Poco::RuntimeException("Failed to submit process IDs");
     }
 
 #pragma endregion
@@ -155,7 +157,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
     {
         CloseHandle(lOverlapped.hEvent);
-        throw std::runtime_error("Failed to submit service IDs");
+        throw Poco::RuntimeException("Failed to submit service IDs");
     }
 
 #pragma endregion

@@ -17,6 +17,7 @@
 #include <Poco/Logger.h>
 #include <Poco/Util/WinRegistryKey.h>
 #include <Poco/Environment.h>
+#include <Poco/Exception.h>
 
 using Poco::Glob;
 using Poco::Path;
@@ -80,18 +81,18 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _runtimeHost(null
 
     _coreCLRModule = LoadLibraryExA(coreClrDll.toString().c_str(), nullptr, 0);
     if (!_coreCLRModule) {
-        throw std::runtime_error("CoreCLR.dll could not be found");
+        throw Poco::RuntimeException("CoreCLR.dll could not be found");
     }
 
     const auto pfnGetCLRRuntimeHost = reinterpret_cast<FnGetCLRRuntimeHost>(GetProcAddress(
         _coreCLRModule, "GetCLRRuntimeHost"));
     if (!pfnGetCLRRuntimeHost) {
-        throw std::runtime_error("GetCLRRuntimeHost not found");
+        throw Poco::RuntimeException("GetCLRRuntimeHost not found");
     }
 
     auto hr = pfnGetCLRRuntimeHost(IID_ICLRRuntimeHost2, reinterpret_cast<IUnknown**>(&_runtimeHost));
     if (FAILED(hr)) {
-        throw std::runtime_error("Failed to get ICLRRuntimeHost2 instance");
+        throw Poco::RuntimeException("Failed to get ICLRRuntimeHost2 instance");
     }
 
     hr = _runtimeHost->SetStartupFlags(
@@ -106,12 +107,12 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _runtimeHost(null
             )
     );
     if (FAILED(hr)) {
-        throw std::runtime_error("Failed to set startup flags");
+        throw Poco::RuntimeException("Failed to set startup flags");
     }
 
     hr = _runtimeHost->Start();
     if (FAILED(hr)) {
-        throw std::runtime_error("Failed to start the runtime");
+        throw Poco::RuntimeException("Failed to start the runtime");
     }
 
     const auto appDomainFlags =
@@ -153,7 +154,7 @@ CoreClrHost::CoreClrHost(const LayeredConfiguration& config) : _runtimeHost(null
 
     if (FAILED(hr))
     {
-        throw std::runtime_error("Failed to create AppDomain");
+        throw Poco::RuntimeException("Failed to create AppDomain");
     }
 }
 
@@ -195,7 +196,7 @@ void CoreClrHost::loadVigil(std::string assemblyName, std::string className, std
 
     if (FAILED(hr))
     {
-        throw std::runtime_error("Delegate creation failed");
+        throw Poco::RuntimeException("Delegate creation failed");
     }
 
     _accessRequestVigils.push_back(fpnVPAR);

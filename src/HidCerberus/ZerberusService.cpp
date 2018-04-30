@@ -37,6 +37,7 @@
 #include <Poco/SAX/InputSource.h>
 #include <Poco/DOM/NodeList.h>
 #include <Poco/DOM/NamedNodeMap.h>
+#include <Poco/Exception.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -178,7 +179,11 @@ int ZerberusService::main(const std::vector<std::string>& args)
     // Get path to ourself
     // 
     Buffer<char> myPathBuf(MAX_PATH + 1);
-    GetModuleFileNameA(reinterpret_cast<HINSTANCE>(&__ImageBase), myPathBuf.begin(), myPathBuf.size());
+    GetModuleFileNameA(
+        reinterpret_cast<HINSTANCE>(&__ImageBase),
+        myPathBuf.begin(),
+        static_cast<DWORD>(myPathBuf.size())
+    );
     Path myPath(myPathBuf.begin());
     Path myDir(myPath.parent());
 
@@ -279,7 +284,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
     // Concat & implode assembly directories
     // 
     if (config().has("dotnet.APP_PATHS"))
+    {
         assemblyPaths.push_back(config().getString("dotnet.APP_PATHS"));
+    }
     std::stringstream assemblyPathStream;
     std::copy(assemblyPaths.begin(), assemblyPaths.end(), std::ostream_iterator<std::string>(assemblyPathStream, ";"));
     config().setString("dotnet.APP_PATHS", assemblyPathStream.str());
@@ -291,9 +298,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
         // 
         _clrHost = new CoreClrHost(config());
     }
-    catch (const std::exception& ex)
+    catch (Poco::Exception& ex)
     {
-        logger.fatal("Couldn't load Core CLR: %s", std::string(ex.what()));
+        logger.fatal("Couldn't load Core CLR: %s", ex.displayText());
 
         return Application::EXIT_OSFILE;
     }
@@ -313,9 +320,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
                 vigil.methodName
             );
         }
-        catch (const std::exception& ex)
+        catch (Poco::Exception& ex)
         {
-            logger.fatal("Couldn't load .NET Core Vigil: %s", std::string(ex.what()));
+            logger.fatal("Couldn't load .NET Core Vigil: %s", ex.displayText());
         }
     }
 
@@ -326,9 +333,9 @@ int ZerberusService::main(const std::vector<std::string>& args)
     {
         _controlDevice = new ControlDevice(CONTROL_DEVICE_PATH);
     }
-    catch (std::exception& ex)
+    catch (Poco::Exception& ex)
     {
-        logger.fatal("Couldn't create control device: %s", std::string(ex.what()));
+        logger.fatal("Couldn't create control device: %s", ex.displayText());
 
         return Application::EXIT_OSFILE;
     }
