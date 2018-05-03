@@ -1,5 +1,7 @@
 ﻿using System.IO;
 using System.Reflection;
+using HidCerberus.Vigils.Core.Webhooks.Core;
+using Microsoft.AspNetCore.Hosting;
 using Serilog;
 
 namespace HidCerberus.Vigils.Core.Webhooks.Public
@@ -14,6 +16,14 @@ namespace HidCerberus.Vigils.Core.Webhooks.Public
                 .MinimumLevel.Information()
                 .WriteTo.RollingFile(Path.Combine(assemblyFolder, "HidCerberus.Vigils.Core.Webhooks-{Date}.log"))
                 .CreateLogger();
+
+            var host = new WebHostBuilder()
+                .UseContentRoot(Directory.GetCurrentDirectory())
+                .UseKestrel()
+                .UseStartup<Startup>()
+                .Build();
+
+            host.Start();
         }
 
         public static bool ProcessAccessRequest(
