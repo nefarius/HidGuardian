@@ -1,5 +1,5 @@
 ﻿using System;
-using HidCerberus.Vigils.Core.YAML.Public;
+using HidCerberus.Vigils.Core.Webhooks.Public;
 
 namespace CoreVigilTestHost
 {
@@ -16,6 +16,8 @@ namespace CoreVigilTestHost
 
             Console.WriteLine($"IsAllowed: {isAllowed2}");
             Console.WriteLine($"IsPermanent: {isPermanent2}");
+
+            Console.ReadKey();
         }
     }
 }

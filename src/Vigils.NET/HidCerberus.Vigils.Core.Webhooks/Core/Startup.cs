@@ -12,7 +12,7 @@ namespace HidCerberus.Vigils.Core.Webhooks.Core
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json")
+                //.AddJsonFile("appsettings.json")
                 .SetBasePath(env.ContentRootPath);
 
             config = builder.Build();
