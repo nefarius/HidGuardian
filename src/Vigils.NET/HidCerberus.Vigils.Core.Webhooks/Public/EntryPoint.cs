@@ -21,6 +21,7 @@ namespace HidCerberus.Vigils.Core.Webhooks.Public
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseKestrel()
                 .UseStartup<Startup>()
+                .UseUrls("http://localhost:19949")
                 .Build();
 
             host.Start();
