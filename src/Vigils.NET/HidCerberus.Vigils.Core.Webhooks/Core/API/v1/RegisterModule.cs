@@ -1,6 +1,6 @@
 ﻿using Nancy;
 
-namespace HidCerberus.Vigils.Core.Webhooks.Core
+namespace HidCerberus.Vigils.Core.Webhooks.Core.API.v1
 {
     public class RegisterModule : NancyModule
     {
