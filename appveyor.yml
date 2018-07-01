@@ -1,12 +1,12 @@
 version: 3.1.{build}.0
-image: Visual Studio 2017
+image: Previous Visual Studio 2017
 before_build:
 - nuget restore HidGuardian.sln
 build_script:
 - ps: .\build.ps1 -configuration release
 after_build:
 - ps: |
-    Invoke-WebRequest "https://github.com/pavel-a/ddverpatch/files/1215010/verpatch-1.0.15.1-x86-codeplex.zip" -OutFile verpatch-1.0.15.1-x86-codeplex.zip
+    Invoke-WebRequest "https://downloads.vigem.org/other/pavel-a/ddverpatch/verpatch-1.0.15.1-x86-codeplex.zip" -OutFile verpatch-1.0.15.1-x86-codeplex.zip
     Expand-Archive verpatch-1.0.15.1-x86-codeplex.zip -DestinationPath .
     .\verpatch.exe .\artifacts\x64\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
     .\verpatch.exe .\artifacts\x64\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
