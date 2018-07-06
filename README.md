@@ -39,9 +39,9 @@ devcon.exe classfilter XboxComposite upper -HidGuardian
 ## Manual Removal
 Get [`devcon`](https://downloads.vigem.org/other/microsoft/devcon.zip) and execute:
 ```
-devcon.exe remove Root\HidGuardian
 devcon.exe classfilter HIDClass upper !HidGuardian
 devcon.exe classfilter XnaComposite upper !HidGuardian
 devcon.exe classfilter XboxComposite upper !HidGuardian
+devcon.exe remove Root\HidGuardian
 ```
 Re-plug your devices or reboot the system for the driver to get unloaded and removed.
