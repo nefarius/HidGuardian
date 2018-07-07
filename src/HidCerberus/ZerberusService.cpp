@@ -59,36 +59,6 @@ using Poco::Delegate;
 using Poco::AutoPtr;
 
 
-
-void ZerberusService::enumerateDeviceInterface(const std::string& name, const std::string& value)
-{
-    auto interfaceGuid = DeviceEnumerator::stringToGuid(value);
-
-    auto devices = DeviceEnumerator::enumerateDeviceInterface(&interfaceGuid);
-
-    for (auto& device : devices)
-    {
-        std::cout << "Device path: " << device << "\n";
-    }
-
-    stopOptionsProcessing();
-}
-
-void ZerberusService::help(const std::string & name, const std::string & value)
-{
-    displayHelp();
-    stopOptionsProcessing();
-}
-
-void ZerberusService::displayHelp() const
-{
-    HelpFormatter helpFormatter(options());
-    helpFormatter.setCommand(commandName());
-    helpFormatter.setUsage("[options]");
-    helpFormatter.setHeader("HidGuardian management and control application.");
-    helpFormatter.format(std::cout);
-}
-
 void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
@@ -110,12 +80,6 @@ void ZerberusService::onDeviceRemoved(const void * pSender, std::string & name)
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
     logger.information("Device %s removed", name);
-}
-
-void ZerberusService::initialize(Application & self)
-{
-    loadConfiguration(); // load default configuration files
-    Application::initialize(self);
 }
 
 int ZerberusService::main(const std::vector<std::string>& args)
@@ -403,30 +367,5 @@ int ZerberusService::main(const std::vector<std::string>& args)
     _clrHost->release();
 
     return Application::EXIT_OK;
-}
-
-void ZerberusService::defineOptions(Poco::Util::OptionSet & options)
-{
-    ServerApplication::defineOptions(options);
-
-    options.addOption(
-        Poco::Util::Option("help", "h", "Display this help.")
-        .required(false)
-        .repeatable(false)
-        .binding("core.oneShot")
-        .callback(Poco::Util::OptionCallback<ZerberusService>(this, &ZerberusService::help)));
-
-    options.addOption(
-        Poco::Util::Option("enumerateDeviceInterface", "e", "Returns a list of instance paths of devices with the specified interface GUID.")
-        .required(false)
-        .repeatable(true)
-        .argument("GUID")
-        .binding("core.oneShot")
-        .callback(Poco::Util::OptionCallback<ZerberusService>(this, &ZerberusService::enumerateDeviceInterface)));
-}
-
-void ZerberusService::handleOption(const std::string & name, const std::string & value)
-{
-    ServerApplication::handleOption(name, value);
 }
 
