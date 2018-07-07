@@ -37,15 +37,6 @@ SOFTWARE.
 extern "C" {
 #endif
 
-    typedef BOOL(STDMETHODCALLTYPE *fpnClrVigilProcessAccessRequest)(
-        PCSTR hwId,
-        PCSTR deviceId,
-        PCSTR instanceId,
-        DWORD processId,
-        const BOOL *bIsAllowed,
-        const BOOL *bIsPermanent
-        );
-
     typedef struct _HC_HANDLE_T *PHC_HANDLE;
 
     typedef

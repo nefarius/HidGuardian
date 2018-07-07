@@ -49,3 +49,9 @@
 /src/Vigils.NET/HidCerberus.Vigils.Core.Webhooks/bin/Release/netcoreapp2.0
 /.vs/Vigils.NET/DesignTimeBuild
 /src/Vigils.NET/HidCerberus.Vigils.Core.Webhooks/Core
+/lib/HidCerberus/Release
+/lib/HidCerberus/x64
+/lib/HidCerberus/Zerberus.db
+/lib/HidCerberus/Zerberus.aps
+/lib/HidCerberus/HidCerberus.vcxproj.user
+/lib/HidCerberus/HidCerberus.db
