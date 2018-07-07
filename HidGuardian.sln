@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "driver", "driver", "{FE48D4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "app", "app", "{733C04A5-5FB2-45EC-AAEE-B77B1135747C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HidCerberus", "src\HidCerberus\HidCerberus.vcxproj", "{BD579B12-B22E-40BB-ADB8-9B34024688F5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HidCerberus", "lib\HidCerberus\HidCerberus.vcxproj", "{BD579B12-B22E-40BB-ADB8-9B34024688F5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
