@@ -47,3 +47,5 @@
 /src/Vigils.NET/CoreVigilTestHost/bin/Release/netcoreapp2.0
 /src/Vigils.NET/HidCerberus.Vigils.Core.Webhooks/bin/Debug/netcoreapp2.0
 /src/Vigils.NET/HidCerberus.Vigils.Core.Webhooks/bin/Release/netcoreapp2.0
+/.vs/Vigils.NET/DesignTimeBuild
+/src/Vigils.NET/HidCerberus.Vigils.Core.Webhooks/Core

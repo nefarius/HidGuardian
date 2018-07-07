@@ -28,6 +28,12 @@ SOFTWARE.
 
 #include <Windows.h>
 
+#ifdef HC_EXPORTS
+#define HC_API __declspec(dllexport)
+#else
+#define HC_API __declspec(dllimport)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,6 +46,28 @@ extern "C" {
         const BOOL *bIsAllowed,
         const BOOL *bIsPermanent
         );
+
+    typedef struct _HC_HANDLE_T *PHC_HANDLE;
+
+    typedef
+        _Function_class_(EVT_HC_ACCESS_REQUEST)
+        BOOLEAN
+        EVT_HC_ACCESS_REQUEST(
+            PCSTR HardwareId,
+            PCSTR DeviceId,
+            PCSTR InstanceId,
+            DWORD ProcessId,
+            const BOOL *bIsAllowed,
+            const BOOL *bIsPermanent
+        );
+
+    typedef EVT_HC_ACCESS_REQUEST PFN_HC_ACCESS_REQUEST;
+
+    HC_API PHC_HANDLE hc_init();
+
+    HC_API VOID hc_shutdown(PHC_HANDLE handle);
+
+    HC_API VOID hc_register_access_request_event(PHC_HANDLE handle, PFN_HC_ACCESS_REQUEST callback);
 
 #ifdef __cplusplus
 }

@@ -39,6 +39,9 @@
     <ClCompile Include="CoreClrHost.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HidCerberus.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ZerberusService.h">
