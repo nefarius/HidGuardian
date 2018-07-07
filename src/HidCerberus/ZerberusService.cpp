@@ -84,58 +84,16 @@ void ZerberusService::onDeviceRemoved(const void * pSender, std::string & name)
 
 int ZerberusService::main(const std::vector<std::string>& args)
 {
-    //
-    // TODO: maybe there's a better way, consult POCO docs
-    // 
-    if (config().has("core.oneShot")) {
-        return Application::EXIT_OK;
-    }
-
-    //
-    // Prepare to log to file and optionally console window
-    // 
-
-    auto logFilePath = config().getString("core.logging.path", "");
-
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
-
-    //
-    // TODO: also check for path validity
-    // 
-    if (config().getBool("core.logging[@toFile]", false) && !logFilePath.empty())
-    {
-        AutoPtr<FileChannel> pFileChannel(new FileChannel(Path::expand(logFilePath)));
-        pSplitter->addChannel(pFileChannel);
-    }
-
-    //
-    // Print to console if run interactively
-    // 
-    if (!config().getBool("application.runAsService", false))
-    {
-        AutoPtr<WindowsConsoleChannel> pCons(new WindowsConsoleChannel);
-        pSplitter->addChannel(pCons);
-    }
+    AutoPtr<FileChannel> pFileChannel(new FileChannel("HidCerberus.log"));
+    pSplitter->addChannel(pFileChannel);
 
     //
     // Prepare logging formatting
     // 
-    AutoPtr<PatternFormatter> pPF(new PatternFormatter(config().getString("core.logging.pattern", "%Y-%m-%d %H:%M:%S.%i %s [%p]: %t")));
+    AutoPtr<PatternFormatter> pPF(new PatternFormatter("%Y-%m-%d %H:%M:%S.%i %s [%p]: %t"));
     AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
     AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
-
-    //
-    // Do we even log?
-    // 
-    if (config().getBool("core.logging[@enabled]", true))
-    {
-        Logger::root().setChannel(pAsync);
-
-        if (config().getBool("core.logging[@debug]", false))
-        {
-            Logger::root().setLevel(Message::PRIO_DEBUG);
-        }
-    }
 
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
@@ -187,108 +145,6 @@ int ZerberusService::main(const std::vector<std::string>& args)
     }
 
     logger.information("Current directory: %s", myDir.toString());
-
-    std::vector<CoreClrVigil> vigils;
-    std::vector<std::string> assemblyPaths;
-
-    //
-    // Begin parsing Vigils.xml
-    // 
-    std::ifstream in("Vigils.xml");
-    Poco::XML::InputSource src(in);
-    Poco::XML::DOMParser parser;
-    AutoPtr<Poco::XML::Document> pDoc = parser.parse(&src);
-    Poco::XML::NodeIterator root(pDoc, Poco::XML::NodeFilter::SHOW_ELEMENT);
-    Poco::XML::Node* coreclr = root.root()->getNodeByPath("//vigils/coreclr");
-
-    //
-    // Loop through Vigil definitions
-    // 
-    logger.information("Enumerating .NET Core Vigils");
-    const auto vigilNodes = coreclr->childNodes();
-    for (ULONG i = 0; i < vigilNodes->length(); i++)
-    {
-        const auto item = vigilNodes->item(i);
-        const auto type = item->nodeType();
-        if (type == Poco::XML::Node::ELEMENT_NODE)
-        {
-            const auto attr = item->attributes();
-            const auto name = attr->getNamedItem("name")->getNodeValue();
-
-            logger.information("Discovered Vigil %s", name);
-
-            CoreClrVigil vigil;
-            vigil.name = name;
-            vigil.description = item->getNodeByPath("//description")->innerText();
-
-            Path assemblyPath(item->getNodeByPath("//path")->innerText());
-            if (assemblyPath.isRelative())
-            {
-                Path assemblyPathAbsolute(myDir, assemblyPath);
-                vigil.assemblyPath = assemblyPathAbsolute.toString();
-                logger.warning("Relative paths not tolerated by CoreCLR, expanding to: %s", vigil.assemblyPath);
-            }
-            else
-            {
-                vigil.assemblyPath = assemblyPath.toString();
-            }
-
-            vigil.assemblyName = item->getNodeByPath("//assembly")->innerText();
-            vigil.className = item->getNodeByPath("//class")->innerText();
-            vigil.methodName = item->getNodeByPath("//method")->innerText();
-
-            vigils.push_back(vigil);
-            assemblyPaths.push_back(vigil.assemblyPath);
-        }
-    }
-    vigilNodes->release();
-    logger.information("Found %lu .NET Core Vigils", static_cast<ULONG>(vigils.size()));
-
-    //
-    // Concat & implode assembly directories
-    // 
-    if (config().has("dotnet.APP_PATHS"))
-    {
-        assemblyPaths.push_back(config().getString("dotnet.APP_PATHS"));
-    }
-    std::stringstream assemblyPathStream;
-    std::copy(assemblyPaths.begin(), assemblyPaths.end(), std::ostream_iterator<std::string>(assemblyPathStream, ";"));
-    config().setString("dotnet.APP_PATHS", assemblyPathStream.str());
-
-    try
-    {
-        //
-        // Initialize CoreCLR host
-        // 
-        _clrHost = new CoreClrHost(config());
-    }
-    catch (Poco::Exception& ex)
-    {
-        logger.fatal("Couldn't load Core CLR: %s", ex.displayText());
-
-        return Application::EXIT_OSFILE;
-    }
-
-    //
-    // Load discovered Vigils
-    // 
-    for (auto& vigil : vigils)
-    {
-        logger.information("Loading .NET Core Vigil %s", vigil.name);
-
-        try
-        {
-            _clrHost->loadVigil(
-                vigil.assemblyName,
-                vigil.className,
-                vigil.methodName
-            );
-        }
-        catch (Poco::Exception& ex)
-        {
-            logger.fatal("Couldn't load .NET Core Vigil: %s", ex.displayText());
-        }
-    }
 
     //
     // Access control device (establish connection to driver)
