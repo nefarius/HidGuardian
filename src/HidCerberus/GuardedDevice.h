@@ -1,11 +1,11 @@
 #pragma once
 
-#include "CoreClrHost.h"
-
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <string>
 #include <vector>
+
+#include "HidCerberus.h"
 
 #define POCO_NO_UNWINDOWS
 #include <Poco/Task.h>
@@ -22,9 +22,10 @@ class GuardedDevice : public Task
     HANDLE _deviceHandle = INVALID_HANDLE_VALUE;
     Random _rnd;
     const int _bufferSize = 1024;
-    AutoPtr<CoreClrHost> _clrHost;
+    PHC_HANDLE _hcHandle;
+
 public:
-    GuardedDevice(std::string devicePath, const AutoPtr<CoreClrHost>& clrHost);
+    GuardedDevice(std::string devicePath, PHC_HANDLE handle);
 
     void runTask() override;
 

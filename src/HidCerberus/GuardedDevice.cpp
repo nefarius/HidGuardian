@@ -1,6 +1,7 @@
 #include "GuardedDevice.h"
 #include <HidGuardian.h>
 #include <devioctl.h>
+#include "HidCerberusInternal.h"
 
 //
 // STL
@@ -27,8 +28,8 @@ using Poco::Buffer;
 using Poco::icompare;
 
 
-GuardedDevice::GuardedDevice(std::string devicePath, const AutoPtr<CoreClrHost>& clrHost)
-    : Task(devicePath), _devicePath(std::move(devicePath)), _clrHost(clrHost)
+GuardedDevice::GuardedDevice(std::string devicePath, PHC_HANDLE handle)
+    : Task(devicePath), _devicePath(std::move(devicePath)), _hcHandle(handle)
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
@@ -142,7 +143,7 @@ void GuardedDevice::runTask()
 
         std::string instanceId;
         Poco::UnicodeConverter::convert(pHgGet->InstanceId, instanceId);
-        
+
         if (logger.is(Poco::Message::PRIO_DEBUG))
         {
             logger.debug("DeviceId = %s", deviceId);
@@ -156,14 +157,35 @@ void GuardedDevice::runTask()
         if (logger.is(Poco::Message::PRIO_DEBUG)) {
             logger.debug("Start processing Vigil (ID: %lu)", pHgGet->RequestId);
         }
-        _clrHost->processVigil(
-            pHgGet->HardwareIds,
-            deviceId.c_str(),
-            instanceId.c_str(),
-            pHgGet->ProcessId,
-            reinterpret_cast<PBOOL>(&hgSet.IsAllowed),
-            reinterpret_cast<PBOOL>(&hgSet.IsSticky)
-        );
+
+        BOOL isAllowed = FALSE;
+        BOOL isPermanent = FALSE;
+
+        //
+        // Split up multi-value string and call processing method
+        // 
+        for (PCWSTR szIter = pHgGet->HardwareIds; *szIter; szIter += wcslen(szIter) + 1)
+        {
+            using convert_type = std::codecvt_utf8<wchar_t>;
+            std::wstring_convert<convert_type, wchar_t> converter;
+            const std::string id(converter.to_bytes(szIter));
+
+            const auto ret = _hcHandle->EvtProcessAccessRequest(
+                id.c_str(),
+                deviceId.c_str(),
+                instanceId.c_str(),
+                pHgGet->ProcessId,
+                &isAllowed,
+                &isPermanent
+            );
+
+            if (ret)
+            {
+                hgSet.IsAllowed = isAllowed;
+                hgSet.IsSticky = isPermanent;
+            }
+        }
+
         if (logger.is(Poco::Message::PRIO_DEBUG)) {
             logger.debug("End processing Vigil (ID: %lu)", pHgGet->RequestId);
         }

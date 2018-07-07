@@ -172,7 +172,6 @@
     <ClCompile Include="GuardedDevice.cpp" />
     <ClCompile Include="HidCerberus.cpp" />
     <ClCompile Include="ServiceEnumerator.cpp" />
-    <ClCompile Include="Zerberus.cpp" />
     <ClCompile Include="ZerberusService.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -183,6 +182,7 @@
     <ClInclude Include="DeviceEnumerator.h" />
     <ClInclude Include="DeviceListener.h" />
     <ClInclude Include="GuardedDevice.h" />
+    <ClInclude Include="HidCerberusInternal.h" />
     <ClInclude Include="mscoree.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ServiceEnumerator.h" />
@@ -196,10 +196,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="devil.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="HidCerberus.xml" />
-    <Xml Include="Vigils.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

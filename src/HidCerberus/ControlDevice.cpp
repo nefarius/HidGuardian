@@ -165,7 +165,6 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     CloseHandle(lOverlapped.hEvent);
 }
 
-
 ControlDevice::~ControlDevice()
 {
     auto& logger = Poco::Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));

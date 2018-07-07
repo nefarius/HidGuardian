@@ -1,20 +1,39 @@
-#include "HidCerberus.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
-typedef struct _HC_HANDLE_T
-{
-} HC_HANDLE;
+#include "HidCerberus.h"
+#include "ZerberusService.h"
+#include "HidCerberusInternal.h"
+
 
 HC_API PHC_HANDLE hc_init()
 {
-    return HC_API PHC_HANDLE();
+    auto handle = (PHC_HANDLE)malloc(sizeof(HC_HANDLE));
+
+    if (!handle) {
+        return nullptr;
+    }
+
+    handle->MainManager = new TaskManager();
+
+    handle->MainManager->start(new ZerberusService("ZerberusService", handle));
+
+    return handle;
 }
 
 HC_API VOID hc_shutdown(PHC_HANDLE handle)
 {
-    return HC_API VOID();
+    if (!handle) {
+        return;
+    }
+
+    handle->MainManager->cancelAll();
+    handle->MainManager->joinAll();
+
+    free(handle);
 }
 
-HC_API VOID hc_register_access_request_event(PHC_HANDLE handle, PFN_HC_ACCESS_REQUEST callback)
+HC_API VOID hc_register_access_request_event(PHC_HANDLE handle, PFN_HC_PROCESS_ACCESS_REQUEST callback)
 {
-    return HC_API VOID();
+    handle->EvtProcessAccessRequest = callback;
 }

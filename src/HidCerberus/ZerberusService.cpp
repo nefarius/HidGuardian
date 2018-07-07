@@ -67,7 +67,7 @@ void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
 
     try
     {
-        _taskManager.start(new GuardedDevice(name, _clrHost));
+        _taskManager.start(new GuardedDevice(name, _hcHandle));
     }
     catch (const std::exception& ex)
     {
@@ -82,7 +82,7 @@ void ZerberusService::onDeviceRemoved(const void * pSender, std::string & name)
     logger.information("Device %s removed", name);
 }
 
-int ZerberusService::main(const std::vector<std::string>& args)
+ZerberusService::ZerberusService(const std::string & name, PHC_HANDLE handle): Task(name), _hcHandle(handle)
 {
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
     AutoPtr<FileChannel> pFileChannel(new FileChannel("HidCerberus.log"));
@@ -94,7 +94,10 @@ int ZerberusService::main(const std::vector<std::string>& args)
     AutoPtr<PatternFormatter> pPF(new PatternFormatter("%Y-%m-%d %H:%M:%S.%i %s [%p]: %t"));
     AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
     AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
+}
 
+void ZerberusService::runTask()
+{
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
     //
@@ -157,7 +160,7 @@ int ZerberusService::main(const std::vector<std::string>& args)
     {
         logger.fatal("Couldn't create control device: %s", ex.displayText());
 
-        return Application::EXIT_OSFILE;
+        return;
     }
 
     //
@@ -193,19 +196,13 @@ int ZerberusService::main(const std::vector<std::string>& args)
     logger.information("Done, up and running");
 
     //
-    // Print additional information if run interactively
-    // 
-    if (!config().getBool("application.runAsService", false))
-    {
-        logger.information("Press CTRL+C to terminate");
-    }
-
-    //
     // Block until user or service manager requests a halt
     // 
-    waitForTerminationRequest();
+    while (!isCancelled()) {
+        sleep(1000);
+    }
 
-    logger.information("Process terminating");
+    logger.information("Library unloading");
 
     //
     // Request graceful shutdown from all background tasks
@@ -219,9 +216,5 @@ int ZerberusService::main(const std::vector<std::string>& args)
     logger.debug("Waiting for tasks to stop");
     _taskManager.joinAll();
     logger.debug("Tasks stopped");
-
-    _clrHost->release();
-
-    return Application::EXIT_OK;
 }
 

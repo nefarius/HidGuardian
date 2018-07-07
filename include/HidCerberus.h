@@ -26,7 +26,6 @@ SOFTWARE.
 #ifndef HidCerberus_h__
 #define HidCerberus_h__
 
-#include <Windows.h>
 
 #ifdef HC_EXPORTS
 #define HC_API __declspec(dllexport)
@@ -50,9 +49,9 @@ extern "C" {
     typedef struct _HC_HANDLE_T *PHC_HANDLE;
 
     typedef
-        _Function_class_(EVT_HC_ACCESS_REQUEST)
-        BOOLEAN
-        EVT_HC_ACCESS_REQUEST(
+        _Function_class_(EVT_HC_PROCESS_ACCESS_REQUEST)
+        BOOL
+        EVT_HC_PROCESS_ACCESS_REQUEST(
             PCSTR HardwareId,
             PCSTR DeviceId,
             PCSTR InstanceId,
@@ -61,13 +60,13 @@ extern "C" {
             const BOOL *bIsPermanent
         );
 
-    typedef EVT_HC_ACCESS_REQUEST PFN_HC_ACCESS_REQUEST;
+    typedef EVT_HC_PROCESS_ACCESS_REQUEST *PFN_HC_PROCESS_ACCESS_REQUEST;
 
     HC_API PHC_HANDLE hc_init();
 
     HC_API VOID hc_shutdown(PHC_HANDLE handle);
 
-    HC_API VOID hc_register_access_request_event(PHC_HANDLE handle, PFN_HC_ACCESS_REQUEST callback);
+    HC_API VOID hc_register_access_request_event(PHC_HANDLE handle, PFN_HC_PROCESS_ACCESS_REQUEST callback);
 
 #ifdef __cplusplus
 }

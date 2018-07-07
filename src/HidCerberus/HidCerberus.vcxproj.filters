@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Zerberus.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ZerberusService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -77,6 +74,9 @@
     <ClInclude Include="..\..\include\HidCerberus.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="HidCerberusInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -90,9 +90,5 @@
     <Image Include="devil.ico">
       <Filter>Resource Files</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="HidCerberus.xml" />
-    <Xml Include="Vigils.xml" />
   </ItemGroup>
 </Project>
