@@ -2,7 +2,6 @@
 #include "DeviceEnumerator.h"
 #include "GuardedDevice.h"
 #include "DeviceListener.h"
-#include "CoreClrHost.h"
 
 #include <fstream>
 
