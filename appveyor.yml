@@ -1,4 +1,4 @@
-version: 3.1.{build}.0
+version: 4.0.{build}.0
 image: Previous Visual Studio 2017
 before_build:
 - nuget restore HidGuardian.sln
@@ -13,14 +13,14 @@ after_build:
     .\verpatch.exe .\artifacts\x86\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
     .\verpatch.exe .\artifacts\x86\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
     makecab.exe /f HidGuardian.ddf
-    .\verpatch.exe .\bin\x64\HidCerberus.exe "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x64\HidCerberus.exe /pv "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x86\HidCerberus.exe "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x86\HidCerberus.exe /pv "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x64\HidCerberus.dll "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x64\HidCerberus.dll /pv "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x86\HidCerberus.dll "$env:APPVEYOR_BUILD_VERSION"
+    .\verpatch.exe .\bin\x86\HidCerberus.dll /pv "$env:APPVEYOR_BUILD_VERSION"
 artifacts:
 - path: disk1\HidGuardian.cab
   name: HidGuardian_unsigned_x86_amd64
-- path: 'bin\**\HidCerberus.exe'
+- path: 'bin\**\HidCerberus.dll'
   name: HidCerberus
 deploy:
 - provider: Environment
