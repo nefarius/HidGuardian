@@ -153,6 +153,7 @@ void GuardedDevice::runTask()
         }
 
         hgSet.RequestId = pHgGet->RequestId;
+        hgSet.IsAllowed = TRUE; // important; use as a default
 
         if (logger.is(Poco::Message::PRIO_DEBUG)) {
             logger.debug("Start processing Vigil (ID: %lu)", pHgGet->RequestId);
@@ -170,6 +171,9 @@ void GuardedDevice::runTask()
             std::wstring_convert<convert_type, wchar_t> converter;
             const std::string id(converter.to_bytes(szIter));
 
+            //
+            // Invoke callback asking host for a decision
+            // 
             const auto ret = _hcHandle->EvtProcessAccessRequest(
                 id.c_str(),
                 deviceId.c_str(),
@@ -179,6 +183,9 @@ void GuardedDevice::runTask()
                 &isPermanent
             );
 
+            //
+            // Only overwrite properties if a rule applies
+            // 
             if (ret)
             {
                 hgSet.IsAllowed = isAllowed;
