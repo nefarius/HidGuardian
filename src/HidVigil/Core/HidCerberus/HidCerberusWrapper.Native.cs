@@ -9,7 +9,7 @@ namespace HidVigil.Core.HidCerberus
             string hardwareId,
             string deviceId,
             string instanceId,
-            int processId,
+            uint processId,
             out bool isAllowed,
             out bool isPermananet
         );
