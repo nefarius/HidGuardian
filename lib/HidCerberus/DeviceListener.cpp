@@ -180,11 +180,12 @@ void DeviceListener::runTask()
     // Message loop
     // 
     MSG msg;
-    while (!sleep(25))
+    while (!isCancelled())
     {
         PeekMessage(&msg, _windowHandle, 0, 0, PM_REMOVE);
         TranslateMessage(&msg);
         DispatchMessage(&msg);
+        sleep(25);
     }
 
     logger.debug("Listener terminating");

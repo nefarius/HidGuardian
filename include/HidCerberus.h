@@ -47,8 +47,8 @@ extern "C" {
             PCSTR DeviceId,
             PCSTR InstanceId,
             DWORD ProcessId,
-            const BOOL *bIsAllowed,
-            const BOOL *bIsPermanent
+            BOOL *bIsAllowed,
+            BOOL *bIsPermanent
         );
 
     typedef EVT_HC_PROCESS_ACCESS_REQUEST *PFN_HC_PROCESS_ACCESS_REQUEST;

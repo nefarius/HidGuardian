@@ -8,16 +8,21 @@
 #include <Poco/TaskManager.h>
 #include <Poco/AutoPtr.h>
 #include <Poco/Task.h>
+#include <Poco/ThreadPool.h>
+#include <Poco/SharedPtr.h>
 
 using Poco::TaskManager;
 using Poco::AutoPtr;
+using Poco::ThreadPool;
+using Poco::SharedPtr;
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 class ZerberusService :
     public Poco::Task
 {
-    TaskManager _taskManager;
+    ThreadPool _threadPool;
+    SharedPtr<TaskManager> _taskManager;
     AutoPtr<ControlDevice> _controlDevice;
     PHC_HANDLE _hcHandle;
 
@@ -25,7 +30,7 @@ class ZerberusService :
     void onDeviceRemoved(const void* pSender, std::string& name);
 
 public:
-    ZerberusService(const std::string& name, PHC_HANDLE handle);
+    ZerberusService(PHC_HANDLE handle);
     ~ZerberusService() {};
 
     void runTask() override;

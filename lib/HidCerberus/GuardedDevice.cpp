@@ -183,6 +183,7 @@ void GuardedDevice::runTask()
             {
                 hgSet.IsAllowed = isAllowed;
                 hgSet.IsSticky = isPermanent;
+                break;
             }
         }
 

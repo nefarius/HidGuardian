@@ -66,7 +66,7 @@ void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
 
     try
     {
-        _taskManager.start(new GuardedDevice(name, _hcHandle));
+        _taskManager->start(new GuardedDevice(name, _hcHandle));
     }
     catch (const std::exception& ex)
     {
@@ -81,7 +81,7 @@ void ZerberusService::onDeviceRemoved(const void * pSender, std::string & name)
     logger.information("Device %s removed", name);
 }
 
-ZerberusService::ZerberusService(const std::string & name, PHC_HANDLE handle): Task(name), _hcHandle(handle)
+ZerberusService::ZerberusService(PHC_HANDLE handle): Task("ZerberusService"), _hcHandle(handle)
 {
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
     AutoPtr<FileChannel> pFileChannel(new FileChannel("HidCerberus.log"));
@@ -93,6 +93,10 @@ ZerberusService::ZerberusService(const std::string & name, PHC_HANDLE handle): T
     AutoPtr<PatternFormatter> pPF(new PatternFormatter("%Y-%m-%d %H:%M:%S.%i %s [%p]: %t"));
     AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
     AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
+    
+    Logger::root().setChannel(pAsync);
+
+    _taskManager = new TaskManager(_threadPool);
 }
 
 void ZerberusService::runTask()
@@ -190,7 +194,7 @@ void ZerberusService::runTask()
     //
     // Start listening
     // 
-    _taskManager.start(dl);
+    _taskManager->start(dl);
 
     logger.information("Done, up and running");
 
@@ -206,14 +210,14 @@ void ZerberusService::runTask()
     //
     // Request graceful shutdown from all background tasks
     // 
-    _taskManager.cancelAll();
+    _taskManager->cancelAll();
     logger.debug("Requested all tasks to cancel");
 
     //
     // Wait for all background tasks to shut down
     // 
     logger.debug("Waiting for tasks to stop");
-    _taskManager.joinAll();
+    _taskManager->joinAll();
     logger.debug("Tasks stopped");
 }
 
