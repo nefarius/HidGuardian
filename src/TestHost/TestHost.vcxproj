@@ -164,7 +164,7 @@
     <ClCompile Include="TestHost.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\HidCerberus\HidCerberus.vcxproj">
+    <ProjectReference Include="..\..\lib\HidCerberus.vcxproj">
       <Project>{bd579b12-b22e-40bb-adb8-9b34024688f5}</Project>
     </ProjectReference>
   </ItemGroup>

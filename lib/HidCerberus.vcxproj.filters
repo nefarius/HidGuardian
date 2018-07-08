@@ -44,9 +44,6 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\HidGuardian.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DeviceEnumerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -62,10 +59,13 @@
     <ClInclude Include="ServiceEnumerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\HidCerberus.h">
+    <ClInclude Include="HidCerberusInternal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HidCerberusInternal.h">
+    <ClInclude Include="$(SolutionDir)include\HidCerberus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)include\HidGuardian.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
