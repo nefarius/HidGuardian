@@ -59,3 +59,8 @@
 *.user
 /src/TestHostNet/bin/x64/Release
 /src/TestHostNet/obj
+/src/HidVigil/obj
+/lib/Release
+/lib/x64
+*.dtbcache
+/src/HidVigil/bin/Release/net461
