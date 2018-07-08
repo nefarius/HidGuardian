@@ -7,7 +7,7 @@ namespace HidVigil.Core.HidCerberus
     {
         public delegate void AccessRequestReceivedEventHandler(object sender, AccessRequestReceivedEventArgs args);
 
-        public event AccessRequestReceivedEventHandler AccessRequestReceived;
+        private readonly IntPtr _hcHandle;
 
         public HidCerberusWrapper()
         {
@@ -17,7 +17,7 @@ namespace HidVigil.Core.HidCerberus
             hc_register_access_request_event(_hcHandle, ProcessAccessRequest);
         }
 
-        private readonly IntPtr _hcHandle;
+        public event AccessRequestReceivedEventHandler AccessRequestReceived;
 
         private bool ProcessAccessRequest(
             string hardwareId,
@@ -44,7 +44,7 @@ namespace HidVigil.Core.HidCerberus
 
         #region IDisposable Support
 
-        private bool _disposedValue = false; // To detect redundant calls
+        private bool _disposedValue; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
         {

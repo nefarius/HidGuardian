@@ -41,7 +41,7 @@ namespace HidVigil.Core.Util.Native
             {
                 var lib64 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, amd64Path);
 
-                if (!Kernel32.LoadLibrary(lib64).IsInvalid)
+                if (Kernel32.LoadLibrary(lib64).IsInvalid)
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error());
                 }
@@ -50,7 +50,7 @@ namespace HidVigil.Core.Util.Native
             {
                 var lib32 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, x86Path);
 
-                if (!Kernel32.LoadLibrary(lib32).IsInvalid)
+                if (Kernel32.LoadLibrary(lib32).IsInvalid)
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error());
                 }
