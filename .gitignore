@@ -28,6 +28,7 @@
 /sys/x64/Debug
 /x64/Debug
 /bin
+/driver
 /src/HidCerberus/x64
 /src/HidCerberus/Zerberus.db
 /src/HidCerberus/HidCerberus.vcxproj.user

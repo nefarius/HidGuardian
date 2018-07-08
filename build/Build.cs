@@ -60,13 +60,13 @@ class Build : NukeBuild
                 
                 new Dictionary<RP, RP>
                 {
-                    { (RP)"bin" / "x64" / "HidGuardian.inf", /* => */ (RP)"HidGuardian.inf" },
-                    { (RP)"bin" / "x64" / "HidGuardian.pdb", /* => */ (RP)"x64" / "HidGuardian.pdb" },
-                    { (RP)"bin" / "x64" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x64" / "HidGuardian.sys" },
-                    { (RP)"bin" / "x64" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x64" / "WdfCoinstaller01009.dll" },
-                    { (RP)"bin" / "x86" / "HidGuardian.pdb", /* => */ (RP)"x86" / "HidGuardian.pdb" },
-                    { (RP)"bin" / "x86" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x86" / "HidGuardian.sys" },
-                    { (RP)"bin" / "x86" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x86" / "WdfCoinstaller01009.dll" }
+                    { (RP)"driver" / "x64" / "HidGuardian.inf", /* => */ (RP)"HidGuardian.inf" },
+                    { (RP)"driver" / "x64" / "HidGuardian.pdb", /* => */ (RP)"x64" / "HidGuardian.pdb" },
+                    { (RP)"driver" / "x64" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x64" / "HidGuardian.sys" },
+                    { (RP)"driver" / "x64" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x64" / "WdfCoinstaller01009.dll" },
+                    { (RP)"driver" / "x86" / "HidGuardian.pdb", /* => */ (RP)"x86" / "HidGuardian.pdb" },
+                    { (RP)"driver" / "x86" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x86" / "HidGuardian.sys" },
+                    { (RP)"driver" / "x86" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x86" / "WdfCoinstaller01009.dll" }
                 }.ForEach((pair, i) => File.Copy(SolutionDirectory / pair.Key, ArtifactsDirectory / pair.Value));
                 
                 #endregion
