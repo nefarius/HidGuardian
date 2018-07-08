@@ -174,8 +174,8 @@
     <ClCompile Include="ZerberusService.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\HidCerberus.h" />
-    <ClInclude Include="..\..\include\HidGuardian.h" />
+    <ClInclude Include="$(SolutionDir)include\HidCerberus.h" />
+    <ClInclude Include="$(SolutionDir)include\HidGuardian.h" />
     <ClInclude Include="ControlDevice.h" />
     <ClInclude Include="DeviceEnumerator.h" />
     <ClInclude Include="DeviceListener.h" />
