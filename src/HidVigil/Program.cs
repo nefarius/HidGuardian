@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using HidVigil.Core.HidCerberus;
+﻿using HidVigil.Core.Service;
+using Nancy;
+using Serilog;
+using Topshelf;
 
 namespace HidVigil
 {
@@ -11,19 +9,28 @@ namespace HidVigil
     {
         static void Main(string[] args)
         {
-            using (var hcw = new HidCerberusWrapper())
-            {
-                hcw.AccessRequestReceived += HcwOnAccessRequestReceived;
-                Console.ReadKey();
-            }
-        }
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console()
+                .WriteTo.RollingFile(@"Logs\HidVigil-{Date}.log")
+                .CreateLogger();
 
-        private static void HcwOnAccessRequestReceived(object sender, AccessRequestReceivedEventArgs args)
-        {
-            Console.WriteLine($"HWID: {args.HardwareId}, PID: {args.ProcessId}");
-            
-            args.IsHandled = true;
-            args.IsAllowed = true;
+            HostFactory.Run(x =>
+            {
+                StaticConfiguration.DisableErrorTraces = false;
+
+                x.Service<HidVigilService>(s =>
+                {
+                    s.ConstructUsing(name => new HidVigilService());
+                    s.WhenStarted(tc => tc.Start());
+                    s.WhenStopped(tc => tc.Stop());
+                });
+
+                x.RunAsLocalSystem();
+                x.SetDescription("HidCerberus Configuration Host for HidGuardian Filter Drivers");
+                x.SetDisplayName("HidCerberus Service");
+                x.SetServiceName("HidVigil");
+            });
         }
     }
 }

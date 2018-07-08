@@ -47,6 +47,11 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Nancy.Hosting.Self" Version="1.4.1" />
+    <PackageReference Include="Nancy.Serialization.JsonNet" Version="1.4.1" />
     <PackageReference Include="PInvoke.Kernel32" Version="0.5.152" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.2-dev-00777" />
+    <PackageReference Include="Serilog.Sinks.RollingFile" Version="3.3.1-dev-00771" />
+    <PackageReference Include="Topshelf" Version="4.0.4.148-develop" />
   </ItemGroup>
 </Project>
