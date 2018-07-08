@@ -44,12 +44,9 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
     NTSTATUS                status;
     ULONG                   i;
     WDFKEY                  keyParams;
-    BOOLEAN                 affected = FALSE;
-    ULONG                   force = 0;
+    BOOLEAN                 affected = TRUE;
     PCWSTR                  szIter = NULL;
 
-    DECLARE_CONST_UNICODE_STRING(valueAffectedMultiSz, REG_MULTI_SZ_AFFECTED_DEVICES);
-    DECLARE_CONST_UNICODE_STRING(valueForceUl, REG_DWORD_FORCE);
     DECLARE_CONST_UNICODE_STRING(valueExemptedMultiSz, REG_MULTI_SZ_EXCEMPTED_DEVICES);
     DECLARE_UNICODE_STRING_SIZE(currentHardwareID, MAX_HARDWARE_ID_SIZE);
     DECLARE_UNICODE_STRING_SIZE(myHardwareID, MAX_HARDWARE_ID_SIZE);
@@ -136,70 +133,6 @@ NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext)
                     return STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
                 }
             }
-        }
-    }
-
-    //
-    // Force loading on every class device
-    // 
-    status = WdfRegistryQueryULong(keyParams, &valueForceUl, &force);
-    if (NT_SUCCESS(status) && force > 0) {
-        WdfRegistryClose(keyParams);
-        WdfObjectDelete(col);
-        return STATUS_SUCCESS;
-    }
-
-    WDF_OBJECT_ATTRIBUTES_INIT(&stringAttributes);
-    stringAttributes.ParentObject = col;
-
-    //
-    // Get the multi-string value for affected devices
-    // 
-    status = WdfRegistryQueryMultiString(
-        keyParams,
-        &valueAffectedMultiSz,
-        &stringAttributes,
-        col
-    );
-    if (NT_SUCCESS(status))
-    {
-        //
-        // Walk through devices Hardware IDs
-        // 
-        for (szIter = DeviceContext->HardwareIDs; *szIter; szIter += wcslen(szIter) + 1)
-        {
-            //
-            // Convert wide into Unicode string
-            // 
-            status = RtlUnicodeStringInit(&myHardwareID, szIter);
-            if (!NT_SUCCESS(status)) {
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_GUARDIAN,
-                    "RtlUnicodeStringInit failed: %!STATUS!", status);
-                return status;
-            }
-
-            // 
-            // Get affected values
-            // 
-            for (i = 0; i < WdfCollectionGetCount(col); i++)
-            {
-                WdfStringGetUnicodeString(WdfCollectionGetItem(col, i), &currentHardwareID);
-
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_GUARDIAN,
-                    "My ID %wZ vs current affected ID %wZ\n", &myHardwareID, &currentHardwareID);
-
-                affected = RtlEqualUnicodeString(&myHardwareID, &currentHardwareID, TRUE);
-
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_GUARDIAN,
-                    "Are we affected: %d\n", affected);
-
-                if (affected) break;
-            }
-
-            if (affected) break;
         }
     }
 
