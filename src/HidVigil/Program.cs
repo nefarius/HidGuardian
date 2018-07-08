@@ -1,5 +1,4 @@
 ﻿using HidVigil.Core.Service;
-using Nancy;
 using Serilog;
 using Topshelf;
 
@@ -17,8 +16,6 @@ namespace HidVigil
 
             HostFactory.Run(x =>
             {
-                StaticConfiguration.DisableErrorTraces = false;
-
                 x.Service<HidVigilService>(s =>
                 {
                     s.ConstructUsing(name => new HidVigilService());
