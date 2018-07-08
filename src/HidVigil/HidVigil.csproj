@@ -45,6 +45,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Core\Util\Native\Modules\" />
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
