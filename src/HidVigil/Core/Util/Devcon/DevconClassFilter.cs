@@ -23,6 +23,8 @@ namespace HidVigil.Core.Util.Devcon
 
         public static string XnaCompositeClassName => "XnaComposite";
 
+        public static string XboxCompositeClassName => "XboxComposite";
+
         /// <summary>
         ///     Retrieves the first <see cref="Guid" /> reported by the system corresponding to the provided class name.
         /// </summary>

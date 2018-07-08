@@ -9,6 +9,9 @@ namespace HidVigil.Core.HidCerberus
 
         private readonly IntPtr _hcHandle;
 
+        /// <summary>
+        ///     Loads native library and registers callback for handling access requests.
+        /// </summary>
         public HidCerberusWrapper()
         {
             LoadNativeLibrary("HidCerberus", @"x86\HidCerberus.dll", @"x64\HidCerberus.dll");
@@ -17,6 +20,9 @@ namespace HidVigil.Core.HidCerberus
             hc_register_access_request_event(_hcHandle, ProcessAccessRequest);
         }
 
+        /// <summary>
+        ///     Gets called when an access request is incoming from the driver.
+        /// </summary>
         public event AccessRequestReceivedEventHandler AccessRequestReceived;
 
         private bool ProcessAccessRequest(
