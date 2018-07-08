@@ -46,4 +46,7 @@
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="PInvoke.Kernel32" Version="0.5.152" />
+  </ItemGroup>
 </Project>
