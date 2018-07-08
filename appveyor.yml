@@ -20,7 +20,7 @@ after_build:
 artifacts:
 - path: disk1\HidGuardian.cab
   name: HidGuardian_unsigned_x86_amd64
-- path: 'bin\**\HidCerberus.dll'
+- path: 'bin'
   name: HidCerberus
 deploy:
 - provider: Environment
