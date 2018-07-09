@@ -4,5 +4,10 @@
     },
     "HidGuardian": {
         "Timeout": 10000
+    },
+    "WebSocket": {
+        "Server": {
+            "Location": "ws://127.0.0.1:22408"
+        }
     }
 }
