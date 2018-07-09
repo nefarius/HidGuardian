@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using Newtonsoft.Json;
 using WebSocketSharp;
 using WebSocketSharp.Server;
+using JsonConfig;
 
 namespace HidVigil.Core.WebHooks
 {
@@ -43,7 +44,7 @@ namespace HidVigil.Core.WebHooks
 
             Send(JsonConvert.SerializeObject(obj));
 
-            if (obj.Signal.WaitOne(TimeSpan.FromSeconds(10)))
+            if (obj.Signal.WaitOne(TimeSpan.FromMilliseconds(Config.Global.HidGuardian.Timeout)))
             {
                 args.IsHandled = obj.IsHandled;
                 args.IsAllowed = obj.IsAllowed;
@@ -69,13 +70,20 @@ namespace HidVigil.Core.WebHooks
         {
             var obj = JsonConvert.DeserializeObject<AccessRequest>(e.Data);
 
-            var request = _requestQueue.First(r => r.Key == obj.RequestId);
+            var request = _requestQueue.Where(r => r.Key == obj.RequestId)
+                .Select(r => (KeyValuePair<Guid, AccessRequest>?) r)
+                .FirstOrDefault();
 
-            request.Value.IsHandled = obj.IsHandled;
-            request.Value.IsAllowed = obj.IsAllowed;
-            request.Value.IsPermanent = obj.IsPermanent;
+            if (request == null)
+            {
+                return;
+            }
 
-            request.Value.Signal.Set();
+            request.Value.Value.IsHandled = obj.IsHandled;
+            request.Value.Value.IsAllowed = obj.IsAllowed;
+            request.Value.Value.IsPermanent = obj.IsPermanent;
+
+            request.Value.Value.Signal.Set();
         }
     }
 }

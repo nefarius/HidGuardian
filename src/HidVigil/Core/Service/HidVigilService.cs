@@ -1,13 +1,9 @@
-﻿using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using HidVigil.Core.Types;
+﻿using System.Text;
 using HidVigil.Core.WebHooks;
-using Newtonsoft.Json;
 using Serilog;
 using WebSocketSharp;
 using WebSocketSharp.Server;
-
+using JsonConfig;
 namespace HidVigil.Core.Service
 {
     public class HidVigilService
@@ -18,7 +14,8 @@ namespace HidVigil.Core.Service
         {
             Log.Information("Service starting");
 
-            _server = new HttpServer(IPAddress.Loopback, 22408);
+            _server = new HttpServer(Config.Global.HttpServer.ListenUrl);
+
             _server.AddWebSocketService<HidGuardianInterface>("/HidGuardian");
             _server.Start();
         }
