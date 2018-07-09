@@ -84,7 +84,7 @@ void ZerberusService::onDeviceRemoved(const void * pSender, std::string & name)
 ZerberusService::ZerberusService(PHC_HANDLE handle): Task("ZerberusService"), _hcHandle(handle)
 {
     AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
-    AutoPtr<FileChannel> pFileChannel(new FileChannel("HidCerberus.log"));
+    AutoPtr<FileChannel> pFileChannel(new FileChannel("Logs\\HidCerberus.log"));
     pSplitter->addChannel(pFileChannel);
 
     //

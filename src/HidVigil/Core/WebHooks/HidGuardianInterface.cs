@@ -53,6 +53,18 @@ namespace HidVigil.Core.WebHooks
             _requestQueue.Remove(obj.RequestId);
         }
 
+        protected override void OnOpen()
+        {
+            Serilog.Log.Information("WebSocket connection established");
+            base.OnOpen();
+        }
+
+        protected override void OnClose(CloseEventArgs e)
+        {
+            Serilog.Log.Information("WebSocket connection closed");
+            base.OnClose(e);
+        }
+
         protected override void OnMessage(MessageEventArgs e)
         {
             var obj = JsonConvert.DeserializeObject<AccessRequest>(e.Data);
