@@ -28,6 +28,8 @@ namespace HidVigil.Core.Types
 
         public bool IsPermanent { get; set; }
 
+        public DateTime ExpiresOn { get; set; }
+
         [JsonIgnore]
         public ManualResetEvent Signal { get; }
 

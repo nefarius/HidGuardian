@@ -1,9 +1,6 @@
 ﻿{
-    "HttpServer": {
-        "ListenUrl": "http://localhost:22408"
-    },
     "HidGuardian": {
-        "Timeout": 10000
+        "Timeout": 120000
     },
     "WebSocket": {
         "Server": {

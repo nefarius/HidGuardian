@@ -56,24 +56,30 @@ namespace HidVigil.Core.Service
             {
                 connection.OnOpen = () =>
                 {
-                    Log.Information("Connection established");
+                    Log.Information("Client {RemoteAddress}:{RemotePort} connected ({Origin})",
+                        connection.ConnectionInfo.ClientIpAddress,
+                        connection.ConnectionInfo.ClientPort,
+                        connection.ConnectionInfo.Origin);
 
                     _hcSystem = new HidCerberusWrapper();
                     _hcSystem.AccessRequestReceived += (sender, args) =>
                     {
+                        var timeout = TimeSpan.FromMilliseconds(Config.Global.HidGuardian.Timeout);
+
                         var obj = new AccessRequest
                         {
                             HardwareId = args.HardwareId,
                             DeviceId = args.DeviceId,
                             InstanceId = args.InstanceId,
-                            ProcessId = args.ProcessId
+                            ProcessId = args.ProcessId,
+                            ExpiresOn = DateTime.Now.Add(timeout)
                         };
 
                         _requestQueue.Add(obj.RequestId, obj);
 
                         connection.Send(JsonConvert.SerializeObject(obj));
 
-                        if (obj.Signal.WaitOne(TimeSpan.FromMilliseconds(Config.Global.HidGuardian.Timeout)))
+                        if (obj.Signal.WaitOne(timeout))
                         {
                             args.IsHandled = obj.IsHandled;
                             args.IsAllowed = obj.IsAllowed;
@@ -126,8 +132,8 @@ namespace HidVigil.Core.Service
         {
             Log.Information("Service stopping");
 
-            _hcSystem?.Dispose();
             _server.Dispose();
+            _hcSystem?.Dispose();
         }
     }
 }
