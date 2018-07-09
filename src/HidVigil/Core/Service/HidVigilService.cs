@@ -18,13 +18,9 @@ namespace HidVigil.Core.Service
         private HidCerberusWrapper _hcSystem;
         private WebSocketServer _server;
 
-        public void Start()
+        public HidVigilService()
         {
-            Log.Information("Service starting");
-
-            //
             // Redirect logging to Serilog
-            // 
             FleckLog.LogAction = (level, message, ex) =>
             {
                 switch (level)
@@ -43,15 +39,16 @@ namespace HidVigil.Core.Service
                         break;
                 }
             };
+        }
 
-            //
+        public void Start()
+        {
+            Log.Information("Service starting");
+
             // Set up WebSocket server
-            // 
             _server = new WebSocketServer(Config.Global.WebSocket.Server.Location);
 
-            //
             // Start listening for connections
-            // 
             _server.Start(connection =>
             {
                 connection.OnOpen = () =>
@@ -63,6 +60,7 @@ namespace HidVigil.Core.Service
 
                     try
                     {
+                        // Try to boot up HidCerberus sub-system
                         _hcSystem = new HidCerberusWrapper();
                     }
                     catch (Exception ex)
@@ -73,10 +71,13 @@ namespace HidVigil.Core.Service
                         return;
                     }
 
+                    // Listen for access requests from HidCerberus
                     _hcSystem.AccessRequestReceived += (sender, args) =>
                     {
+                        // Timeout defines how long the request will stay on halt
                         var timeout = TimeSpan.FromMilliseconds(Config.Global.HidGuardian.Timeout);
 
+                        // Message object getting sent to the client
                         var obj = new AccessRequest
                         {
                             HardwareId = args.HardwareId,
@@ -86,10 +87,13 @@ namespace HidVigil.Core.Service
                             ExpiresOn = DateTime.Now.Add(timeout)
                         };
 
+                        // Enqueue object for later completion
                         _requestQueue.Add(obj.RequestId, obj);
 
+                        // Send request to client
                         connection.Send(JsonConvert.SerializeObject(obj));
 
+                        // Wait until response comes back in
                         if (obj.Signal.WaitOne(timeout))
                         {
                             args.IsHandled = obj.IsHandled;
@@ -97,13 +101,12 @@ namespace HidVigil.Core.Service
                             args.IsPermanent = obj.IsPermanent;
                         }
 
+                        // Pop from queue
                         _requestQueue.Remove(obj.RequestId);
                     };
                 };
 
-                //
                 // Clean-up on disconnect
-                // 
                 connection.OnClose = () =>
                 {
                     Log.Information("Connection closed");
@@ -112,28 +115,27 @@ namespace HidVigil.Core.Service
                     _hcSystem = null;
                 };
 
-                //
                 // Log error
-                // 
                 connection.OnError = exception => Log.Error("Unexpected error: {Exception}", exception);
 
-                //
-                // handle incoming message
-                // 
+                // Handle incoming message
                 connection.OnMessage = message =>
                 {
                     var obj = JsonConvert.DeserializeObject<AccessRequest>(message);
 
+                    // Grab pending request (if still in queue)
                     var request = _requestQueue.Where(r => r.Key == obj.RequestId)
                         .Select(r => (KeyValuePair<Guid, AccessRequest>?) r)
                         .FirstOrDefault();
 
+                    // Request timed out, abort
                     if (request == null) return;
 
                     request.Value.Value.IsHandled = obj.IsHandled;
                     request.Value.Value.IsAllowed = obj.IsAllowed;
                     request.Value.Value.IsPermanent = obj.IsPermanent;
 
+                    // Fire event to complete this request
                     request.Value.Value.Signal.Set();
                 };
             });
@@ -142,6 +144,14 @@ namespace HidVigil.Core.Service
         public void Stop()
         {
             Log.Information("Service stopping");
+
+            // Complete all pending requests
+            foreach (var request in _requestQueue)
+            {
+                request.Value.Signal.Set();
+            }
+
+            _requestQueue.Clear();
 
             try
             {
