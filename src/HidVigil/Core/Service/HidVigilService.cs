@@ -61,7 +61,18 @@ namespace HidVigil.Core.Service
                         connection.ConnectionInfo.ClientPort,
                         connection.ConnectionInfo.Origin);
 
-                    _hcSystem = new HidCerberusWrapper();
+                    try
+                    {
+                        _hcSystem = new HidCerberusWrapper();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Fatal("Fatal error: {Exception}", ex);
+                        connection.Send(JsonConvert.SerializeObject("Internal server error, can't connect, sorry =("));
+                        connection.Close();
+                        return;
+                    }
+
                     _hcSystem.AccessRequestReceived += (sender, args) =>
                     {
                         var timeout = TimeSpan.FromMilliseconds(Config.Global.HidGuardian.Timeout);
@@ -132,8 +143,15 @@ namespace HidVigil.Core.Service
         {
             Log.Information("Service stopping");
 
-            _server.Dispose();
-            _hcSystem?.Dispose();
+            try
+            {
+                _server.Dispose();
+                _hcSystem?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal("Fatal error: {Exception}", ex);
+            }
         }
     }
 }
