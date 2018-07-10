@@ -7,6 +7,8 @@ namespace HidVigil.Core.HidCerberus
     {
         public delegate void AccessRequestReceivedEventHandler(object sender, AccessRequestReceivedEventArgs args);
 
+        private readonly EvtHcProcessAccessRequest _callback;
+
         private readonly IntPtr _hcHandle;
 
         /// <summary>
@@ -17,7 +19,8 @@ namespace HidVigil.Core.HidCerberus
             LoadNativeLibrary("HidCerberus", @"x86\HidCerberus.dll", @"x64\HidCerberus.dll");
 
             _hcHandle = hc_init();
-            hc_register_access_request_event(_hcHandle, ProcessAccessRequest);
+            _callback = ProcessAccessRequest;
+            hc_register_access_request_event(_hcHandle, _callback);
         }
 
         /// <summary>

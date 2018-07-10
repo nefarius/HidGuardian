@@ -12,6 +12,9 @@ namespace HidVigil.Core.Service
 {
     public class HidVigilService
     {
+        private readonly SynchronizedCollection<IWebSocketConnection> _currentConnections =
+            new SynchronizedCollection<IWebSocketConnection>();
+
         private readonly Dictionary<Guid, AccessRequest> _requestQueue =
             new Dictionary<Guid, AccessRequest>();
 
@@ -45,8 +48,21 @@ namespace HidVigil.Core.Service
         {
             Log.Information("Service starting");
 
+            try
+            {
+                // Try to boot up HidCerberus sub-system
+                _hcSystem = new HidCerberusWrapper();
+                _hcSystem.AccessRequestReceived += HcSystemOnAccessRequestReceived;
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal("Fatal error: {Exception}", ex);
+                Stop();
+                return;
+            }
+
             // Set up WebSocket server
-            _server = new WebSocketServer(Config.Global.WebSocket.Server.Location);
+            _server = new WebSocketServer(Config.Global.WebSocket.Server.Location) {RestartAfterListenError = true};
 
             // Start listening for connections
             _server.Start(connection =>
@@ -58,52 +74,7 @@ namespace HidVigil.Core.Service
                         connection.ConnectionInfo.ClientPort,
                         connection.ConnectionInfo.Origin);
 
-                    try
-                    {
-                        // Try to boot up HidCerberus sub-system
-                        _hcSystem = new HidCerberusWrapper();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Fatal("Fatal error: {Exception}", ex);
-                        connection.Send(JsonConvert.SerializeObject("Internal server error, can't connect, sorry =("));
-                        connection.Close();
-                        return;
-                    }
-
-                    // Listen for access requests from HidCerberus
-                    _hcSystem.AccessRequestReceived += (sender, args) =>
-                    {
-                        // Timeout defines how long the request will stay on halt
-                        var timeout = TimeSpan.FromMilliseconds(Config.Global.HidGuardian.Timeout);
-
-                        // Message object getting sent to the client
-                        var obj = new AccessRequest
-                        {
-                            HardwareId = args.HardwareId,
-                            DeviceId = args.DeviceId,
-                            InstanceId = args.InstanceId,
-                            ProcessId = args.ProcessId,
-                            ExpiresOn = DateTime.Now.Add(timeout)
-                        };
-
-                        // Enqueue object for later completion
-                        _requestQueue.Add(obj.RequestId, obj);
-
-                        // Send request to client
-                        connection.Send(JsonConvert.SerializeObject(obj));
-
-                        // Wait until response comes back in
-                        if (obj.Signal.WaitOne(timeout))
-                        {
-                            args.IsHandled = obj.IsHandled;
-                            args.IsAllowed = obj.IsAllowed;
-                            args.IsPermanent = obj.IsPermanent;
-                        }
-
-                        // Pop from queue
-                        _requestQueue.Remove(obj.RequestId);
-                    };
+                    _currentConnections.Add(connection);
                 };
 
                 // Clean-up on disconnect
@@ -111,8 +82,7 @@ namespace HidVigil.Core.Service
                 {
                     Log.Information("Connection closed");
 
-                    _hcSystem.Dispose();
-                    _hcSystem = null;
+                    _currentConnections.Remove(connection);
                 };
 
                 // Log error
@@ -141,21 +111,55 @@ namespace HidVigil.Core.Service
             });
         }
 
+        private void HcSystemOnAccessRequestReceived(object sender, AccessRequestReceivedEventArgs args)
+        {
+            // Timeout defines how long the request will stay on halt
+            var timeout = TimeSpan.FromMilliseconds(Config.Global.HidGuardian.Timeout);
+
+            // Message object getting sent to the client
+            var obj = new AccessRequest
+            {
+                HardwareId = args.HardwareId,
+                DeviceId = args.DeviceId,
+                InstanceId = args.InstanceId,
+                ProcessId = args.ProcessId,
+                ExpiresOn = DateTime.Now.Add(timeout)
+            };
+
+            // Enqueue object for later completion
+            _requestQueue.Add(obj.RequestId, obj);
+
+            // Send request to client(s)
+            var message = JsonConvert.SerializeObject(obj);
+            _currentConnections.ToList().ForEach(c => c.Send(message));
+
+            // Wait until response comes back in
+            if (obj.Signal.WaitOne(timeout))
+            {
+                args.IsHandled = obj.IsHandled;
+                args.IsAllowed = obj.IsAllowed;
+                args.IsPermanent = obj.IsPermanent;
+            }
+
+            // Pop from queue
+            _requestQueue.Remove(obj.RequestId);
+        }
+
         public void Stop()
         {
             Log.Information("Service stopping");
 
+            _currentConnections.ToList().ForEach(c => c.Close());
+            
+            _server.Dispose();
+
             // Complete all pending requests
-            foreach (var request in _requestQueue)
-            {
-                request.Value.Signal.Set();
-            }
+            foreach (var request in _requestQueue) request.Value.Signal.Set();
 
             _requestQueue.Clear();
 
             try
             {
-                _server.Dispose();
                 _hcSystem?.Dispose();
             }
             catch (Exception ex)

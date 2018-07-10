@@ -1,6 +1,6 @@
 ﻿{
     "HidGuardian": {
-        "Timeout": 120000
+        "Timeout": 250
     },
     "WebSocket": {
         "Server": {
