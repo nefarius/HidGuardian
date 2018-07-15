@@ -1,33 +1,62 @@
 # HidGuardian
-Blocks HID devices from being accessed by user-mode applications.
+Windows kernel-mode filter driver restricting access to input peripherals.
 
-## The Problem
-Games and other user-mode applications enumerate Joysticks, Gamepads and similar devices through various well-known APIs ([DirectInput](https://msdn.microsoft.com/en-us/library/windows/desktop/ee416842(v=vs.85).aspx), [XInput](https://msdn.microsoft.com/en-us/library/windows/desktop/hh405053(v=vs.85).aspx), [Raw Input](https://msdn.microsoft.com/en-us/library/windows/desktop/ms645536(v=vs.85).aspx)) and continously read their reported input states. The primary collection of devices available through DirectInput are [HID](https://en.wikipedia.org/wiki/Human_interface_device)-Class based devices. When emulating virtual devices with ViGEm the system (and subsequently the application) may not be able to distinguish between e.g. a "real" physical HID Gamepad which acts as a "feeder" and the virtual ViGEm device, therefore suffer from side effects like doubled input. Since coming up with a solution for each application available would become quite tedious a more generalized approach was necessary to reliably solve these issues.
+## About
+`HidGuardian` (abbreviated as `HG`) is an upper filter driver for device classes like `HIDClass` (Keyboards, Mice, Gamepads, Joysticks, Wheels, ...), `XnaComposite` (Xbox 360-compatible controllers) or `XboxComposite` (Xbox One-compatible controllers) therefore targeting and attaching itself to every input device connected to the system. A user-mode companion library and service initialize the driver and listen for access request events containing information about the device and the process ID demanding access. 
 
-## The Semi-Solution
-A common way for intercepting the Game's communication with the input devices would be hooking the mentioned input APIs within the target process. While a stable and user-friendly implementation for the end-user might be achievable for some processes, targeting the wide variety of Games available on the market is a difficult task. Hooking APIs involves manipulating the target processes memory which also might falsely trigger Anti-Cheat systems and ban innocent users.
+## Workflow
+Regardless of used higher-level API ([DirectInput](https://msdn.microsoft.com/en-us/library/windows/desktop/ee416842(v=vs.85).aspx), [XInput](https://msdn.microsoft.com/en-us/library/windows/desktop/hh405053(v=vs.85).aspx), [Raw Input](https://msdn.microsoft.com/en-us/library/windows/desktop/ms645536(v=vs.85).aspx)), accessing (opening) an input device will at its core result in a call of the [`CreateFile`](<https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-createfilea>) function, invoking the [`EVT_WDF_DEVICE_FILE_CREATE`](<https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/wdfdevice/nc-wdfdevice-evt_wdf_device_file_create>) callback within the filter driver. Without `HidGuardian`, this request would get answered by the original devices function driver, typically resulting in a successful completion giving the user-mode application a valid handle to said device. With `HG` joining the party, this flow gets altered as follows:
 
-## The Real Solution
-`HidGuardian` is an upper filter driver for the `HIDClass` device class therefore targeting and attaching itself to every HID device connected to the system. On startup it queries the `AffectedDevices` value in the service's `Parameters` key to check if the current device in the driver stack is "blacklisted". If a matching Hardware ID is found, every call of the `CreateFile(...)` API will be answered with an `ERROR_ACCESS_DENIED` thus failing the attempt to open a file handle and communicate with the affected device. If the guardian is attached to a device which shouldn't get blocked it will unload itself from the driver stack.
+![Flowchart](https://vigem.org/wp-content/uploads/2018/07/2018-07-15_13-38-25.png)
 
-## Demo
-Sony DualShock 4 and generic USB Gamepad connected:
+<details><summary>Show source</summary>
+<p>
 
-![](http://content.screencast.com/users/Nefarius/folders/Snagit/media/f7532345-da15-41f8-b403-1d3c42ace1a9/11.19.2016-19.33.png)
+Flowchart created with [flowchart.js](<https://github.com/adrai/flowchart.js>)
 
-`HidGuardian.sys` active and hiding the DualShock 4:
+```js
+open=>start: Device Access Request
+allowed=>end: Access granted
+denied=>end: Access denied
+hg=>operation: Request reaches HidGuardian
+hc_present=>condition: Is HidCerberus present?
+default=>operation: Apply default action
+allow=>operation: Allow access
+forward=>subroutine: Forward request to lower driver
+ask=>operation: Ask HidCerberus what to do
+submit=>subroutine: Submit details to HC (HWID, PID, ...)
+wait=>subroutine: Wait for decision through HidVigil
+pass=>subroutine: Pass result back to HidGuardian
+eval=>condition: Access granted?
+deny=>operation: Fail request with STATUS_ACCESS_DENIED
 
-![](http://content.screencast.com/users/Nefarius/folders/Snagit/media/08741f7b-8272-4d16-9c18-0376f716dc42/11.19.2016-19.28.png)
+open->hg->hc_present
+hc_present(no, right)->default->allow->forward->allowed
+hc_present(yes)->ask->submit->wait->pass->eval
+eval(yes, right)->allow
+eval(no)->deny->denied
+```
+
+</p>
+</details>
+
+As a generic filter driver has limited capabilities of querying details about process IDs (name of the main executable, path to image file, ownership, etc.) a little help from a user-mode component (labeled `HidCerberus`) is required to reverse-lookup the process ID and make the decision if the open request shall be granted or denied.
 
 ## Manual Installation
+Get [`devcon`](https://downloads.vigem.org/other/microsoft/devcon.zip) and execute:
 ```
 devcon.exe install HidGuardian.inf Root\HidGuardian
 devcon.exe classfilter HIDClass upper -HidGuardian
+devcon.exe classfilter XnaComposite upper -HidGuardian
+devcon.exe classfilter XboxComposite upper -HidGuardian
 ```
 
 ## Manual Removal
+Get [`devcon`](https://downloads.vigem.org/other/microsoft/devcon.zip) and execute:
 ```
-devcon.exe remove Root\HidGuardian
 devcon.exe classfilter HIDClass upper !HidGuardian
+devcon.exe classfilter XnaComposite upper !HidGuardian
+devcon.exe classfilter XboxComposite upper !HidGuardian
+devcon.exe remove Root\HidGuardian
 ```
 Re-plug your devices or reboot the system for the driver to get unloaded and removed.
