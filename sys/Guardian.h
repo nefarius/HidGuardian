@@ -30,4 +30,3 @@ SOFTWARE.
 
 NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext);
 BOOLEAN AmIMaster(PDEVICE_CONTEXT DeviceContext);
-VOID GetDefaultAction(PDEVICE_CONTEXT DeviceContext);

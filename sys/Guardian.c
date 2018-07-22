@@ -31,7 +31,6 @@ SOFTWARE.
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, AmIAffected)
-#pragma alloc_text (PAGE, GetDefaultAction)
 #endif
 
 //
@@ -179,42 +178,3 @@ BOOLEAN AmIMaster(PDEVICE_CONTEXT DeviceContext)
 
     return FALSE;
 }
-
-//
-// Read the default action (allow or block) from registry.
-// 
-VOID GetDefaultAction(PDEVICE_CONTEXT DeviceContext)
-{
-    NTSTATUS status;
-    WDFKEY                  keyParams;
-    ULONG                   allowByDefault = 0;
-    DECLARE_CONST_UNICODE_STRING(allowByDefaultUl, L"AllowByDefault");
-
-    PAGED_CODE();
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_GUARDIAN, "%!FUNC! Entry");
-
-    //
-    // Get the filter drivers Parameter key
-    // 
-    status = WdfDriverOpenParametersRegistryKey(WdfGetDriver(), STANDARD_RIGHTS_READ, WDF_NO_OBJECT_ATTRIBUTES, &keyParams);
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_WARNING,
-            TRACE_GUARDIAN,
-            "WdfDriverOpenParametersRegistryKey failed: %!STATUS!", status);
-        return;
-    }
-
-    //
-    // Force loading on every class device
-    // 
-    status = WdfRegistryQueryULong(keyParams, &allowByDefaultUl, &allowByDefault);
-    if (NT_SUCCESS(status) && allowByDefault > 0) {
-        DeviceContext->AllowByDefault = TRUE;
-    }
-
-    WdfRegistryClose(keyParams);
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_GUARDIAN, "%!FUNC! Exit");
-}
-
