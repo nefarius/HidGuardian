@@ -33,22 +33,25 @@ SOFTWARE.
 #define HC_API __declspec(dllimport)
 #endif
 
+#include <OAIdl.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
     typedef struct _HC_HANDLE_T *PHC_HANDLE;
 
+	typedef struct _HC_ARE_HANDLE_T *PHC_ARE_HANDLE;
+
     typedef
         _Function_class_(EVT_HC_PROCESS_ACCESS_REQUEST)
         BOOL
         EVT_HC_PROCESS_ACCESS_REQUEST(
-            PCSTR HardwareId,
+			PHC_ARE_HANDLE Handle,
+			SAFEARRAY** ppHardwareIds,
             PCSTR DeviceId,
             PCSTR InstanceId,
-            DWORD ProcessId,
-            BOOL *bIsAllowed,
-            BOOL *bIsPermanent
+            DWORD ProcessId
         );
 
     typedef EVT_HC_PROCESS_ACCESS_REQUEST *PFN_HC_PROCESS_ACCESS_REQUEST;
@@ -58,6 +61,12 @@ extern "C" {
     HC_API VOID hc_shutdown(PHC_HANDLE handle);
 
     HC_API VOID hc_register_access_request_event(PHC_HANDLE handle, PFN_HC_PROCESS_ACCESS_REQUEST callback);
+
+	HC_API VOID hc_submit_access_request_result(
+		PHC_ARE_HANDLE Handle,
+		BOOL IsAllowed,
+		BOOL IsPermanent
+	);
 
 #ifdef __cplusplus
 }

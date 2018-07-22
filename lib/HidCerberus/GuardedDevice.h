@@ -2,6 +2,8 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <OAIdl.h>
+
 #include <string>
 #include <vector>
 
@@ -23,6 +25,13 @@ class GuardedDevice : public Task
     Random _rnd;
     const int _bufferSize = 1024;
     PHC_HANDLE _hcHandle;
+
+	long CreateSafeArrayFromBSTRArray
+	(
+		BSTR* pBSTRArray,
+		ULONG ulArraySize,
+		SAFEARRAY** ppSafeArrayReceiver
+	);
 
 public:
     GuardedDevice(std::string devicePath, PHC_HANDLE handle);
