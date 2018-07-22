@@ -527,6 +527,8 @@ HidGuardianEvtIoDeviceControl(
             break;
         }
 
+        prevTagRequest = tagRequest = NULL;
+
         //
         // The access request response might come in out of sync (because the
         // user-mode components process them in an asynchronous fashion) so we
