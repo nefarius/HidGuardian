@@ -39,5 +39,13 @@ HC_API VOID hc_register_access_request_event(PHC_HANDLE handle, PFN_HC_PROCESS_A
 
 HC_API VOID hc_submit_access_request_result(PHC_ARE_HANDLE Handle, BOOL IsAllowed, BOOL IsPermanent)
 {
-	return;
+    if (!Handle) {
+        return;
+    }
+
+    Handle->ParentDevice->submitAccessRequestResult(
+        Handle->RequestId, 
+        IsAllowed, 
+        IsPermanent
+    );
 }

@@ -10,18 +10,15 @@
 
 #define POCO_NO_UNWINDOWS
 #include <Poco/Task.h>
-#include <Poco/Random.h>
 #include <Poco/AutoPtr.h>
 
 using Poco::Task;
-using Poco::Random;
 using Poco::AutoPtr;
 
 class GuardedDevice : public Task
 {
     std::string _devicePath;
     HANDLE _deviceHandle = INVALID_HANDLE_VALUE;
-    Random _rnd;
     const int _bufferSize = 1024;
     PHC_HANDLE _hcHandle;
 
@@ -30,7 +27,11 @@ public:
 
     void runTask() override;
 
+    void submitAccessRequestResult(ULONG Id, BOOL IsAllowed, BOOL IsPermanent);
+
 protected:
     ~GuardedDevice();
 };
+
+typedef void (GuardedDevice::*fpnSubmitAccessRequestResult)(ULONG Id, BOOL IsAllowed, BOOL IsPermanent);
 

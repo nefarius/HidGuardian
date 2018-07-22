@@ -10,6 +10,7 @@
 #include <codecvt>
 #include <utility>
 #include <functional>
+#include <random>
 
 //
 // Windows
@@ -73,8 +74,14 @@ void GuardedDevice::runTask()
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
+    //
+    // Random number generator
+    // 
+    std::random_device rd;     // only used once to initialise (seed) engine
+    std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+    std::uniform_int_distribution<int> uni; // guaranteed unbiased
+
     logger.debug("Worker running (%s)", _devicePath);
-    _rnd.seed();
 
     //
     // DeviceIoControl stuff
@@ -95,7 +102,7 @@ void GuardedDevice::runTask()
         ZeroMemory(pHgGet, pHgGetSize);
         pHgGet->Size = pHgGetSize;
 
-        const auto reqId = _rnd.next();
+        const auto reqId = uni(rng);
 
         pHgGet->RequestId = reqId;
 
@@ -160,13 +167,13 @@ void GuardedDevice::runTask()
             logger.debug("Start processing Vigil (ID: %lu)", pHgGet->RequestId);
         }
 
-        BOOL isAllowed = FALSE;
-        BOOL isPermanent = FALSE;
-
+        //
+        // Holds converted HardwareID strings
+        // 
 		std::vector<std::string> arrayIds;
 
         //
-        // Split up multi-value string and call processing method
+        // Split up wide multi-value string value into std:.string array
         // 
         for (PCWSTR szIter = pHgGet->HardwareIds; *szIter; szIter += wcslen(szIter) + 1)
         {
@@ -177,13 +184,22 @@ void GuardedDevice::runTask()
 			arrayIds.push_back(id);
         }
 
+        //
+        // Convert std::string array to PCSTR array
+        // 
 		std::vector<const char *> chars(arrayIds.size());
 		std::transform(arrayIds.begin(), arrayIds.end(), chars.begin(), std::mem_fun_ref(&std::string::c_str));
 
+        //
+        // Allocate new context handle
+        // 
 		auto ctx = new HC_ARE_HANDLE();
 		ctx->ParentDevice = this;
 		ctx->RequestId = reqId;
 
+        //
+        // Submit details to host
+        // 
 		auto ret = _hcHandle->EvtProcessAccessRequest(
 			ctx,
 			&chars[0],
@@ -193,9 +209,17 @@ void GuardedDevice::runTask()
 			pHgGet->ProcessId
 		);
 
-		if (!ret) {
-			delete ctx;
+        //
+        // Access request accepted by host, continue querying for new requests
+        // 
+		if (ret) {
+			continue;
 		}
+
+        //
+        // Host not handling request, free context
+        // 
+        delete ctx;
 
         if (logger.is(Poco::Message::PRIO_DEBUG)) {
             logger.debug("End processing Vigil (ID: %lu)", pHgGet->RequestId);
@@ -244,6 +268,53 @@ void GuardedDevice::runTask()
     CloseHandle(lOverlapped.hEvent);
 
     logger.information("No more guarding");
+}
+
+void GuardedDevice::submitAccessRequestResult(ULONG Id, BOOL IsAllowed, BOOL IsPermanent)
+{
+    auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
+
+    HIDGUARDIAN_SET_CREATE_REQUEST hgSet;
+    ZeroMemory(&hgSet, sizeof(HIDGUARDIAN_SET_CREATE_REQUEST));
+
+    hgSet.RequestId = Id;
+    hgSet.IsAllowed = IsAllowed;
+    hgSet.IsSticky = IsPermanent;
+
+    //
+    // DeviceIoControl stuff
+    // 
+    DWORD bytesReturned = 0;
+    OVERLAPPED lOverlapped = { 0 };
+    lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
+    //
+    // Submit result to driver
+    // 
+    DeviceIoControl(
+        _deviceHandle,
+        IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST,
+        &hgSet,
+        sizeof(HIDGUARDIAN_SET_CREATE_REQUEST),
+        nullptr,
+        0,
+        &bytesReturned,
+        &lOverlapped
+    );
+
+    if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
+    {
+        const auto error = GetLastError();
+
+        if (error == ERROR_DEV_NOT_EXIST) {
+            logger.debug("Device got removed/powered down");
+        }
+        else {
+            logger.error("Permission request %lu failed", hgSet.RequestId);
+        }
+    }
+
+    CloseHandle(lOverlapped.hEvent);
 }
 
 GuardedDevice::~GuardedDevice()
