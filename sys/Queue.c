@@ -559,7 +559,7 @@ HidGuardianEvtIoDeviceControl(
             // Reached the end of the queue without success
             // 
             if (status == STATUS_NO_MORE_ENTRIES) {
-                status = STATUS_UNSUCCESSFUL;
+                //status = STATUS_UNSUCCESSFUL;
                 break;
             }
 
@@ -573,7 +573,7 @@ HidGuardianEvtIoDeviceControl(
                 continue;
             }
             if (!NT_SUCCESS(status)) {
-                status = STATUS_UNSUCCESSFUL;
+                //status = STATUS_UNSUCCESSFUL;
                 break;
             }
             
@@ -606,7 +606,7 @@ HidGuardianEvtIoDeviceControl(
                     continue;
                 }
                 if (!NT_SUCCESS(status)) {
-                    status = STATUS_UNSUCCESSFUL;
+                    //status = STATUS_UNSUCCESSFUL;
                     break;
                 }
 
@@ -700,7 +700,7 @@ HidGuardianEvtIoDeviceControl(
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_QUEUE,
-                "Processing request with ID %X failed with status %!STATUS!", 
+                "Processing request with ID %d failed with status %!STATUS!", 
                 pSetCreateRequest->RequestId,
                 status
             );
