@@ -6,12 +6,6 @@
 #include "HidCerberusInternal.h"
 
 
-typedef struct _HC_ARE_HANDLE_T
-{
-	ULONG RequestId;
-
-} HC_ARE_HANDLE;
-
 HC_API PHC_HANDLE hc_init()
 {
     auto handle = new HC_HANDLE;

@@ -33,7 +33,6 @@ SOFTWARE.
 #define HC_API __declspec(dllimport)
 #endif
 
-#include <OAIdl.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +47,8 @@ extern "C" {
         BOOL
         EVT_HC_PROCESS_ACCESS_REQUEST(
 			PHC_ARE_HANDLE Handle,
-			SAFEARRAY** ppHardwareIds,
+			PCSTR HardwareIds[],
+			ULONG HardwareIdsCount,
             PCSTR DeviceId,
             PCSTR InstanceId,
             DWORD ProcessId

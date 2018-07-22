@@ -21,28 +21,31 @@ namespace TestHostNet
         }
 
         static bool ProcessAccessRequest(
-            string HardwareId,
+            IntPtr Handle,
+            string[] HardwareIds,
+            int HardwareIdsCount,
             string DeviceId,
             string InstanceId,
-            int ProcessId,
-            out bool IsAllowed,
-            out bool IsPermananet
+            int ProcessId
             )
         {
-            Console.WriteLine(HardwareId);
-
-            IsAllowed = IsPermananet = true;
+            foreach(var id in HardwareIds)
+            {
+                Console.WriteLine(id);
+            }
 
             return true;
         }
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate bool EVT_HC_PROCESS_ACCESS_REQUEST(
-            string HardwareId,
+            IntPtr Handle,
+            [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr, SizeParamIndex = 2)]
+            string[] HardwareIds,
+            int HardwareIdsCount,
             string DeviceId,
             string InstanceId,
-            int ProcessId,
-            out bool IsAllowed,
-            out bool IsPermananet
+            int ProcessId
             );
 
         [DllImport("HidCerberus.dll", SetLastError = true, CharSet = CharSet.Auto)]

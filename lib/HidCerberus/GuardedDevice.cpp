@@ -9,6 +9,7 @@
 #include <locale>
 #include <codecvt>
 #include <utility>
+#include <functional>
 
 //
 // Windows
@@ -27,58 +28,6 @@ using Poco::Logger;
 using Poco::Buffer;
 using Poco::icompare;
 
-
-long GuardedDevice::CreateSafeArrayFromBSTRArray(BSTR * pBSTRArray, ULONG ulArraySize, SAFEARRAY ** ppSafeArrayReceiver)
-{
-	HRESULT hrRetTemp = S_OK;
-	SAFEARRAY* pSAFEARRAYRet = NULL;
-	SAFEARRAYBOUND rgsabound[1];
-	ULONG ulIndex = 0;
-	long lRet = 0;
-
-	// Initialize receiver.
-	if (ppSafeArrayReceiver)
-	{
-		*ppSafeArrayReceiver = NULL;
-	}
-
-	if (pBSTRArray)
-	{
-		rgsabound[0].lLbound = 0;
-		rgsabound[0].cElements = ulArraySize;
-
-		pSAFEARRAYRet = (SAFEARRAY*)SafeArrayCreate
-		(
-			(VARTYPE)VT_BSTR,
-			(unsigned int)1,
-			(SAFEARRAYBOUND*)rgsabound
-		);
-	}
-
-	for (ulIndex = 0; ulIndex < ulArraySize; ulIndex++)
-	{
-		long lIndexVector[1];
-
-		lIndexVector[0] = ulIndex;
-
-		// Since pSAFEARRAYRet is created as a SafeArray of VT_BSTR,
-		// SafeArrayPutElement() will create a copy of each BSTR
-		// inserted into the SafeArray.
-		SafeArrayPutElement
-		(
-			(SAFEARRAY*)pSAFEARRAYRet,
-			(long*)lIndexVector,
-			(void*)(pBSTRArray[ulIndex])
-		);
-	}
-
-	if (pSAFEARRAYRet)
-	{
-		*ppSafeArrayReceiver = pSAFEARRAYRet;
-	}
-
-	return lRet;
-}
 
 GuardedDevice::GuardedDevice(std::string devicePath, PHC_HANDLE handle)
     : Task(devicePath), _devicePath(std::move(devicePath)), _hcHandle(handle)
@@ -214,10 +163,7 @@ void GuardedDevice::runTask()
         BOOL isAllowed = FALSE;
         BOOL isPermanent = FALSE;
 
-		SAFEARRAY* pSafeArrayOfBSTR = NULL;
-		ULONG hwIdCount = 0;
-
-		BSTR *pBstrArray = (BSTR *)malloc(sizeof(BSTR));
+		std::vector<std::string> arrayIds;
 
         //
         // Split up multi-value string and call processing method
@@ -228,30 +174,28 @@ void GuardedDevice::runTask()
             std::wstring_convert<convert_type, wchar_t> converter;
             const std::string id(converter.to_bytes(szIter));
 
-
-
-            //
-            // Invoke callback asking host for a decision
-            // 
-            //const auto ret = _hcHandle->EvtProcessAccessRequest(
-            //    id.c_str(),
-            //    deviceId.c_str(),
-            //    instanceId.c_str(),
-            //    pHgGet->ProcessId,
-            //    &isAllowed,
-            //    &isPermanent
-            //);
-
-            //
-            // Only overwrite properties if a rule applies
-            // 
-            //if (ret)
-            //{
-            //    hgSet.IsAllowed = isAllowed;
-            //    hgSet.IsSticky = isPermanent;
-            //    break;
-            //}
+			arrayIds.push_back(id);
         }
+
+		std::vector<const char *> chars(arrayIds.size());
+		std::transform(arrayIds.begin(), arrayIds.end(), chars.begin(), std::mem_fun_ref(&std::string::c_str));
+
+		auto ctx = new HC_ARE_HANDLE();
+		ctx->ParentDevice = this;
+		ctx->RequestId = reqId;
+
+		auto ret = _hcHandle->EvtProcessAccessRequest(
+			ctx,
+			&chars[0],
+			(ULONG)arrayIds.size(),
+			deviceId.c_str(),
+			instanceId.c_str(),
+			pHgGet->ProcessId
+		);
+
+		if (!ret) {
+			delete ctx;
+		}
 
         if (logger.is(Poco::Message::PRIO_DEBUG)) {
             logger.debug("End processing Vigil (ID: %lu)", pHgGet->RequestId);
