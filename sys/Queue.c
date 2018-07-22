@@ -368,6 +368,8 @@ HidGuardianEvtIoDeviceControl(
     WDFDEVICE                           device;
     WDFREQUEST                          authRequest;
     WDFREQUEST                          createRequest;
+    WDFREQUEST                          tagRequest;
+    WDFREQUEST                          prevTagRequest;
     PDEVICE_CONTEXT                     pDeviceCtx;
     WDF_REQUEST_SEND_OPTIONS            options;
     BOOLEAN                             ret;
@@ -526,91 +528,181 @@ HidGuardianEvtIoDeviceControl(
         }
 
         //
-        // Pop pending auth request from device queue
+        // The access request response might come in out of sync (because the
+        // user-mode components process them in an asynchronous fashion) so we
+        // need to loop through the pending requests queue and validate the 
+        // assigned ID value to match this request to the pending request.
         // 
-        status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->PendingAuthQueue, &authRequest);
+        do 
+        {
+            //
+            // Start looking for pending request
+            // 
+            status = WdfIoQueueFindRequest(
+                pDeviceCtx->PendingAuthQueue,
+                prevTagRequest,
+                NULL,
+                NULL,
+                &tagRequest
+            );
+
+            //
+            // Decrease reference count of previous match
+            // 
+            if (prevTagRequest) {
+                WdfObjectDereference(prevTagRequest);
+            }
+
+            //
+            // Reached the end of the queue without success
+            // 
+            if (status == STATUS_NO_MORE_ENTRIES) {
+                status = STATUS_UNSUCCESSFUL;
+                break;
+            }
+
+            if (status == STATUS_NOT_FOUND) {
+                //
+                // The prevTagRequest request has disappeared from the
+                // queue. There might be other requests that match
+                // the criteria, so restart the search. 
+                //
+                prevTagRequest = tagRequest = NULL;
+                continue;
+            }
+            if (!NT_SUCCESS(status)) {
+                status = STATUS_UNSUCCESSFUL;
+                break;
+            }
+            
+            //
+            // Note: this is allowed but only read from the context
+            // since at this point we don't own the request object!
+            // 
+            pRequestCtx = CreateRequestGetContext(tagRequest);
+
+            //
+            // Validate the request ID
+            // 
+            if (pSetCreateRequest->RequestId == pRequestCtx->RequestId) {
+                //
+                // Found a match. Retrieve the request from the queue.
+                //
+                status = WdfIoQueueRetrieveFoundRequest(
+                    Queue,
+                    tagRequest,
+                    &authRequest
+                );
+                WdfObjectDereference(tagRequest);
+                if (status == STATUS_NOT_FOUND) {
+                    //
+                    // The tagRequest request has disappeared from the
+                    // queue. There might be other requests that match 
+                    // the criteria, so restart the search. 
+                    //
+                    prevTagRequest = tagRequest = NULL;
+                    continue;
+                }
+                if (!NT_SUCCESS(status)) {
+                    status = STATUS_UNSUCCESSFUL;
+                    break;
+                }
+
+                //
+                // Found the request.
+                //
+                status = STATUS_SUCCESS;
+                pRequestCtx = CreateRequestGetContext(authRequest);
+
+                //
+                // Cache result in driver to improve speed
+                // 
+                if (pSetCreateRequest->IsSticky) {
+                    if (!PID_LIST_CONTAINS(
+                        &pDeviceCtx->StickyPidList, 
+                        pRequestCtx->ProcessId,
+                        NULL
+                    )) {
+                        PID_LIST_PUSH(
+                            &pDeviceCtx->StickyPidList, 
+                            pRequestCtx->ProcessId, 
+                            pSetCreateRequest->IsAllowed
+                        );
+                    }
+                    else {
+                        TraceEvents(TRACE_LEVEL_WARNING,
+                            TRACE_QUEUE,
+                            "Sticky PID %d already present in cache", pRequestCtx->ProcessId);
+                    }
+                }
+
+                //
+                // Request was permitted, pass it down the stack
+                // 
+                if (pSetCreateRequest->IsAllowed) {
+                    TraceEvents(TRACE_LEVEL_INFORMATION,
+                        TRACE_QUEUE,
+                        "!! Request %d from PID %d is allowed",
+                        pRequestCtx->RequestId,
+                        pRequestCtx->ProcessId);
+
+                    WdfRequestFormatRequestUsingCurrentType(authRequest);
+
+                    //
+                    // PID is white-listed, pass request down the stack
+                    // 
+                    WDF_REQUEST_SEND_OPTIONS_INIT(&options,
+                        WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
+
+                    ret = WdfRequestSend(authRequest, WdfDeviceGetIoTarget(device), &options);
+
+                    //
+                    // Complete the request on failure
+                    // 
+                    if (ret == FALSE) {
+                        status = WdfRequestGetStatus(authRequest);
+                        TraceEvents(TRACE_LEVEL_ERROR,
+                            TRACE_QUEUE,
+                            "WdfRequestSend failed: %!STATUS!", status);
+                        WdfRequestComplete(authRequest, status);
+                    }
+                }
+                else {
+                    TraceEvents(TRACE_LEVEL_INFORMATION,
+                        TRACE_QUEUE,
+                        "!! Request %d from PID %d is not allowed",
+                        pRequestCtx->RequestId,
+                        pRequestCtx->ProcessId);
+
+                    //
+                    // Request was denied, complete it with failure
+                    // 
+                    WdfRequestComplete(authRequest, STATUS_ACCESS_DENIED);
+                }
+
+                break;
+            }
+
+            //
+            // This request is not the correct one. Drop the reference 
+            // on the tagRequest after the driver obtains the next request.
+            //
+            prevTagRequest = tagRequest;
+            continue;
+
+        } while (TRUE);
+
+        //
+        // Trace error
+        // 
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_QUEUE,
-                "WdfIoQueueRetrieveNextRequest (PendingAuthQueue) failed with status %!STATUS!", status);
-            break;
-        }
-
-        pRequestCtx = CreateRequestGetContext(authRequest);
-
-        //
-        // Validate that the response matches the request
-        // 
-        if (pSetCreateRequest->RequestId != pRequestCtx->RequestId) {
-            TraceEvents(TRACE_LEVEL_ERROR,
-                TRACE_QUEUE,
-                "Request ID mismatch: %X != %X",
+                "Processing request with ID %X failed with status %!STATUS!", 
                 pSetCreateRequest->RequestId,
-                pRequestCtx->RequestId);
-
-            status = STATUS_INVALID_PARAMETER;
-
-            WdfRequestComplete(authRequest, status);
-
+                status
+            );
             break;
-        }
-
-        //
-        // Cache result in driver to improve speed
-        // 
-        if (pSetCreateRequest->IsSticky) {
-            if (!PID_LIST_CONTAINS(&pDeviceCtx->StickyPidList, pRequestCtx->ProcessId, NULL)) {
-                PID_LIST_PUSH(&pDeviceCtx->StickyPidList, pRequestCtx->ProcessId, pSetCreateRequest->IsAllowed);
-            }
-            else {
-                TraceEvents(TRACE_LEVEL_WARNING,
-                    TRACE_QUEUE,
-                    "Sticky PID %d already present in cache", pRequestCtx->ProcessId);
-            }
-        }
-
-        //
-        // Request was permitted, pass it down the stack
-        // 
-        if (pSetCreateRequest->IsAllowed) {
-            TraceEvents(TRACE_LEVEL_INFORMATION,
-                TRACE_QUEUE,
-                "!! Request %d from PID %d is allowed",
-                pRequestCtx->RequestId,
-                pRequestCtx->ProcessId);
-
-            WdfRequestFormatRequestUsingCurrentType(authRequest);
-
-            //
-            // PID is white-listed, pass request down the stack
-            // 
-            WDF_REQUEST_SEND_OPTIONS_INIT(&options,
-                WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
-
-            ret = WdfRequestSend(authRequest, WdfDeviceGetIoTarget(device), &options);
-
-            //
-            // Complete the request on failure
-            // 
-            if (ret == FALSE) {
-                status = WdfRequestGetStatus(authRequest);
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_QUEUE,
-                    "WdfRequestSend failed: %!STATUS!", status);
-                WdfRequestComplete(authRequest, status);
-            }
-        }
-        else {
-            TraceEvents(TRACE_LEVEL_INFORMATION,
-                TRACE_QUEUE,
-                "!! Request %d from PID %d is not allowed",
-                pRequestCtx->RequestId,
-                pRequestCtx->ProcessId);
-
-            //
-            // Request was denied, complete it with failure
-            // 
-            WdfRequestComplete(authRequest, STATUS_ACCESS_DENIED);
         }
 
         break;
