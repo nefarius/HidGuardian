@@ -318,11 +318,11 @@ HidGuardianCreateDevice(
             return status;
         }
 
-        //
-        // Fetch default action to take what to do if service isn't available
-        // from registry key.
-        // 
-        GetDefaultAction(pDeviceCtx);
+		//
+		// This value was previously fetched from the registry.
+		// Exposing it to the user has been to dangerous though, so always allow by default.
+		// 
+		pDeviceCtx->AllowByDefault = TRUE;
 
         //
         // Check if this device should get intercepted
