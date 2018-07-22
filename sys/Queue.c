@@ -559,7 +559,6 @@ HidGuardianEvtIoDeviceControl(
             // Reached the end of the queue without success
             // 
             if (status == STATUS_NO_MORE_ENTRIES) {
-                //status = STATUS_UNSUCCESSFUL;
                 break;
             }
 
@@ -573,7 +572,6 @@ HidGuardianEvtIoDeviceControl(
                 continue;
             }
             if (!NT_SUCCESS(status)) {
-                //status = STATUS_UNSUCCESSFUL;
                 break;
             }
             
@@ -591,7 +589,7 @@ HidGuardianEvtIoDeviceControl(
                 // Found a match. Retrieve the request from the queue.
                 //
                 status = WdfIoQueueRetrieveFoundRequest(
-                    Queue,
+                    pDeviceCtx->PendingAuthQueue,
                     tagRequest,
                     &authRequest
                 );
@@ -606,7 +604,6 @@ HidGuardianEvtIoDeviceControl(
                     continue;
                 }
                 if (!NT_SUCCESS(status)) {
-                    //status = STATUS_UNSUCCESSFUL;
                     break;
                 }
 
