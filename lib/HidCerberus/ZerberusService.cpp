@@ -9,8 +9,6 @@
 #include "HidGuardian.h"
 
 #define POCO_NO_UNWINDOWS
-#include <Poco/Util/Option.h>
-#include <Poco/Util/OptionSet.h>
 #include <Poco/AutoPtr.h>
 #include <Poco/Logger.h>
 #include <Poco/Message.h>
@@ -19,23 +17,12 @@
 #include <Poco/FormattingChannel.h>
 #include <Poco/AsyncChannel.h>
 #include <Poco/Path.h>
-#include <Poco/WindowsConsoleChannel.h>
 #include <Poco/SplitterChannel.h>
 #include <Poco/SharedPtr.h>
-#include <Poco/Data/SQLite/Utility.h>
 #include <Poco/Buffer.h>
-#include <Poco/Util/RegExpValidator.h>
-#include <Poco/Util/HelpFormatter.h>
 #include <Poco/ThreadPool.h>
 #include <Poco/BasicEvent.h>
 #include <Poco/Delegate.h>
-#include <Poco/DOM/DOMParser.h>
-#include <Poco/DOM/Document.h>
-#include <Poco/DOM/NodeIterator.h>
-#include <Poco/DOM/NodeFilter.h>
-#include <Poco/SAX/InputSource.h>
-#include <Poco/DOM/NodeList.h>
-#include <Poco/DOM/NamedNodeMap.h>
 #include <Poco/Exception.h>
 
 using Poco::AutoPtr;
@@ -46,12 +33,9 @@ using Poco::PatternFormatter;
 using Poco::FormattingChannel;
 using Poco::AsyncChannel;
 using Poco::Path;
-using Poco::WindowsConsoleChannel;
 using Poco::SplitterChannel;
 using Poco::SharedPtr;
 using Poco::Buffer;
-using Poco::Util::RegExpValidator;
-using Poco::Util::HelpFormatter;
 using Poco::ThreadPool;
 using Poco::BasicEvent;
 using Poco::Delegate;
