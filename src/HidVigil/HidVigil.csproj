@@ -51,6 +51,7 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Costura.Fody" Version="3.1.0" />
     <PackageReference Include="Fleck" Version="1.0.3" />
     <PackageReference Include="JetBrains.Annotations" Version="11.1.0" />
     <PackageReference Include="Nefarius.JsonConfig" Version="1.0.2" />
