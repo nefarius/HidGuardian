@@ -1,6 +1,7 @@
 ﻿using System;
 using HidVigil.Core.Types;
 using HidVigil.Core.Util.Native;
+using Newtonsoft.Json;
 
 namespace HidVigil.Core.HidCerberus
 {
@@ -59,6 +60,7 @@ namespace HidVigil.Core.HidCerberus
                 RequestId = Guid.NewGuid();
             }
 
+            [JsonIgnore]
             public IntPtr NativeHandle { get; set; }
 
             public Guid RequestId { get; }
@@ -71,6 +73,7 @@ namespace HidVigil.Core.HidCerberus
 
             public uint ProcessId { get; private set; }
 
+            [JsonIgnore]
             public bool IsHandled { get; set; }
 
             public static IAccessRequest CreateAccessRequest(

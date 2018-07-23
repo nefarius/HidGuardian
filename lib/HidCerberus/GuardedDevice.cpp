@@ -174,7 +174,7 @@ void GuardedDevice::runTask()
         hgSet.IsAllowed = TRUE; // important; use as a default
 
         if (logger.is(Poco::Message::PRIO_DEBUG)) {
-            logger.debug("Start processing Vigil (ID: %lu)", pHgGet->RequestId);
+            logger.debug("Start processing request (ID: %lu)", pHgGet->RequestId);
         }
 
         //
@@ -223,6 +223,8 @@ void GuardedDevice::runTask()
         // Access request accepted by host, continue querying for new requests
         // 
 		if (ret || ctx->IsHandled) {
+            if (logger.is(Poco::Message::PRIO_DEBUG))
+                logger.debug("Permission request %lu accepted by host", pHgGet->RequestId);
 			continue;
 		}
 
@@ -232,7 +234,7 @@ void GuardedDevice::runTask()
         delete ctx;
 
         if (logger.is(Poco::Message::PRIO_DEBUG)) {
-            logger.debug("End processing Vigil (ID: %lu)", pHgGet->RequestId);
+            logger.debug("End processing request (ID: %lu)", pHgGet->RequestId);
         }
 
         if (logger.is(Poco::Message::PRIO_DEBUG))
@@ -245,7 +247,7 @@ void GuardedDevice::runTask()
         submitAccessRequestResult(pHgGet->RequestId, TRUE, FALSE);
 
         if (logger.is(Poco::Message::PRIO_DEBUG))
-            logger.debug("Permission request %lu finished successfully", pHgGet->RequestId);
+            logger.debug("Permission request %lu completed successfully", pHgGet->RequestId);
     }
 
     free(pHgGet);
