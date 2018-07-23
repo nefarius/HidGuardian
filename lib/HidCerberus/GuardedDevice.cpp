@@ -24,10 +24,14 @@
 #include <Poco/Buffer.h>
 #include <Poco/String.h>
 #include <Poco/UnicodeConverter.h>
+#include <Poco/Environment.h>
+#include <Poco/NumberParser.h>
 
 using Poco::Logger;
 using Poco::Buffer;
 using Poco::icompare;
+using Poco::Environment;
+using Poco::NumberParser;
 
 
 GuardedDevice::GuardedDevice(std::string devicePath, PHC_HANDLE handle)
@@ -73,6 +77,10 @@ GuardedDevice::GuardedDevice(std::string devicePath, PHC_HANDLE handle)
 void GuardedDevice::runTask()
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
+
+    const auto pollDelay = Environment::has("HC_POLLING_DELAY_MS")
+        ? NumberParser::parse(Environment::get("HC_POLLING_DELAY_MS"))
+        : 200;
 
     //
     // Random number generator
@@ -132,7 +140,7 @@ void GuardedDevice::runTask()
             // 
             if (error == ERROR_NO_MORE_ITEMS)
             {
-                sleep(200);
+                sleep(pollDelay);
                 continue;
             }
 
