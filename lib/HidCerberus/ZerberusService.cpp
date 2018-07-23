@@ -24,6 +24,7 @@
 #include <Poco/BasicEvent.h>
 #include <Poco/Delegate.h>
 #include <Poco/Exception.h>
+#include <Poco/Environment.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -40,6 +41,7 @@ using Poco::ThreadPool;
 using Poco::BasicEvent;
 using Poco::Delegate;
 using Poco::AutoPtr;
+using Poco::Environment;
 
 
 void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
@@ -67,19 +69,29 @@ void ZerberusService::onDeviceRemoved(const void * pSender, std::string & name)
 
 ZerberusService::ZerberusService(PHC_HANDLE handle): Task("ZerberusService"), _hcHandle(handle)
 {
-    AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
-    AutoPtr<FileChannel> pFileChannel(new FileChannel("HidCerberus.log"));
-    pSplitter->addChannel(pFileChannel);
+    if (Environment::has("HC_LOGGING_ENABLED"))
+    {
+        const auto logFileName = Environment::has("HC_LOGGING_FILE_NAME")
+            ? Environment::get("HC_LOGGING_FILE_NAME")
+            : "HidCerberus.log";
 
-    //
-    // Prepare logging formatting
-    // 
-    AutoPtr<PatternFormatter> pPF(new PatternFormatter("%Y-%m-%d %H:%M:%S.%i %s [%p]: %t"));
-    AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
-    AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
-    
-    Logger::root().setLevel(Message::PRIO_DEBUG);
-    Logger::root().setChannel(pAsync);
+        AutoPtr<SplitterChannel> pSplitter(new SplitterChannel);
+        AutoPtr<FileChannel> pFileChannel(new FileChannel("HidCerberus.log"));
+        pSplitter->addChannel(pFileChannel);
+
+        //
+        // Prepare logging formatting
+        // 
+        AutoPtr<PatternFormatter> pPF(new PatternFormatter("%Y-%m-%d %H:%M:%S.%i %s [%p]: %t"));
+        AutoPtr<FormattingChannel> pFC(new FormattingChannel(pPF, pSplitter));
+        AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pFC));
+
+        if (Environment::has("HC_LOGGING_DEBUG")) {
+            Logger::root().setLevel(Message::PRIO_DEBUG);
+        }        
+        
+        Logger::root().setChannel(pAsync);
+    }    
 
     _taskManager = new TaskManager(_threadPool);
 }
