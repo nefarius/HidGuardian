@@ -82,6 +82,8 @@ void GuardedDevice::runTask()
         ? NumberParser::parse(Environment::get("HC_POLLING_DELAY_MS"))
         : 200;
 
+    logger.debug("pollDelay = %lu", (ULONG)pollDelay);
+
     //
     // Random number generator
     // 
