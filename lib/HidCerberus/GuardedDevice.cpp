@@ -260,12 +260,21 @@ void GuardedDevice::submitAccessRequestResult(ULONG Id, BOOL IsAllowed, BOOL IsP
 {
     auto& logger = Logger::get(std::string(typeid(this).name()) + std::string("::") + std::string(__func__));
 
+    if (logger.is(Poco::Message::PRIO_DEBUG))
+        logger.debug("Submitting request (%lu) result", Id);
+
     HIDGUARDIAN_SET_CREATE_REQUEST hgSet;
     ZeroMemory(&hgSet, sizeof(HIDGUARDIAN_SET_CREATE_REQUEST));
 
     hgSet.RequestId = Id;
     hgSet.IsAllowed = IsAllowed;
     hgSet.IsSticky = IsPermanent;
+
+    if (logger.is(Poco::Message::PRIO_DEBUG))
+    {
+        logger.debug("IsAllowed: %b", (bool)hgSet.IsAllowed);
+        logger.debug("IsSticky: %b", (bool)hgSet.IsSticky);
+    }
 
     //
     // DeviceIoControl stuff
@@ -301,6 +310,9 @@ void GuardedDevice::submitAccessRequestResult(ULONG Id, BOOL IsAllowed, BOOL IsP
     }
 
     CloseHandle(lOverlapped.hEvent);
+
+    if (logger.is(Poco::Message::PRIO_DEBUG))
+        logger.debug("Request (%lu) result submitted successfully", Id);
 }
 
 GuardedDevice::~GuardedDevice()

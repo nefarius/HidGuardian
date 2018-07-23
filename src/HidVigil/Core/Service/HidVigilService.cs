@@ -91,20 +91,29 @@ namespace HidVigil.Core.Service
                 // Handle incoming message
                 connection.OnMessage = message =>
                 {
-                    var result = JsonConvert.DeserializeObject<AccessRequestResult>(message);
-
-                    // Grab pending request (if still in queue)
-                    var request = _requestQueue.Where(r => r.Key == result.RequestId)
-                        .Select(r => (KeyValuePair<Guid, IAccessRequest>?)r)
-                        .FirstOrDefault();
-
-                    if (request == null)
+                    try
                     {
-                        Log.Warning("Request {Id} missing from queue", result.RequestId);
-                        return;
-                    }
+                        var result = JsonConvert.DeserializeObject<AccessRequestResult>(message);
 
-                    request.Value.Value.SubmitResult(result.IsAllowed, result.IsPermanent);
+                        // Grab pending request (if still in queue)
+                        var request = _requestQueue.Where(r => r.Key == result.RequestId)
+                            .Select(r => (KeyValuePair<Guid, IAccessRequest>?) r)
+                            .FirstOrDefault();
+
+                        // This shouldn't happen
+                        if (request == null)
+                        {
+                            Log.Error("Request {Id} missing from queue", result.RequestId);
+                            return;
+                        }
+
+                        // Submit result back to subsystem
+                        request.Value.Value.SubmitResult(result.IsAllowed, result.IsPermanent);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Unexpected error: {Exception}", ex);
+                    }
                 };
             });
         }
