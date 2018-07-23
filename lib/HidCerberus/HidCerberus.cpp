@@ -43,9 +43,13 @@ HC_API VOID hc_submit_access_request_result(PHC_ARE_HANDLE Handle, BOOL IsAllowe
         return;
     }
 
+    Handle->IsHandled = true;
+
     Handle->ParentDevice->submitAccessRequestResult(
         Handle->RequestId, 
         IsAllowed, 
         IsPermanent
     );
+
+    delete Handle;
 }

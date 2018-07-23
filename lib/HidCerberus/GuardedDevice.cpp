@@ -212,7 +212,7 @@ void GuardedDevice::runTask()
         //
         // Access request accepted by host, continue querying for new requests
         // 
-		if (ret) {
+		if (ret || ctx->IsHandled) {
 			continue;
 		}
 
@@ -232,33 +232,7 @@ void GuardedDevice::runTask()
             logger.debug("Sending permission request %lu", pHgGet->RequestId);
         }
 
-        //
-        // Submit result to driver
-        // 
-        DeviceIoControl(
-            _deviceHandle,
-            IOCTL_HIDGUARDIAN_SET_CREATE_REQUEST,
-            &hgSet,
-            sizeof(HIDGUARDIAN_SET_CREATE_REQUEST),
-            nullptr,
-            0,
-            &bytesReturned,
-            &lOverlapped
-        );
-
-        if (GetOverlappedResult(_deviceHandle, &lOverlapped, &bytesReturned, TRUE) == 0)
-        {
-            const auto error = GetLastError();
-
-            if (error == ERROR_DEV_NOT_EXIST)
-            {
-                logger.debug("Device got removed/powered down, terminating thread");
-                break;
-            }
-
-            logger.error("Permission request %lu failed", pHgGet->RequestId);
-            break;
-        }
+        submitAccessRequestResult(pHgGet->RequestId, TRUE, FALSE);
 
         if (logger.is(Poco::Message::PRIO_DEBUG))
             logger.debug("Permission request %lu finished successfully", pHgGet->RequestId);

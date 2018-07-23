@@ -7,6 +7,8 @@
 #include <Poco/SharedPtr.h>
 #include <Poco/TaskManager.h>
 
+#include <atomic>
+
 typedef struct _HC_HANDLE_T
 {
     Poco::SharedPtr<Poco::TaskManager> MainManager;
@@ -20,5 +22,7 @@ typedef struct _HC_ARE_HANDLE_T
 	ULONG RequestId;
 
 	GuardedDevice* ParentDevice;
+
+    std::atomic<bool> IsHandled;
 
 } HC_ARE_HANDLE;
