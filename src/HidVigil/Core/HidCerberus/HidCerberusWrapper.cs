@@ -1,4 +1,5 @@
 ﻿using System;
+using HidVigil.Core.Types;
 using HidVigil.Core.Util.Native;
 
 namespace HidVigil.Core.HidCerberus
@@ -29,26 +30,70 @@ namespace HidVigil.Core.HidCerberus
         public event AccessRequestReceivedEventHandler AccessRequestReceived;
 
         private bool ProcessAccessRequest(
-            string hardwareId,
+            IntPtr handle,
+            string[] hardwareIds,
+            int hardwareIdsCount,
             string deviceId,
             string instanceId,
-            uint processId,
-            out bool isAllowed,
-            out bool isPermananet
+            uint processId
         )
         {
             var args = new AccessRequestReceivedEventArgs(
-                hardwareId,
-                deviceId,
-                instanceId,
-                processId);
+                AccessRequest.CreateAccessRequest(
+                    handle,
+                    hardwareIds,
+                    deviceId,
+                    instanceId,
+                    processId
+                ));
 
             AccessRequestReceived?.Invoke(this, args);
 
-            isAllowed = args.IsAllowed;
-            isPermananet = args.IsPermanent;
+            return args.AccessRequest.IsHandled;
+        }
 
-            return args.IsHandled;
+        private class AccessRequest : IAccessRequest
+        {
+            private AccessRequest()
+            {
+                RequestId = Guid.NewGuid();
+            }
+
+            public IntPtr NativeHandle { get; set; }
+
+            public Guid RequestId { get; }
+
+            public string[] HardwareIds { get; private set; }
+
+            public string DeviceId { get; private set; }
+
+            public string InstanceId { get; private set; }
+
+            public uint ProcessId { get; private set; }
+
+            public bool IsHandled { get; set; }
+
+            public static IAccessRequest CreateAccessRequest(
+                IntPtr handle,
+                string[] hardwareIds,
+                string deviceId,
+                string instanceId,
+                uint processId)
+            {
+                return new AccessRequest
+                {
+                    NativeHandle = handle,
+                    HardwareIds = hardwareIds,
+                    DeviceId = deviceId,
+                    InstanceId = instanceId,
+                    ProcessId = processId
+                };
+            }
+
+            public void SubmitResult(bool isAllowed, bool isPermanent)
+            {
+                hc_submit_access_request_result(NativeHandle, isAllowed, isPermanent);
+            }
         }
 
         #region IDisposable Support

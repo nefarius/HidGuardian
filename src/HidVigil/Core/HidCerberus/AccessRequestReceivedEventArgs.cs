@@ -1,29 +1,15 @@
 ﻿using System;
+using HidVigil.Core.Types;
 
 namespace HidVigil.Core.HidCerberus
 {
     public class AccessRequestReceivedEventArgs : EventArgs
     {
-        public AccessRequestReceivedEventArgs(string hardwareId, string deviceId, string instanceId, uint processId)
+        public AccessRequestReceivedEventArgs(IAccessRequest accessRequest)
         {
-            HardwareId = hardwareId;
-            DeviceId = deviceId;
-            InstanceId = instanceId;
-            ProcessId = processId;
+            AccessRequest = accessRequest;
         }
 
-        public string HardwareId { get; }
-
-        public string DeviceId { get; }
-
-        public string InstanceId { get; }
-
-        public uint ProcessId { get; }
-
-        public bool IsHandled { get; set; }
-
-        public bool IsAllowed { get; set; }
-
-        public bool IsPermanent { get; set; }
+        public IAccessRequest AccessRequest { get; }
     }
 }
