@@ -30,6 +30,16 @@ namespace HidVigil.Core.HidCerberus
         /// </summary>
         public event AccessRequestReceivedEventHandler AccessRequestReceived;
 
+        /// <summary>
+        ///     Gets called whenever a pending access request requires processing.
+        /// </summary>
+        /// <param name="handle">The native handle to request context.</param>
+        /// <param name="hardwareIds">The list of one or more hardware IDs.</param>
+        /// <param name="hardwareIdsCount">The count of hardware IDs in the list.</param>
+        /// <param name="deviceId">The device identifier.</param>
+        /// <param name="instanceId">The instance identifier.</param>
+        /// <param name="processId">The ID of the process generating the access request.</param>
+        /// <returns>True if the request will be handled, false otherwise.</returns>
         private bool ProcessAccessRequest(
             IntPtr handle,
             string[] hardwareIds,
@@ -50,6 +60,7 @@ namespace HidVigil.Core.HidCerberus
 
             AccessRequestReceived?.Invoke(this, args);
 
+            // Returning false will free the context memory
             return args.AccessRequest.IsHandled;
         }
 
@@ -60,8 +71,7 @@ namespace HidVigil.Core.HidCerberus
                 RequestId = Guid.NewGuid();
             }
 
-            [JsonIgnore]
-            private IntPtr NativeHandle { get; set; }
+            [JsonIgnore] private IntPtr NativeHandle { get; set; }
 
             public Guid RequestId { get; }
 
@@ -73,9 +83,28 @@ namespace HidVigil.Core.HidCerberus
 
             public uint ProcessId { get; private set; }
 
-            [JsonIgnore]
-            public bool IsHandled { get; set; }
+            [JsonIgnore] public bool IsHandled { get; set; }
 
+            /// <summary>
+            ///     Submit the result of the access request decision back to the driver.
+            /// </summary>
+            /// <param name="isAllowed">True if access shall be granted, false otherwise.</param>
+            /// <param name="isPermanent">True if the driver should remember this decision for the lifetime of the affected device.</param>
+            public void SubmitResult(bool isAllowed, bool isPermanent)
+            {
+                // This call will complete the request and free the context memory
+                hc_submit_access_request_result(NativeHandle, isAllowed, isPermanent);
+            }
+
+            /// <summary>
+            ///     <see cref="AccessRequest" /> object factory.
+            /// </summary>
+            /// <param name="handle">The native context handle.</param>
+            /// <param name="hardwareIds">The list of one or more hardware IDs.</param>
+            /// <param name="deviceId">The device identifier.</param>
+            /// <param name="instanceId">The instance identifier.</param>
+            /// <param name="processId">The ID of the process generating the access request.</param>
+            /// <returns>An <see cref="AccessRequest" /> object.</returns>
             public static IAccessRequest CreateAccessRequest(
                 IntPtr handle,
                 string[] hardwareIds,
@@ -91,11 +120,6 @@ namespace HidVigil.Core.HidCerberus
                     InstanceId = instanceId,
                     ProcessId = processId
                 };
-            }
-
-            public void SubmitResult(bool isAllowed, bool isPermanent)
-            {
-                hc_submit_access_request_result(NativeHandle, isAllowed, isPermanent);
             }
         }
 
