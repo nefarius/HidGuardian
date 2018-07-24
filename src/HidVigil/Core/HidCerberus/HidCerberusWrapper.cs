@@ -61,7 +61,7 @@ namespace HidVigil.Core.HidCerberus
             }
 
             [JsonIgnore]
-            public IntPtr NativeHandle { get; set; }
+            private IntPtr NativeHandle { get; set; }
 
             public Guid RequestId { get; }
 
