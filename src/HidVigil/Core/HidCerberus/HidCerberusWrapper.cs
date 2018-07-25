@@ -1,4 +1,5 @@
 ﻿using System;
+using HidVigil.Core.Exceptions;
 using HidVigil.Core.Types;
 using HidVigil.Core.Util.Native;
 using Newtonsoft.Json;
@@ -9,8 +10,14 @@ namespace HidVigil.Core.HidCerberus
     {
         public delegate void AccessRequestReceivedEventHandler(object sender, AccessRequestReceivedEventArgs args);
 
+        /// <summary>
+        ///     Reference to delegate to avoid garbage collection.
+        /// </summary>
         private readonly EvtHcProcessAccessRequest _callback;
 
+        /// <summary>
+        ///     Native handle to HidCerberus sub-system.
+        /// </summary>
         private readonly IntPtr _hcHandle;
 
         /// <summary>
@@ -21,6 +28,10 @@ namespace HidVigil.Core.HidCerberus
             LoadNativeLibrary("HidCerberus", @"x86\HidCerberus.dll", @"x64\HidCerberus.dll");
 
             _hcHandle = hc_init();
+
+            if (_hcHandle == IntPtr.Zero)
+                throw new HidCerberusInitializationFailedException("Failed to initialize the HidCerberus subsystem.");
+
             _callback = ProcessAccessRequest;
             hc_register_access_request_event(_hcHandle, _callback);
         }
