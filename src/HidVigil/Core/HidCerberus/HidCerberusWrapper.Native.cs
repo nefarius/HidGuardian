@@ -18,13 +18,13 @@ namespace HidVigil.Core.HidCerberus
         private static extern void hc_submit_access_request_result(IntPtr handle, bool isAllowed, bool isPermanent);
 
         private delegate bool EvtHcProcessAccessRequest(
-            IntPtr Handle,
+            IntPtr handle,
             [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr, SizeParamIndex = 2)]
-            string[] HardwareIds,
-            int HardwareIdsCount,
-            string DeviceId,
-            string InstanceId,
-            uint ProcessId
+            string[] hardwareIds,
+            int hardwareIdsCount,
+            string deviceId,
+            string instanceId,
+            uint processId
         );
     }
 }
