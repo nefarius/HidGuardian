@@ -75,6 +75,9 @@ namespace HidVigil.Core.HidCerberus
             return args.AccessRequest.IsHandled;
         }
 
+        /// <summary>
+        ///     Private implementation of <see cref="IAccessRequest"/>.
+        /// </summary>
         private class AccessRequest : IAccessRequest
         {
             private AccessRequest()
@@ -86,14 +89,29 @@ namespace HidVigil.Core.HidCerberus
 
             public Guid RequestId { get; }
 
+            /// <summary>
+            ///     The list of one or more hardware IDs.
+            /// </summary>
             public string[] HardwareIds { get; private set; }
 
+            /// <summary>
+            ///     The device identifier.
+            /// </summary>
             public string DeviceId { get; private set; }
 
+            /// <summary>
+            ///     The instance identifier.
+            /// </summary>
             public string InstanceId { get; private set; }
 
+            /// <summary>
+            ///     The ID of the process generating the access request.
+            /// </summary>
             public uint ProcessId { get; private set; }
 
+            /// <summary>
+            ///     True if the host handles the request. False will result in a default action.
+            /// </summary>
             [JsonIgnore] public bool IsHandled { get; set; }
 
             /// <summary>
