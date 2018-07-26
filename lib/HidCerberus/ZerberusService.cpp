@@ -25,6 +25,8 @@
 #include <Poco/Delegate.h>
 #include <Poco/Exception.h>
 #include <Poco/Environment.h>
+#include <Poco/Exception.h>
+#include <Poco/NumberFormatter.h>
 
 using Poco::AutoPtr;
 using Poco::Logger;
@@ -42,6 +44,8 @@ using Poco::BasicEvent;
 using Poco::Delegate;
 using Poco::AutoPtr;
 using Poco::Environment;
+using Poco::Exception;
+using Poco::NumberFormatter;
 
 
 void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
@@ -54,9 +58,13 @@ void ZerberusService::onDeviceArrived(const void* pSender, std::string& name)
     {
         _taskManager->start(new GuardedDevice(name, _hcHandle));
     }
-    catch (const std::exception& ex)
+    catch (const Poco::Exception& ex)
     {
-        logger.fatal("Fatal error: %s", std::string(ex.what()));
+        logger.fatal(
+            "Fatal error: %s (ERR: %s)", 
+            ex.displayText(), 
+            NumberFormatter::formatHex(ex.code())
+        );
     }
 }
 

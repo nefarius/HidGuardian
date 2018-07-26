@@ -26,12 +26,16 @@
 #include <Poco/UnicodeConverter.h>
 #include <Poco/Environment.h>
 #include <Poco/NumberParser.h>
+#include <Poco/NumberFormatter.h>
+#include <Poco/Exception.h>
 
 using Poco::Logger;
 using Poco::Buffer;
 using Poco::icompare;
 using Poco::Environment;
 using Poco::NumberParser;
+using Poco::NumberFormatter;
+using Poco::Exception;
 
 
 GuardedDevice::GuardedDevice(std::string devicePath, PHC_HANDLE handle)
@@ -58,17 +62,20 @@ GuardedDevice::GuardedDevice(std::string devicePath, PHC_HANDLE handle)
     // 
     if (_deviceHandle == INVALID_HANDLE_VALUE)
     {
-        if (GetLastError() == ERROR_FILE_NOT_FOUND)
-        {
-            throw std::runtime_error("Couldn't open the desired device, make sure the provided path is correct.");
-        }
+        const auto error = GetLastError();
 
-        if (GetLastError() == ERROR_ACCESS_DENIED)
+        switch (error)
         {
-            throw std::runtime_error("Couldn't access device, please make sure the device isn't already guarded.");
+        case ERROR_FILE_NOT_FOUND:
+            throw Poco::RuntimeException("Couldn't open the desired device, make sure the provided path is correct.", error);
+            break;
+        case ERROR_ACCESS_DENIED:
+            throw Poco::RuntimeException("Couldn't access device, please make sure the device isn't already guarded.", error);
+            break;
+        default:
+            throw Poco::RuntimeException("Couldn't access device, unexpected error.", error);
+            break;
         }
-
-        throw std::runtime_error("Couldn't access device, unknown error.");
     }
 
     logger.debug("Device opened");
@@ -116,8 +123,8 @@ void GuardedDevice::runTask()
 
         pHgGet->RequestId = reqId;
 
-        if (logger.is(Poco::Message::PRIO_DEBUG))
-            logger.debug("Looking for quests (ID: %lu)", pHgGet->RequestId);
+        //if (logger.is(Poco::Message::PRIO_DEBUG))
+        //    logger.debug("Looking for quests (ID: %lu)", pHgGet->RequestId);
 
         //
         // Query for pending create (open) requests
@@ -156,6 +163,9 @@ void GuardedDevice::runTask()
             break;
         }
 
+        if (logger.is(Poco::Message::PRIO_DEBUG))
+            logger.debug("Request (ID: %lu) got accepted, extracting data", pHgGet->RequestId);
+
         std::string deviceId;
         Poco::UnicodeConverter::convert(pHgGet->DeviceId, deviceId);
 
@@ -180,7 +190,7 @@ void GuardedDevice::runTask()
         //
         // Holds converted HardwareID strings
         // 
-		std::vector<std::string> arrayIds;
+        std::vector<std::string> arrayIds;
 
         //
         // Split up wide multi-value string value into std:.string array
@@ -191,42 +201,42 @@ void GuardedDevice::runTask()
             std::wstring_convert<convert_type, wchar_t> converter;
             const std::string id(converter.to_bytes(szIter));
 
-			arrayIds.push_back(id);
+            arrayIds.push_back(id);
         }
 
         //
         // Convert std::string array to PCSTR array
         // 
-		std::vector<const char *> chars(arrayIds.size());
-		std::transform(arrayIds.begin(), arrayIds.end(), chars.begin(), std::mem_fun_ref(&std::string::c_str));
+        std::vector<const char *> chars(arrayIds.size());
+        std::transform(arrayIds.begin(), arrayIds.end(), chars.begin(), std::mem_fun_ref(&std::string::c_str));
 
         //
         // Allocate new context handle
         // 
-		auto ctx = new HC_ARE_HANDLE();
-		ctx->ParentDevice = this;
-		ctx->RequestId = reqId;
+        auto ctx = new HC_ARE_HANDLE();
+        ctx->ParentDevice = this;
+        ctx->RequestId = reqId;
 
         //
         // Submit details to host
         // 
-		auto ret = _hcHandle->EvtProcessAccessRequest(
-			ctx,
-			&chars[0],
-			(ULONG)arrayIds.size(),
-			deviceId.c_str(),
-			instanceId.c_str(),
-			pHgGet->ProcessId
-		);
+        auto ret = _hcHandle->EvtProcessAccessRequest(
+            ctx,
+            &chars[0],
+            (ULONG)arrayIds.size(),
+            deviceId.c_str(),
+            instanceId.c_str(),
+            pHgGet->ProcessId
+        );
 
         //
         // Access request accepted by host, continue querying for new requests
         // 
-		if (ret || ctx->IsHandled) {
+        if (ret || ctx->IsHandled) {
             if (logger.is(Poco::Message::PRIO_DEBUG))
                 logger.debug("Permission request %lu accepted by host", pHgGet->RequestId);
-			continue;
-		}
+            continue;
+        }
 
         //
         // Host not handling request, free context
@@ -245,9 +255,6 @@ void GuardedDevice::runTask()
         }
 
         submitAccessRequestResult(pHgGet->RequestId, TRUE, FALSE);
-
-        if (logger.is(Poco::Message::PRIO_DEBUG))
-            logger.debug("Permission request %lu completed successfully", pHgGet->RequestId);
     }
 
     free(pHgGet);
@@ -301,18 +308,24 @@ void GuardedDevice::submitAccessRequestResult(ULONG Id, BOOL IsAllowed, BOOL IsP
     {
         const auto error = GetLastError();
 
-        if (error == ERROR_DEV_NOT_EXIST) {
+        switch (error)
+        {
+        case ERROR_SUCCESS:
+            if (logger.is(Poco::Message::PRIO_DEBUG))
+                logger.debug("Request (%lu) result submitted successfully", Id);
+            break;
+        case ERROR_DEV_NOT_EXIST:
             logger.debug("Device got removed/powered down");
-        }
-        else {
-            logger.error("Permission request %lu failed", hgSet.RequestId);
+            break;
+        default:
+            logger.error("Permission request %lu failed: %s", 
+                hgSet.RequestId,
+                NumberFormatter::formatHex(error));
+            break;
         }
     }
 
     CloseHandle(lOverlapped.hEvent);
-
-    if (logger.is(Poco::Message::PRIO_DEBUG))
-        logger.debug("Request (%lu) result submitted successfully", Id);
 }
 
 GuardedDevice::~GuardedDevice()
