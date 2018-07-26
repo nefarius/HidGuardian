@@ -559,6 +559,10 @@ HidGuardianEvtIoDeviceControl(
             // Reached the end of the queue without success
             // 
             if (status == STATUS_NO_MORE_ENTRIES) {
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_QUEUE,
+                    "Reached end of queue (%!STATUS!)", 
+                    status);
                 break;
             }
 
@@ -569,9 +573,17 @@ HidGuardianEvtIoDeviceControl(
                 // the criteria, so restart the search. 
                 //
                 prevTagRequest = tagRequest = NULL;
+                TraceEvents(TRACE_LEVEL_WARNING,
+                    TRACE_QUEUE,
+                    "Iterator request missing (%!STATUS!)",
+                    status);
                 continue;
             }
             if (!NT_SUCCESS(status)) {
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_QUEUE,
+                    "WdfIoQueueFindRequest failed with status %!STATUS!",
+                    status);
                 break;
             }
             
@@ -581,10 +593,20 @@ HidGuardianEvtIoDeviceControl(
             // 
             pRequestCtx = CreateRequestGetContext(tagRequest);
 
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_QUEUE,
+                "Found request with ID %d (while looking for %d)",
+                pRequestCtx->RequestId,
+                pSetCreateRequest->RequestId);
+
             //
             // Validate the request ID
             // 
             if (pSetCreateRequest->RequestId == pRequestCtx->RequestId) {
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_QUEUE,
+                    "Request found, acquiring ownership");
+
                 //
                 // Found a match. Retrieve the request from the queue.
                 //
@@ -601,11 +623,23 @@ HidGuardianEvtIoDeviceControl(
                     // the criteria, so restart the search. 
                     //
                     prevTagRequest = tagRequest = NULL;
+                    TraceEvents(TRACE_LEVEL_WARNING,
+                        TRACE_QUEUE,
+                        "Request went missing, couldn't acquire ownership (%!STATUS!)",
+                        status);
                     continue;
                 }
                 if (!NT_SUCCESS(status)) {
+                    TraceEvents(TRACE_LEVEL_ERROR,
+                        TRACE_QUEUE,
+                        "WdfIoQueueRetrieveFoundRequest failed with status %!STATUS!",
+                        status);
                     break;
                 }
+
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_QUEUE,
+                    "Ownership acquired, processing access request");
 
                 //
                 // Found the request.
@@ -681,6 +715,10 @@ HidGuardianEvtIoDeviceControl(
 
                 break;
             }
+
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_QUEUE,
+                "Request ID didn't match, continuing iteration");
 
             //
             // This request is not the correct one. Drop the reference 
