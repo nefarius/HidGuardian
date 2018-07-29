@@ -221,6 +221,7 @@ EvtWdfCreateRequestsQueueIoDefault(
     WDF_OBJECT_ATTRIBUTES       requestAttribs;
     PCREATE_REQUEST_CONTEXT     pRequestCtx;
     PCONTROL_DEVICE_CONTEXT     pControlCtx;
+    WDFREQUEST                  notifyReq;
 
 
     PAGED_CODE();
@@ -234,6 +235,9 @@ EvtWdfCreateRequestsQueueIoDefault(
     pControlCtx = ControlDeviceGetContext(ControlDevice);
     pid = CURRENT_PROCESS_ID();
 
+    //
+    // Cerberus present, yet privileged PID, allow
+    //
     if (pControlCtx->IsCerberusConnected == TRUE
         && PID_LIST_CONTAINS(&pControlCtx->SystemPidList, pid, NULL))
     {
@@ -324,6 +328,21 @@ EvtWdfCreateRequestsQueueIoDefault(
         goto defaultAction;
     }
 
+    //
+    // Notify Cerberus that there are pending access requests
+    //
+    status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->NotificationsQueue, &notifyReq);
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_WARNING,
+            TRACE_QUEUE,
+            "Couldn't notify Cerberus (WdfIoQueueRetrieveNextRequest failed with status %!STATUS!)", 
+            status);
+    }
+    else
+    {
+        WdfRequestComplete(notifyReq, STATUS_SUCCESS);
+    }
+
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Exit (access pending)");
 
     return;
@@ -338,6 +357,8 @@ defaultAction:
         TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "Default action requested: deny");
         goto blockAccess;
     }
+
+#pragma region Allow access
 
 allowAccess:
 
@@ -363,6 +384,10 @@ allowAccess:
 
     return;
 
+#pragma endregion
+
+#pragma region Block access
+
 blockAccess:
 
     //
@@ -371,6 +396,8 @@ blockAccess:
     WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Exit (access blocked)");
+
+#pragma endregion
 }
 
 _Use_decl_annotations_
