@@ -52,13 +52,14 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
     lOverlapped.hEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
 #pragma region Whitelist processes
-
+    /*
     //
     // Processes to always whitelist to ensure system stability
     // 
     std::vector<std::string> processNames = {
         "dwm.exe"
     };
+
 
     const auto submitProcessesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PID) + (sizeof(ULONG) * processNames.size());
     const auto pSubmitProcesses = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PID>(malloc(submitProcessesSize));
@@ -159,6 +160,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
         CloseHandle(lOverlapped.hEvent);
         throw Poco::RuntimeException("Failed to submit service IDs");
     }
+    */
 
 #pragma endregion
 
