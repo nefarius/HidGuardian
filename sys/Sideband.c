@@ -305,12 +305,12 @@ VOID HidGuardianSidebandIoDeviceControl(
         //
         // Validate output buffer
         // 
-        if (!NT_SUCCESS(status) || bufferLength != pSubmitPid->Size)
+        if (!NT_SUCCESS(status) || bufferLength != sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PID))
         {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_QUEUE,
                 "Packet size mismatch: %d != %d",
-                (ULONG)bufferLength, pSubmitPid->Size);
+                (ULONG)bufferLength, sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PID));
 
             break;
         }

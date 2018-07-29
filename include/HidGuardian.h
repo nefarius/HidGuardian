@@ -120,11 +120,6 @@ typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
 
 typedef struct _HIDGUARDIAN_SUBMIT_SYSTEM_PID
 {
-    //
-    // Size of packet
-    // 
-    IN ULONG Size;
-
     // 
     // PID to always whitelist
     // 
