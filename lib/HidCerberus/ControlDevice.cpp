@@ -60,8 +60,8 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
         "dwm.exe"
     };
 
-    const auto submitProcessesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS) + (sizeof(ULONG) * processNames.size());
-    const auto pSubmitProcesses = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS>(malloc(submitProcessesSize));
+    const auto submitProcessesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PID) + (sizeof(ULONG) * processNames.size());
+    const auto pSubmitProcesses = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PID>(malloc(submitProcessesSize));
     pSubmitProcesses->Size = static_cast<ULONG>(submitProcessesSize);
 
     for (unsigned int i = 0; i < processNames.size(); i++)
@@ -73,7 +73,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
 
     DeviceIoControl(
         _deviceHandle,
-        IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS,
+        IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PID,
         pSubmitProcesses,
         static_cast<DWORD>(submitProcessesSize),
         nullptr,
@@ -125,8 +125,8 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
         "wuauserv"
     };
 
-    const auto submitServicesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS) + (sizeof(ULONG) * serviceNames.size());
-    const auto pSubmitServices = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS>(malloc(submitServicesSize));
+    const auto submitServicesSize = sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PID) + (sizeof(ULONG) * serviceNames.size());
+    const auto pSubmitServices = static_cast<PHIDGUARDIAN_SUBMIT_SYSTEM_PID>(malloc(submitServicesSize));
     pSubmitServices->Size = static_cast<ULONG>(submitServicesSize);
 
     for (unsigned int i = 0; i < serviceNames.size(); i++)
@@ -145,7 +145,7 @@ ControlDevice::ControlDevice(std::string devicePath) : _devicePath(std::move(dev
 
     DeviceIoControl(
         _deviceHandle,
-        IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS,
+        IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PID,
         pSubmitServices,
         static_cast<DWORD>(submitServicesSize),
         nullptr,

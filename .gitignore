@@ -69,3 +69,4 @@
 /src/HidVigil/bin/Debug
 /src/TestHostNet/bin/Debug
 *.log
+/lib/HidCerberus/Debug

@@ -273,7 +273,7 @@ VOID HidGuardianSidebandIoDeviceControl(
 )
 {
     NTSTATUS                            status = STATUS_INVALID_PARAMETER;
-    PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS     pSubmitPids;
+    PHIDGUARDIAN_SUBMIT_SYSTEM_PID      pSubmitPid;
     size_t                              bufferLength;
     PCONTROL_DEVICE_CONTEXT             pControlCtx;
     ULONG                               pid;
@@ -288,62 +288,65 @@ VOID HidGuardianSidebandIoDeviceControl(
 
     switch (IoControlCode)
     {
-    case IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS:
+    case IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PID:
 
         TraceEvents(TRACE_LEVEL_INFORMATION,
-            TRACE_SIDEBAND, ">> IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS");
+            TRACE_SIDEBAND, ">> IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PID");
 
         //
         // Get buffer of request
         // 
         status = WdfRequestRetrieveInputBuffer(
             Request,
-            sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PIDS),
-            (void*)&pSubmitPids,
+            sizeof(HIDGUARDIAN_SUBMIT_SYSTEM_PID),
+            (void*)&pSubmitPid,
             &bufferLength);
 
         //
         // Validate output buffer
         // 
-        if (!NT_SUCCESS(status) || bufferLength != pSubmitPids->Size)
+        if (!NT_SUCCESS(status) || bufferLength != pSubmitPid->Size)
         {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_QUEUE,
                 "Packet size mismatch: %d != %d",
-                (ULONG)bufferLength, pSubmitPids->Size);
+                (ULONG)bufferLength, pSubmitPid->Size);
 
             break;
         }
 
-        for (ULONG i = 0; i < ((pSubmitPids->Size - sizeof(ULONG)) / sizeof(ULONG)); i++)
+        pid = pSubmitPid->ProcessId;
+
+        if (pid <= 0)
         {
-            pid = pSubmitPids->ProcessIds[i];
+            TraceEvents(TRACE_LEVEL_WARNING,
+                TRACE_SIDEBAND,
+                "Supplied PID %d not allowed, ignoring", pid);
+            break;
+        }
 
-            if (pid <= 0)
-                continue;;
-
-            if (!PID_LIST_CONTAINS(&pControlCtx->SystemPidList, pid, NULL))
+        if (!PID_LIST_CONTAINS(&pControlCtx->SystemPidList, pid, NULL))
+        {
+            if (PID_LIST_PUSH(&pControlCtx->SystemPidList, pid, TRUE))
             {
-                if (PID_LIST_PUSH(&pControlCtx->SystemPidList, pid, TRUE))
-                {
-                    TraceEvents(TRACE_LEVEL_INFORMATION,
-                        TRACE_SIDEBAND,
-                        "Whitelisted system PID: %d", pid);
-                }
-                else
-                {
-                    TraceEvents(TRACE_LEVEL_ERROR,
-                        TRACE_SIDEBAND,
-                        "Failed to whitelist system PID: %d", pid);
-                }
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_SIDEBAND,
+                    "Whitelisted system PID: %d", pid);
             }
             else
             {
-                TraceEvents(TRACE_LEVEL_VERBOSE,
+                TraceEvents(TRACE_LEVEL_ERROR,
                     TRACE_SIDEBAND,
-                    "System PID %d already in list", pid);
+                    "Failed to whitelist system PID: %d", pid);
             }
         }
+        else
+        {
+            TraceEvents(TRACE_LEVEL_VERBOSE,
+                TRACE_SIDEBAND,
+                "System PID %d already in list", pid);
+        }
+
 
         break;
     }

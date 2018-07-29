@@ -55,7 +55,7 @@ DEFINE_GUID(GUID_DEVINTERFACE_HIDGUARDIAN,
                                                                     METHOD_BUFFERED,    \
                                                                     FILE_WRITE_ACCESS)
 
-#define IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PIDS        CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
+#define IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PID         CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
                                                                     IOCTL_INDEX + 0x02, \
                                                                     METHOD_BUFFERED,    \
                                                                     FILE_WRITE_ACCESS)
@@ -118,9 +118,7 @@ typedef struct _HIDGUARDIAN_SET_CREATE_REQUEST
 
 } HIDGUARDIAN_SET_CREATE_REQUEST, *PHIDGUARDIAN_SET_CREATE_REQUEST;
 
-#pragma warning(push)
-#pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
-typedef struct _HIDGUARDIAN_SUBMIT_SYSTEM_PIDS
+typedef struct _HIDGUARDIAN_SUBMIT_SYSTEM_PID
 {
     //
     // Size of packet
@@ -128,11 +126,10 @@ typedef struct _HIDGUARDIAN_SUBMIT_SYSTEM_PIDS
     IN ULONG Size;
 
     // 
-    // Array containing PIDs to always whitelist
+    // PID to always whitelist
     // 
-    IN ULONG ProcessIds[];
+    IN ULONG ProcessId;
 
-} HIDGUARDIAN_SUBMIT_SYSTEM_PIDS, *PHIDGUARDIAN_SUBMIT_SYSTEM_PIDS;
-#pragma warning(pop)
+} HIDGUARDIAN_SUBMIT_SYSTEM_PID, *PHIDGUARDIAN_SUBMIT_SYSTEM_PID;
 
 #include <poppack.h>
