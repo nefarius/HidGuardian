@@ -268,6 +268,17 @@ HidGuardianCreateDevice(
         }
 
         //
+        // Create NotificationsQueue I/O Queue
+        // 
+        status = NotificationsQueueInitialize(device);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "NotificationsQueueInitialize failed with %!STATUS!", status);
+            return status;
+        }
+
+        //
         // Add this device to the FilterDevice collection.
         //
         WdfWaitLockAcquire(FilterDeviceCollectionLock, NULL);

@@ -63,6 +63,8 @@ typedef struct _DEVICE_CONTEXT
     // 
     WDFQUEUE        PendingAuthQueue;
 
+    WDFQUEUE        NotificationsQueue;
+
     //
     // Linked list containing cached Process IDs and their access state
     // 

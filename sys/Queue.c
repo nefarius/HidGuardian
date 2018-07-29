@@ -31,6 +31,7 @@ SOFTWARE.
 #pragma alloc_text (PAGE, PendingAuthQueueInitialize)
 #pragma alloc_text (PAGE, PendingCreateRequestsQueueInitialize)
 #pragma alloc_text (PAGE, CreateRequestsQueueInitialize)
+#pragma alloc_text (PAGE, NotificationsQueueInitialize)
 #pragma alloc_text (PAGE, EvtWdfCreateRequestsQueueIoDefault)
 #endif
 
@@ -150,6 +151,27 @@ CreateRequestsQueueInitialize(
     return WdfDeviceConfigureRequestDispatching(hDevice,
         pDeviceCtx->CreateRequestsQueue,
         WdfRequestTypeCreate
+    );
+}
+
+NTSTATUS
+NotificationsQueueInitialize(
+    _In_ WDFDEVICE hDevice
+)
+{
+    WDF_IO_QUEUE_CONFIG     queueConfig;
+    PDEVICE_CONTEXT         pDeviceCtx;
+
+    PAGED_CODE();
+
+    pDeviceCtx = DeviceGetContext(hDevice);
+
+    WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchManual);
+
+    return WdfIoQueueCreate(hDevice,
+        &queueConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &pDeviceCtx->NotificationsQueue
     );
 }
 

@@ -47,6 +47,11 @@ CreateRequestsQueueInitialize(
     _In_ WDFDEVICE hDevice
 );
 
+NTSTATUS
+NotificationsQueueInitialize(
+    _In_ WDFDEVICE hDevice
+);
+
 //
 // Events from the IoQueue object
 //
