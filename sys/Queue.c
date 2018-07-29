@@ -468,7 +468,8 @@ HidGuardianEvtIoDeviceControl(
         {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_QUEUE,
-                "Packet size mismatch: %d != %d", (ULONG)bufferLength, pGetCreateRequest->Size);
+                "WdfRequestRetrieveOutputBuffer failed with status %!STATUS!",
+                status);
 
             break;
         }
