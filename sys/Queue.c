@@ -335,7 +335,7 @@ EvtWdfCreateRequestsQueueIoDefault(
     if (!NT_SUCCESS(status)) {
         TraceEvents(TRACE_LEVEL_WARNING,
             TRACE_QUEUE,
-            "Couldn't notify Cerberus (WdfIoQueueRetrieveNextRequest failed with status %!STATUS!)", 
+            "Couldn't notify Cerberus (WdfIoQueueRetrieveNextRequest failed with status %!STATUS!)",
             status);
     }
     else
@@ -360,42 +360,42 @@ defaultAction:
 
 #pragma region Allow access
 
-allowAccess:
+    allowAccess :
 
-    WdfRequestFormatRequestUsingCurrentType(Request);
+                WdfRequestFormatRequestUsingCurrentType(Request);
 
-    //
-    // Send request down the stack
-    // 
-    WDF_REQUEST_SEND_OPTIONS_INIT(&options,
-        WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
+                //
+                // Send request down the stack
+                // 
+                WDF_REQUEST_SEND_OPTIONS_INIT(&options,
+                    WDF_REQUEST_SEND_OPTION_SEND_AND_FORGET);
 
-    ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(device), &options);
+                ret = WdfRequestSend(Request, WdfDeviceGetIoTarget(device), &options);
 
-    if (ret == FALSE) {
-        status = WdfRequestGetStatus(Request);
-        TraceEvents(TRACE_LEVEL_ERROR,
-            TRACE_QUEUE,
-            "WdfRequestSend failed: %!STATUS!", status);
-        WdfRequestComplete(Request, status);
-    }
+                if (ret == FALSE) {
+                    status = WdfRequestGetStatus(Request);
+                    TraceEvents(TRACE_LEVEL_ERROR,
+                        TRACE_QUEUE,
+                        "WdfRequestSend failed: %!STATUS!", status);
+                    WdfRequestComplete(Request, status);
+                }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Exit (access granted)");
+                TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Exit (access granted)");
 
-    return;
+                return;
 
 #pragma endregion
 
 #pragma region Block access
 
-blockAccess:
+                blockAccess :
 
-    //
-    // If forwarding fails, fall back to blocking access
-    // 
-    WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
+                            //
+                            // If forwarding fails, fall back to blocking access
+                            // 
+                            WdfRequestComplete(Request, STATUS_ACCESS_DENIED);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Exit (access blocked)");
+                            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Exit (access blocked)");
 
 #pragma endregion
 }
@@ -584,7 +584,7 @@ HidGuardianEvtIoDeviceControl(
         // need to loop through the pending requests queue and validate the 
         // assigned ID value to match this request to the pending request.
         // 
-        do 
+        do
         {
             //
             // Start looking for pending request
@@ -610,7 +610,7 @@ HidGuardianEvtIoDeviceControl(
             if (status == STATUS_NO_MORE_ENTRIES) {
                 TraceEvents(TRACE_LEVEL_ERROR,
                     TRACE_QUEUE,
-                    "Reached end of queue (%!STATUS!)", 
+                    "Reached end of queue (%!STATUS!)",
                     status);
                 break;
             }
@@ -635,7 +635,7 @@ HidGuardianEvtIoDeviceControl(
                     status);
                 break;
             }
-            
+
             //
             // Note: this is allowed but only read from the context
             // since at this point we don't own the request object!
@@ -701,13 +701,13 @@ HidGuardianEvtIoDeviceControl(
                 // 
                 if (pSetCreateRequest->IsSticky) {
                     if (!PID_LIST_CONTAINS(
-                        &pDeviceCtx->StickyPidList, 
+                        &pDeviceCtx->StickyPidList,
                         pRequestCtx->ProcessId,
                         NULL
                     )) {
                         PID_LIST_PUSH(
-                            &pDeviceCtx->StickyPidList, 
-                            pRequestCtx->ProcessId, 
+                            &pDeviceCtx->StickyPidList,
+                            pRequestCtx->ProcessId,
                             pSetCreateRequest->IsAllowed
                         );
                     }
@@ -784,12 +784,39 @@ HidGuardianEvtIoDeviceControl(
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_QUEUE,
-                "Processing request with ID %d failed with status %!STATUS!", 
+                "Processing request with ID %d failed with status %!STATUS!",
                 pSetCreateRequest->RequestId,
                 status
             );
             break;
         }
+
+        break;
+
+#pragma endregion
+
+#pragma region IOCTL_HIDGUARDIAN_SUBMIT_NOTIFICATION
+
+    case IOCTL_HIDGUARDIAN_SUBMIT_NOTIFICATION:
+
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_QUEUE, ">> IOCTL_HIDGUARDIAN_SUBMIT_NOTIFICATION");
+
+        if (pDeviceCtx->IsShuttingDown) {
+            status = STATUS_DEVICE_DOES_NOT_EXIST;
+            break;
+        }
+
+        status = WdfRequestForwardToIoQueue(Request, pDeviceCtx->NotificationsQueue);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_QUEUE,
+                "WdfRequestForwardToIoQueue (NotificationsQueue) failed with status %!STATUS!", 
+                status);
+            break;
+        }
+
+        status = STATUS_PENDING;
 
         break;
 
