@@ -1,4 +1,4 @@
-version: 4.1.{build}.0
+version: 4.2.{build}.0
 image: Visual Studio 2017
 before_build:
 - nuget restore HidGuardian.sln
