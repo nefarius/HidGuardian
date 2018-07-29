@@ -520,6 +520,7 @@ EvtWdfDeviceReleaseHardware(
     WdfIoQueuePurge(pDeviceCtx->CreateRequestsQueue, NULL, NULL);
     WdfIoQueuePurge(pDeviceCtx->PendingCreateRequestsQueue, NULL, NULL);
     WdfIoQueuePurge(pDeviceCtx->PendingAuthQueue, NULL, NULL);
+    WdfIoQueuePurge(pDeviceCtx->NotificationsQueue, NULL, NULL);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 
