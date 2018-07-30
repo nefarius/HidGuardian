@@ -450,7 +450,9 @@ HidGuardianSidebandFileCleanup(
     pControlCtx->IsCerberusConnected = FALSE;
     PID_LIST_DESTROY(&pControlCtx->SystemPidList);
     pControlCtx->SystemPidList = PID_LIST_CREATE();
-    WdfIoQueuePurge(pControlCtx->DeviceArrivalNotificationQueue, NULL, NULL);
+    
+    WdfIoQueuePurgeSynchronously(pControlCtx->DeviceArrivalNotificationQueue);
+    WdfIoQueueStart(pControlCtx->DeviceArrivalNotificationQueue);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
 }
