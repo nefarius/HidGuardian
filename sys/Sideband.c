@@ -304,6 +304,8 @@ VOID HidGuardianSidebandIoDeviceControl(
 
     switch (IoControlCode)
     {
+#pragma region IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PID
+
     case IOCTL_HIDGUARDIAN_SUBMIT_SYSTEM_PID:
 
         TraceEvents(TRACE_LEVEL_INFORMATION,
@@ -362,9 +364,32 @@ VOID HidGuardianSidebandIoDeviceControl(
                 TRACE_SIDEBAND,
                 "System PID %d already in list", pid);
         }
+        
+        break;
 
+#pragma endregion
+
+#pragma region IOCTL_HIDGUARDIAN_ARRIVAL_NOTIFICATION
+
+    case IOCTL_HIDGUARDIAN_ARRIVAL_NOTIFICATION:
+
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_QUEUE, ">> IOCTL_HIDGUARDIAN_ARRIVAL_NOTIFICATION");
+
+        status = WdfRequestForwardToIoQueue(Request, pControlCtx->DeviceArrivalNotificationQueue);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_QUEUE,
+                "WdfRequestForwardToIoQueue (DeviceArrivalNotificationQueue) failed with status %!STATUS!",
+                status);
+            break;
+        }
+
+        status = STATUS_PENDING;
 
         break;
+
+#pragma endregion
     }
 
     WdfRequestComplete(Request, status);

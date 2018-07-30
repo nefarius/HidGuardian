@@ -48,6 +48,8 @@ HidGuardianCreateDevice(
     WDFMEMORY                       classNameMemory;
     PCWSTR                          className;
     WDF_PNPPOWER_EVENT_CALLBACKS    pnpPowerCallbacks;
+    PCONTROL_DEVICE_CONTEXT         pControlCtx;
+    WDFREQUEST                      notifyReq;
 
 
     PAGED_CODE();
@@ -143,8 +145,8 @@ HidGuardianCreateDevice(
         //
         // Query Instance ID
         // 
-        BusQueryId(device, 
-            BusQueryInstanceID, 
+        BusQueryId(device,
+            BusQueryInstanceID,
             pDeviceCtx->InstanceID,
             MAX_INSTANCE_ID_SIZE
         );
@@ -329,11 +331,11 @@ HidGuardianCreateDevice(
             return status;
         }
 
-		//
-		// This value was previously fetched from the registry.
-		// Exposing it to the user has been to dangerous though, so always allow by default.
-		// 
-		pDeviceCtx->AllowByDefault = TRUE;
+        //
+        // This value was previously fetched from the registry.
+        // Exposing it to the user has been to dangerous though, so always allow by default.
+        // 
+        pDeviceCtx->AllowByDefault = TRUE;
 
         //
         // Check if this device should get intercepted
@@ -343,6 +345,23 @@ HidGuardianCreateDevice(
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
             "AmIAffected status %!STATUS!", status);
+
+        //
+        // Try to notify Cerberus that a new device is available
+        //
+        pControlCtx = ControlDeviceGetContext(ControlDevice);
+
+        status = WdfIoQueueRetrieveNextRequest(
+            pControlCtx->DeviceArrivalNotificationQueue,
+            &notifyReq);
+        if (NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_DEVICE,
+                "Device arrival notification sent");
+            WdfRequestComplete(notifyReq, STATUS_SUCCESS);
+        }
+
+        status = STATUS_SUCCESS;
     }
 
 creationDone:
