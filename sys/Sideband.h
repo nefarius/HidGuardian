@@ -40,6 +40,9 @@ typedef struct _CONTROL_DEVICE_CONTEXT
     // 
     BOOLEAN         IsCerberusConnected;
 
+    //
+    // List if privileged processes who will never get blocked
+    //
     PPID_LIST_NODE  SystemPidList;
 
 } CONTROL_DEVICE_CONTEXT, *PCONTROL_DEVICE_CONTEXT;
