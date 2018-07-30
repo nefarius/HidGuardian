@@ -65,6 +65,11 @@ DEFINE_GUID(GUID_DEVINTERFACE_HIDGUARDIAN,
                                                                     METHOD_BUFFERED,    \
                                                                     FILE_ANY_ACCESS)
 
+#define IOCTL_HIDGUARDIAN_ARRIVAL_NOTIFICATION      CTL_CODE(FILE_DEVICE_HIDGUARDIAN,   \
+                                                                    IOCTL_INDEX + 0x04, \
+                                                                    METHOD_BUFFERED,    \
+                                                                    FILE_ANY_ACCESS)
+
 
 #include <pshpack1.h>
 
