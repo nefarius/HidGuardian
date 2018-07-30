@@ -210,11 +210,11 @@ HidGuardianCreateControlDevice(
         WDF_NO_OBJECT_ATTRIBUTES,
         &pControlCtx->DeviceArrivalNotificationQueue
     );
-    if(!NT_SUCCESS(status))
+    if (!NT_SUCCESS(status))
     {
         TraceEvents(TRACE_LEVEL_ERROR,
             TRACE_SIDEBAND,
-            "WdfIoQueueCreate failed with status %!STATUS!", 
+            "WdfIoQueueCreate failed with status %!STATUS!",
             status);
         goto Error;
     }
@@ -364,7 +364,7 @@ VOID HidGuardianSidebandIoDeviceControl(
                 TRACE_SIDEBAND,
                 "System PID %d already in list", pid);
         }
-        
+
         break;
 
 #pragma endregion
@@ -392,7 +392,9 @@ VOID HidGuardianSidebandIoDeviceControl(
 #pragma endregion
     }
 
-    WdfRequestComplete(Request, status);
+    if (status != STATUS_PENDING) {
+        WdfRequestComplete(Request, status);
+    }
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
 }
@@ -448,6 +450,7 @@ HidGuardianSidebandFileCleanup(
     pControlCtx->IsCerberusConnected = FALSE;
     PID_LIST_DESTROY(&pControlCtx->SystemPidList);
     pControlCtx->SystemPidList = PID_LIST_CREATE();
+    WdfIoQueuePurge(pControlCtx->DeviceArrivalNotificationQueue, NULL, NULL);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_SIDEBAND, "%!FUNC! Exit");
 }
