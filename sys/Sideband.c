@@ -203,6 +203,22 @@ HidGuardianCreateControlDevice(
         goto Error;
     }
 
+    WDF_IO_QUEUE_CONFIG_INIT(&ioQueueConfig, WdfIoQueueDispatchManual);
+
+    status = WdfIoQueueCreate(controlDevice,
+        &ioQueueConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &pControlCtx->DeviceArrivalNotificationQueue
+    );
+    if(!NT_SUCCESS(status))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR,
+            TRACE_SIDEBAND,
+            "WdfIoQueueCreate failed with status %!STATUS!", 
+            status);
+        goto Error;
+    }
+
     //
     // Control devices must notify WDF when they are done initializing.   I/O is
     // rejected until this call is made.

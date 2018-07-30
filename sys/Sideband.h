@@ -45,6 +45,8 @@ typedef struct _CONTROL_DEVICE_CONTEXT
     //
     PPID_LIST_NODE  SystemPidList;
 
+    WDFQUEUE        DeviceArrivalNotificationQueue;
+
 } CONTROL_DEVICE_CONTEXT, *PCONTROL_DEVICE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(CONTROL_DEVICE_CONTEXT, ControlDeviceGetContext)
