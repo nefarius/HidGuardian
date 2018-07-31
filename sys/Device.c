@@ -501,6 +501,20 @@ EvtFileCleanup(
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry (PID: %d)", pid);
 
+    //
+    // Remove PID from sticky list - if it is found
+    // 
+    if (PID_LIST_REMOVE_BY_PID(&pDeviceCtx->StickyPidList, pid))
+    {
+        TraceEvents(TRACE_LEVEL_INFORMATION,
+            TRACE_DEVICE,
+            "PID %d was sticky, removed from cache",
+            pid);
+    }
+
+    //
+    // Cerberus handle got closed, perform clean-up
+    // 
     if (pControlCtx->CerberusPid == pid) {
         TraceEvents(TRACE_LEVEL_INFORMATION,
             TRACE_DEVICE,
