@@ -33,10 +33,10 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll = 1
 %ManufacturerName%=Standard,NTamd64,NTx86
 
 [Standard.NTamd64]
-%HidGuardian.DeviceDesc%=HidGuardian_Device, Root\HidGuardian
+%HidGuardian.DeviceDesc%=HidGuardian_Device, Nefarius\HidGuardian\Gen4
 
 [Standard.NTx86]
-%HidGuardian.DeviceDesc%=HidGuardian_Device, Root\HidGuardian
+%HidGuardian.DeviceDesc%=HidGuardian_Device, Nefarius\HidGuardian\Gen4
 
 [HidGuardian_Device.NT]
 CopyFiles=Drivers_Dir
@@ -79,5 +79,5 @@ KmdfLibraryVersion = $KMDFVERSION$
 SPSVCINST_ASSOCSERVICE= 0x00000002
 ManufacturerName="Benjamin Höglinger-Stelzer"
 DiskName = "HidGuardian Installation Disk"
-HidGuardian.DeviceDesc = "HidGuardian Virtual Device"
+HidGuardian.DeviceDesc = "HidGuardian Virtual Device (Gen4)"
 HidGuardian.SVCDESC = "HidGuardian Service"

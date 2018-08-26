@@ -26,7 +26,7 @@ SOFTWARE.
 #pragma once
 
 #define REG_MULTI_SZ_EXCEMPTED_DEVICES      L"ExemptedDevices"
-#define HIDGUARDIAN_HARDWARE_ID             L"Root\\HidGuardian"
+#define HIDGUARDIAN_HARDWARE_ID             L"Nefarius\\HidGuardian\\Gen4"
 
 NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext);
 BOOLEAN AmIMaster(PDEVICE_CONTEXT DeviceContext);
