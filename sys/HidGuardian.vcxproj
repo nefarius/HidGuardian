@@ -49,6 +49,7 @@
     <ClInclude Include="PidList.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
     <ClInclude Include="Sideband.h" />
     <ClInclude Include="Trace.h" />
   </ItemGroup>
