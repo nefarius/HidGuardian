@@ -13,15 +13,9 @@ after_build:
     .\verpatch.exe .\artifacts\x86\HidGuardian.sys "$env:APPVEYOR_BUILD_VERSION"
     .\verpatch.exe .\artifacts\x86\HidGuardian.sys /pv "$env:APPVEYOR_BUILD_VERSION"
     makecab.exe /f HidGuardian.ddf
-    .\verpatch.exe .\bin\x64\HidCerberus.dll "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x64\HidCerberus.dll /pv "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x86\HidCerberus.dll "$env:APPVEYOR_BUILD_VERSION"
-    .\verpatch.exe .\bin\x86\HidCerberus.dll /pv "$env:APPVEYOR_BUILD_VERSION"
 artifacts:
 - path: disk1\HidGuardian.cab
   name: HidGuardian_unsigned_x86_amd64
-- path: 'bin'
-  name: HidCerberus
 deploy:
 - provider: Environment
   name: BUILDBOT
