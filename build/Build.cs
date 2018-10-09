@@ -17,7 +17,7 @@ class Build : NukeBuild
 {
     public static int Main () => Execute<Build>(x => x.Compile);
 
-    [Solution] readonly Solution Solution;
+    [Solution("HidGuardian.sln")] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
 
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
@@ -33,7 +33,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             MSBuild(s => s
-                .SetTargetPath(SolutionFile)
+                .SetTargetPath(Solution)
                 .SetTargets("Restore"));
         });
 
@@ -42,7 +42,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             MSBuild(s => s
-                .SetTargetPath(SolutionFile)
+                .SetTargetPath(Solution)
                 .SetTargets("Rebuild")
                 .SetConfiguration(Configuration)
                 .SetMaxCpuCount(Environment.ProcessorCount)
@@ -50,7 +50,7 @@ class Build : NukeBuild
                 .SetTargetPlatform(MSBuildTargetPlatform.x64));
 
             MSBuild(s => s
-                .SetTargetPath(SolutionFile)
+                .SetTargetPath(Solution)
                 .SetTargets("Rebuild")
                 .SetConfiguration(Configuration)
                 .SetMaxCpuCount(Environment.ProcessorCount)
@@ -71,7 +71,7 @@ class Build : NukeBuild
                 { (RP)"driver" / "x86" / "HidGuardian.pdb", /* => */ (RP)"x86" / "HidGuardian.pdb" },
                 { (RP)"driver" / "x86" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x86" / "HidGuardian.sys" },
                 { (RP)"driver" / "x86" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x86" / "WdfCoinstaller01009.dll" }
-            }.ForEach((pair, i) => File.Copy(SolutionDirectory / pair.Key, ArtifactsDirectory / pair.Value));
+            }.ForEach((pair, i) => File.Copy(Solution.Directory / pair.Key, ArtifactsDirectory / pair.Value));
 
             #endregion
         });
@@ -81,7 +81,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             MSBuild(s => s
-                .SetTargetPath(SolutionFile)
+                .SetTargetPath(Solution)
                 .SetTargets("Restore", "Pack")
                 .SetPackageOutputPath(ArtifactsDirectory)
                 .SetConfiguration(Configuration)
