@@ -19,7 +19,7 @@ class Build : NukeBuild
 
     [Solution("HidGuardian.sln")] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
-    [Parameter] private string Configuration => IsLocalBuild ? "Debug" : "Release";
+    [Parameter] string Configuration => IsLocalBuild ? "Debug" : "Release";
 
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
 
