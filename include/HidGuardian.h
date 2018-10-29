@@ -86,12 +86,21 @@ typedef struct _HIDGUARDIAN_GET_CREATE_REQUEST
     // 
     OUT ULONG ProcessId;
 
+    //
+    // Device ID
+    // https://docs.microsoft.com/en-us/windows-hardware/drivers/install/device-ids
+    // 
     OUT WCHAR DeviceId[MAX_DEVICE_ID_SIZE];
-
+    
+    //
+    // Instance ID
+    // https://docs.microsoft.com/en-us/windows-hardware/drivers/install/instance-ids
+    // 
     OUT WCHAR InstanceId[MAX_INSTANCE_ID_SIZE];
 
     //
     // Buffer containing Hardware ID string
+    // https://docs.microsoft.com/en-us/windows-hardware/drivers/install/hardware-ids
     // 
     OUT WCHAR HardwareIds[];
 

@@ -27,3 +27,35 @@ Meet `HidGuardian`: a Windows kernel-mode driver sitting on top of every input d
 ## Demo
 
 Outdated, replace with demo video.
+
+## Supported Systems
+
+The driver is built for Windows 7/8/8.1/10 (x86 and amd64).
+
+## How to build
+
+### Prerequisites
+
+- Visual Studio **2017** ([Community Edition](https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=Community&rel=15) is just fine)
+- [WDK for Windows 10, version 1803](https://developer.microsoft.com/en-us/windows/hardware/windows-driver-kit)
+- [.NET Core SDK 2.1](https://www.microsoft.com/net/download/dotnet-core/2.1) (or greater, required for building only)
+
+You can either build directly within Visual Studio or in PowerShell by running the build script:
+
+```PowerShell
+.\build.ps1
+```
+
+Do bear in mind that you'll need to **sign** the driver to use it without [test mode](<https://technet.microsoft.com/en-us/ff553484(v=vs.96)>).
+
+## Contribute
+
+### Bugs & Features
+
+Found a bug and want it fixed? Open a detailed issue on the [GitHub issue tracker](../../issues)!
+
+Have an idea for a new feature? [Check out the project board](https://projects.vigem.org/public/board/26b2bebf0b0092d017f9fd629354cb6e2b255c087f13f8594190f43e2055), maybe it's already on there! If not, let's have a chat about your request on [Discord](https://discord.vigem.org) or the [community forums](https://forums.vigem.org).
+
+### Questions & Support
+
+Please respect that the GitHub issue tracker isn't a helpdesk. We offer a [Discord server](https://discord.vigem.org) and [forums](https://forums.vigem.org), where you're welcome to check out and engage in discussions!

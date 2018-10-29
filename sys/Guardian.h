@@ -20,6 +20,12 @@
 #pragma once
 
 #define REG_MULTI_SZ_EXCEMPTED_DEVICES      L"ExemptedDevices"
+
+//
+// Hardware ID of (virtual) master device
+// 
+// IMPORTANT: change this in the INF as well!
+// 
 #define HIDGUARDIAN_HARDWARE_ID             L"Nefarius\\HidGuardian\\Gen4"
 
 NTSTATUS AmIAffected(PDEVICE_CONTEXT DeviceContext);

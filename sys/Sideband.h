@@ -39,6 +39,9 @@ typedef struct _CONTROL_DEVICE_CONTEXT
     //
     PPID_LIST_NODE  SystemPidList;
 
+    //
+    // Queue for pending arrivals of guarded devices
+    // 
     WDFQUEUE        DeviceArrivalNotificationQueue;
 
 } CONTROL_DEVICE_CONTEXT, *PCONTROL_DEVICE_CONTEXT;

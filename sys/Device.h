@@ -107,10 +107,10 @@ EVT_WDF_FILE_CLEANUP EvtFileCleanup;
 EVT_WDF_DEVICE_RELEASE_HARDWARE EvtWdfDeviceReleaseHardware;
 
 NTSTATUS BusQueryId(
-    WDFDEVICE Device, 
-    BUS_QUERY_ID_TYPE IdType, 
-    PWCHAR Buffer, 
-    ULONG BufferLength
+    _In_ WDFDEVICE Device, 
+    _In_ BUS_QUERY_ID_TYPE IdType, 
+    _Out_ PWCHAR Buffer, 
+    _In_ ULONG BufferLength
 );
 
 EXTERN_C_END

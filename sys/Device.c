@@ -365,6 +365,9 @@ creationDone:
     return status;
 }
 
+//
+// Helper to query the underlying bus about a specific PDO property.
+// 
 NTSTATUS BusQueryId(
     WDFDEVICE Device,
     BUS_QUERY_ID_TYPE IdType,
