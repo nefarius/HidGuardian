@@ -70,3 +70,4 @@
 /src/TestHostNet/bin/Debug
 *.log
 /lib/HidCerberus/Debug
+/build/obj
