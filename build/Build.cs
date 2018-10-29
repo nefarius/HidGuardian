@@ -68,10 +68,10 @@ class Build : NukeBuild
                 { (RP)"driver" / "x64" / "HidGuardian.inf", /* => */ (RP)"HidGuardian.inf" },
                 { (RP)"driver" / "x64" / "HidGuardian.pdb", /* => */ (RP)"x64" / "HidGuardian.pdb" },
                 { (RP)"driver" / "x64" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x64" / "HidGuardian.sys" },
-                { (RP)"driver" / "x64" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x64" / "WdfCoinstaller01009.dll" },
+                { (RP)"driver" / "x64" / "HidGuardian" / "WdfCoinstaller01011.dll", /* => */ (RP)"x64" / "WdfCoinstaller01011.dll" },
                 { (RP)"driver" / "x86" / "HidGuardian.pdb", /* => */ (RP)"x86" / "HidGuardian.pdb" },
                 { (RP)"driver" / "x86" / "HidGuardian" / "HidGuardian.sys", /* => */ (RP)"x86" / "HidGuardian.sys" },
-                { (RP)"driver" / "x86" / "HidGuardian" / "WdfCoinstaller01009.dll", /* => */ (RP)"x86" / "WdfCoinstaller01009.dll" }
+                { (RP)"driver" / "x86" / "HidGuardian" / "WdfCoinstaller01011.dll", /* => */ (RP)"x86" / "WdfCoinstaller01011.dll" }
             }.ForEach((pair, i) => File.Copy(Solution.Directory / pair.Key, ArtifactsDirectory / pair.Value));
 
             #endregion
