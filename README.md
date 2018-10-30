@@ -8,7 +8,7 @@ Blocks various input devices from being accessed by user-mode applications.
 
 ![Disclaimer](http://nefarius.at/public/Alpha-Disclaimer.png)
 
-**ATTENTION: this is in no way a finished product, don't use in production!**
+🔥 **ATTENTION: this project is currently incubating at [git.vigem.org](https://git.vigem.org/) and will be re-released here once finished** 🔥
 
 **Please consider the master branch unstable until the disclaimer disappears!**
 
