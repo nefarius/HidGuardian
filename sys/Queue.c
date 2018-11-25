@@ -334,6 +334,11 @@ EvtWdfCreateRequestsQueueIoDefault(
             TRACE_QUEUE,
             "WdfRequestForwardToIoQueue failed with status %!STATUS!", status);
 
+        //
+        // Notify Cerberus of the failure
+        //
+        WdfRequestComplete(notifyReq, status);
+
         goto defaultAction;
     }
 
@@ -811,7 +816,7 @@ HidGuardianEvtIoDeviceControl(
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_QUEUE,
-                "WdfRequestForwardToIoQueue (NotificationsQueue) failed with status %!STATUS!", 
+                "WdfRequestForwardToIoQueue (NotificationsQueue) failed with status %!STATUS!",
                 status);
             break;
         }
