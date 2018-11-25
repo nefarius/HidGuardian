@@ -312,6 +312,22 @@ EvtWdfCreateRequestsQueueIoDefault(
 
     pRequestCtx->ProcessId = CURRENT_PROCESS_ID();
 
+    //
+    // Grab notification request for Cerberus
+    //
+    status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->NotificationsQueue, &notifyReq);
+    if (!NT_SUCCESS(status)) {
+        TraceEvents(TRACE_LEVEL_WARNING,
+            TRACE_QUEUE,
+            "Couldn't notify Cerberus (WdfIoQueueRetrieveNextRequest failed with status %!STATUS!)",
+            status);
+
+        goto defaultAction;
+    }
+
+    //
+    // Queue this access request
+    // 
     status = WdfRequestForwardToIoQueue(Request, pDeviceCtx->PendingCreateRequestsQueue);
     if (!NT_SUCCESS(status)) {
         TraceEvents(TRACE_LEVEL_ERROR,
@@ -324,17 +340,7 @@ EvtWdfCreateRequestsQueueIoDefault(
     //
     // Notify Cerberus that there are pending access requests
     //
-    status = WdfIoQueueRetrieveNextRequest(pDeviceCtx->NotificationsQueue, &notifyReq);
-    if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_WARNING,
-            TRACE_QUEUE,
-            "Couldn't notify Cerberus (WdfIoQueueRetrieveNextRequest failed with status %!STATUS!)",
-            status);
-    }
-    else
-    {
-        WdfRequestComplete(notifyReq, STATUS_SUCCESS);
-    }
+    WdfRequestComplete(notifyReq, STATUS_SUCCESS);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_QUEUE, "%!FUNC! Exit (access pending)");
 
