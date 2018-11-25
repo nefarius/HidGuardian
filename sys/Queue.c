@@ -292,7 +292,6 @@ EvtWdfCreateRequestsQueueIoDefault(
     }
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&requestAttribs, CREATE_REQUEST_CONTEXT);
-    requestAttribs.ParentObject = Request;
 
     //
     // Add custom context to request so we can validate it later
