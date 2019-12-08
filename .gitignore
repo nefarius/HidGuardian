@@ -71,3 +71,4 @@
 *.log
 /lib/HidCerberus/Debug
 /build/obj
+/.vs
