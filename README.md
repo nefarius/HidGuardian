@@ -4,11 +4,11 @@
 
 Blocks various input devices from being accessed by user-mode applications.
 
-[![Build status](https://ci.appveyor.com/api/projects/status/6i1f715tm961idmg/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/hidguardian/branch/master) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.gg/QTJpBX5) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/) [![PayPal Donate](https://img.shields.io/badge/paypal-donate-blue.svg)](<https://paypal.me/NefariusMaximus>) [![Support on Patreon](https://img.shields.io/badge/patreon-donate-orange.svg)](<https://www.patreon.com/nefarius>) [![GitHub followers](https://img.shields.io/github/followers/nefarius.svg?style=social&label=Follow)](https://github.com/nefarius) [![Twitter Follow](https://img.shields.io/twitter/follow/nefariusmaximus.svg?style=social&label=Follow)](https://twitter.com/nefariusmaximus)
+[![Build status](https://ci.appveyor.com/api/projects/status/6i1f715tm961idmg/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/hidguardian/branch/master) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/) [![PayPal Donate](https://img.shields.io/badge/paypal-donate-blue.svg)](<https://paypal.me/NefariusMaximus>) [![Support on Patreon](https://img.shields.io/badge/patreon-donate-orange.svg)](<https://www.patreon.com/nefarius>) [![GitHub followers](https://img.shields.io/github/followers/nefarius.svg?style=social&label=Follow)](https://github.com/nefarius) [![Twitter Follow](https://img.shields.io/twitter/follow/nefariusmaximus.svg?style=social&label=Follow)](https://twitter.com/nefariusmaximus)
 
-![Disclaimer](http://nefarius.at/public/Alpha-Disclaimer.png)
+![Disclaimer](https://forums.vigem.org/assets/uploads/files/alpha_disclaimer.png)
 
-🔥 **ATTENTION: this project is currently incubating at [git.vigem.org](https://git.vigem.org/) and will be re-released here once finished** 🔥
+🔥 **ATTENTION: this project is currently unmaintained due to resource scarcity, no support or new features are to be expected!** 🔥
 
 **Please consider the master branch unstable until the disclaimer disappears!**
 
@@ -23,10 +23,6 @@ A common way for intercepting the Game's communication with the input devices wo
 ## The Real Solution
 
 Meet `HidGuardian`: a Windows kernel-mode driver sitting on top of every input device attached to the system. With its companion user-mode component [`HidVigil`](https://github.com/ViGEm/HidVigil) it morphs into a powerful device firewall toolkit allowing for fine-grained access restrictions to input devices.
-
-## Demo
-
-Outdated, replace with demo video.
 
 ## Supported Systems
 
@@ -54,7 +50,7 @@ Do bear in mind that you'll need to **sign** the driver to use it without [test 
 
 Found a bug and want it fixed? Open a detailed issue on the [GitHub issue tracker](../../issues)!
 
-Have an idea for a new feature? [Check out the project board](https://projects.vigem.org/public/board/26b2bebf0b0092d017f9fd629354cb6e2b255c087f13f8594190f43e2055), maybe it's already on there! If not, let's have a chat about your request on [Discord](https://discord.vigem.org) or the [community forums](https://forums.vigem.org).
+Have an idea for a new feature? Let's have a chat about your request on [Discord](https://discord.vigem.org) or the [community forums](https://forums.vigem.org).
 
 ### Questions & Support
 
