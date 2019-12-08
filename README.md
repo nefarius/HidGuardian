@@ -8,7 +8,7 @@ Blocks various input devices from being accessed by user-mode applications.
 
 ![Disclaimer](https://forums.vigem.org/assets/uploads/files/alpha_disclaimer.png)
 
-🔥 **ATTENTION: this project is currently unmaintained due to resource scarcity, no support or new features are to be expected!** 🔥
+🔥 **This project is currently unmaintained due to resource scarcity, no support or new features are to be expected!** 🔥
 
 **Please consider the master branch unstable until the disclaimer disappears!**
 
