@@ -4,13 +4,11 @@
 
 Blocks various input devices from being accessed by user-mode applications.
 
-[![Build status](https://ci.appveyor.com/api/projects/status/6i1f715tm961idmg/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/hidguardian/branch/master) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/) [![PayPal Donate](https://img.shields.io/badge/paypal-donate-blue.svg)](<https://paypal.me/NefariusMaximus>) [![Support on Patreon](https://img.shields.io/badge/patreon-donate-orange.svg)](<https://www.patreon.com/nefarius>) [![GitHub followers](https://img.shields.io/github/followers/nefarius.svg?style=social&label=Follow)](https://github.com/nefarius) [![Twitter Follow](https://img.shields.io/twitter/follow/nefariusmaximus.svg?style=social&label=Follow)](https://twitter.com/nefariusmaximus)
+---
 
-![Disclaimer](https://forums.vigem.org/assets/uploads/files/alpha_disclaimer.png)
+This was a research project and an attempt of turning the proof of concept project [HideDS4](https://github.com/nefarius/HideDS4) into a Windows kernel-mode filter driver that allows system-wide hiding of joysticks and gamepads, addressing doubled-input issues in games running with remapping utilities. It has been discontinued [in favour of better solutions](https://github.com/ViGEm/HidHide). The code will stay up for anyone to use as either an inspiration or a negative example 😜 Do bear in mind, that the code may contain unaddressed issues! Compile and use at your own risk! No support or binaries provided!
 
-🔥 **This project is currently unmaintained due to resource scarcity, no support or new features are to be expected!** 🔥
-
-**Please consider the master branch unstable until the disclaimer disappears!**
+---
 
 ## The Problem
 
@@ -43,15 +41,3 @@ You can either build directly within Visual Studio or in PowerShell by running t
 ```
 
 Do bear in mind that you'll need to **sign** the driver to use it without [test mode](<https://technet.microsoft.com/en-us/ff553484(v=vs.96)>).
-
-## Contribute
-
-### Bugs & Features
-
-Found a bug and want it fixed? Open a detailed issue on the [GitHub issue tracker](../../issues)!
-
-Have an idea for a new feature? Let's have a chat about your request on [Discord](https://discord.vigem.org) or the [community forums](https://forums.vigem.org).
-
-### Questions & Support
-
-Please respect that the GitHub issue tracker isn't a helpdesk. We offer a [Discord server](https://discord.vigem.org) and [forums](https://forums.vigem.org), where you're welcome to check out and engage in discussions!
