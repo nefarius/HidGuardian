@@ -20,7 +20,7 @@ A common way for intercepting the Game's communication with the input devices wo
 
 ## The Real Solution
 
-Meet `HidGuardian`: a Windows kernel-mode driver sitting on top of every input device attached to the system. With its companion user-mode component [`HidVigil`](https://github.com/ViGEm/HidVigil) it morphs into a powerful device firewall toolkit allowing for fine-grained access restrictions to input devices.
+Meet `HidGuardian`: a Windows kernel-mode driver sitting on top of every input device attached to the system. With its companion user-mode component [`HidCerberus`](https://github.com/ViGEm/HidCerberus) it morphs into a powerful device firewall toolkit allowing for fine-grained access restrictions to input devices.
 
 ## Supported Systems
 
