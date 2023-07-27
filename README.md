@@ -6,7 +6,7 @@ Blocks various input devices from being accessed by user-mode applications.
 
 ---
 
-This was a research project and an attempt of turning the proof of concept project [HideDS4](https://github.com/nefarius/HideDS4) into a Windows kernel-mode filter driver that allows system-wide hiding of joysticks and gamepads, addressing doubled-input issues in games running with remapping utilities. It has been discontinued [in favour of better solutions](https://github.com/ViGEm/HidHide). The code will stay up for anyone to use as either an inspiration or a negative example 😜 Do bear in mind, that the code may contain unaddressed issues! Compile and use at your own risk! No support or binaries provided!
+This was a research project and an attempt of turning the proof of concept project [HideDS4](https://github.com/nefarius/HideDS4) into a Windows kernel-mode filter driver that allows system-wide hiding of joysticks and gamepads, addressing doubled-input issues in games running with remapping utilities. It has been discontinued [in favour of better solutions](https://github.com/nefarius/HidHide). The code will stay up for anyone to use as either an inspiration or a negative example 😜 Do bear in mind, that the code may contain unaddressed issues! Compile and use at your own risk! No support or binaries provided!
 
 ---
 
@@ -20,7 +20,7 @@ A common way for intercepting the Game's communication with the input devices wo
 
 ## The Real Solution
 
-Meet `HidGuardian`: a Windows kernel-mode driver sitting on top of every input device attached to the system. With its companion user-mode component [`HidCerberus`](https://github.com/ViGEm/HidCerberus) it morphs into a powerful device firewall toolkit allowing for fine-grained access restrictions to input devices.
+Meet `HidGuardian`: a Windows kernel-mode driver sitting on top of every input device attached to the system. With its companion user-mode component [`HidCerberus`](https://github.com/nefarius/HidCerberus) it morphs into a powerful device firewall toolkit allowing for fine-grained access restrictions to input devices.
 
 ## Supported Systems
 
